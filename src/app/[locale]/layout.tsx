@@ -26,6 +26,9 @@ const arabic = Cairo({
   display: "swap",
 });
 
+const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+const GSC_VERIFY = process.env.NEXT_PUBLIC_GSC_VERIFICATION;
+
 export const metadata: Metadata = {
   title: {
     default: "GoTripza — رفيقك الذكي للسفر | AI Travel Companion",
@@ -62,7 +65,10 @@ export const metadata: Metadata = {
     "Mecca hotels",
     "flight deals KSA",
   ],
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(BASE),
+  ...(GSC_VERIFY && {
+    verification: { google: GSC_VERIFY },
+  }),
   openGraph: {
     type: "website",
     siteName: "GoTripza",
@@ -89,12 +95,16 @@ export const metadata: Metadata = {
     },
   },
   alternates: {
-    canonical: process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com",
+    canonical: BASE,
     languages: {
-      "ar-SA": `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com"}/ar`,
-      "en-US": `${process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com"}/en`,
+      "ar-SA": `${BASE}/ar`,
+      "en-US": `${BASE}/en`,
+      "x-default": `${BASE}/ar`,
     },
   },
+  category: "travel",
+  creator: "GoTripza",
+  publisher: "GoTripza",
 };
 
 export function generateStaticParams() {
