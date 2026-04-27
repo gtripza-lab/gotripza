@@ -1,6 +1,6 @@
 import "server-only";
 
-const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "";
+const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 const TOKEN = process.env.TRAVELPAYOUTS_TOKEN ?? "";
 
 export type FlightOffer = {
@@ -26,10 +26,15 @@ export type HotelOffer = {
 
 const BASE = "https://api.travelpayouts.com";
 
+/** Always inject the affiliate marker â never let it be lost. */
+function forceSetMarker(url: URL): URL {
+  url.searchParams.set("marker", MARKER);
+  return url;
+}
+
 function affiliateLink(path: string) {
   const url = new URL(path, "https://www.aviasales.com");
-  url.searchParams.set("marker", MARKER);
-  return url.toString();
+  return forceSetMarker(url).toString();
 }
 
 export async function searchFlights(params: {
@@ -101,8 +106,7 @@ export async function searchHotels(params: {
 
 function hotelDeepLink(hotelId: number, location: string) {
   const u = new URL("https://search.hotellook.com/hotels");
-  u.searchParams.set("marker", MARKER);
   u.searchParams.set("hotelId", String(hotelId));
   u.searchParams.set("destination", location);
-  return u.toString();
+  return forceSetMarker(u).toString();
 }
