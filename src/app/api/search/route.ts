@@ -3,6 +3,7 @@ import { searchFlights, searchHotels } from "@/lib/travelpayouts";
 import { mockFlights, mockHotels } from "@/lib/mock-offers";
 import type { TripIntent } from "@/lib/gemini";
 import type { Currency } from "@/lib/utils";
+import { resolveIata } from "@/lib/iata";
 
 export const runtime = "nodejs";
 
@@ -22,18 +23,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "destination_required" }, { status: 400 });
     }
 
+    // Resolve Arabic/English city names â IATA codes
+    const origin = resolveIata(intent.origin);
+    const destination = resolveIata(intent.destination) ?? intent.destination;
+
     const [flightsRes, hotelsRes] = await Promise.allSettled([
-      intent.origin
+      origin
         ? searchFlights({
-            origin: intent.origin,
-            destination: intent.destination,
+            origin,
+            destination,
             departure_date: intent.departure_date,
             return_date: intent.return_date,
             currency: currency.toLowerCase(),
           })
         : Promise.resolve([]),
       searchHotels({
-        location: intent.destination,
+        location: destination,
         checkIn: intent.departure_date,
         checkOut: intent.return_date,
         adults: intent.adults,
