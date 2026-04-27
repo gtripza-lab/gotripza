@@ -26,15 +26,16 @@ export type HotelOffer = {
 
 const BASE = "https://api.travelpayouts.com";
 
-/** Always inject the affiliate marker â never let it be lost. */
-function forceSetMarker(url: URL): URL {
+/** Always inject the affiliate marker — never let it be lost. */
+function forceSetMarker(url: URL, subid?: string): URL {
   url.searchParams.set("marker", MARKER);
+  if (subid) url.searchParams.set("subid", subid);
   return url;
 }
 
-function affiliateLink(path: string) {
+function affiliateLink(path: string, subid?: string) {
   const url = new URL(path, "https://www.aviasales.com");
-  return forceSetMarker(url).toString();
+  return forceSetMarker(url, subid).toString();
 }
 
 export async function searchFlights(params: {
@@ -43,6 +44,7 @@ export async function searchFlights(params: {
   departure_date?: string | null;
   return_date?: string | null;
   currency?: string;
+  subid?: string;
 }): Promise<FlightOffer[]> {
   const u = new URL(`${BASE}/aviasales/v3/prices_for_dates`);
   u.searchParams.set("origin", params.origin);
@@ -67,7 +69,7 @@ export async function searchFlights(params: {
     airline: String(d.airline ?? ""),
     flight_number: String(d.flight_number ?? ""),
     duration: d.duration ? Number(d.duration) : undefined,
-    link: affiliateLink(String(d.link ?? "/")),
+    link: affiliateLink(String(d.link ?? "/"), params.subid),
   }));
 }
 
@@ -77,6 +79,7 @@ export async function searchHotels(params: {
   checkOut?: string | null;
   adults?: number;
   currency?: string;
+  subid?: string;
 }): Promise<HotelOffer[]> {
   const u = new URL("https://engine.hotellook.com/api/v2/cache.json");
   u.searchParams.set("location", params.location);
@@ -100,13 +103,13 @@ export async function searchHotels(params: {
       name: String((h.location as { name?: string })?.name ?? params.location),
       country: String((h.location as { country?: string })?.country ?? ""),
     },
-    link: hotelDeepLink(Number(h.hotelId ?? 0), params.location),
+    link: hotelDeepLink(Number(h.hotelId ?? 0), params.location, params.subid),
   }));
 }
 
-function hotelDeepLink(hotelId: number, location: string) {
+function hotelDeepLink(hotelId: number, location: string, subid?: string) {
   const u = new URL("https://search.hotellook.com/hotels");
   u.searchParams.set("hotelId", String(hotelId));
   u.searchParams.set("destination", location);
-  return forceSetMarker(u).toString();
+  return forceSetMarker(u, subid).toString();
 }
