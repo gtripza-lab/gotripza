@@ -16,14 +16,19 @@ export async function POST(req: NextRequest) {
     const body = (await req.json()) as {
       intent: TripIntent;
       currency?: string;
+      source?: string;   // "chat" | "trip_page" | "whitelabel"
     };
     const intent = body.intent;
     const currency = normCurrency(body.currency);
+    // Map source to affiliate subid for revenue tracking
+    const subid = body.source === "trip_page" ? "trip_page"
+      : body.source === "whitelabel" ? "whitelabel"
+      : "ai_chat";
     if (!intent?.destination) {
       return NextResponse.json({ error: "destination_required" }, { status: 400 });
     }
 
-    // Resolve Arabic/English city names â IATA codes
+    // Resolve Arabic/English city names → IATA codes
     const origin = resolveIata(intent.origin);
     const destination = resolveIata(intent.destination) ?? intent.destination;
 
@@ -35,6 +40,7 @@ export async function POST(req: NextRequest) {
             departure_date: intent.departure_date,
             return_date: intent.return_date,
             currency: currency.toLowerCase(),
+            subid,
           })
         : Promise.resolve([]),
       searchHotels({
@@ -43,6 +49,7 @@ export async function POST(req: NextRequest) {
         checkOut: intent.return_date,
         adults: intent.adults,
         currency: currency.toLowerCase(),
+        subid,
       }),
     ]);
 
