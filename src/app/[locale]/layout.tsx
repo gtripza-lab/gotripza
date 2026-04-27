@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { Inter, Plus_Jakarta_Sans, Cairo } from "next/font/google";
 import { notFound } from "next/navigation";
+import Script from "next/script";
 import "../globals.css";
 import { isLocale, localeMeta, locales, type Locale } from "@/i18n/config";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
+
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
 const sans = Inter({
   subsets: ["latin"],
@@ -117,6 +120,27 @@ export default function LocaleLayout({
         <OrganizationJsonLd />
         <WebsiteJsonLd />
         {children}
+
+        {/* Google Analytics GA4 */}
+        {GA_ID && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="ga4-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}', {
+                  page_path: window.location.pathname,
+                  cookie_flags: 'SameSite=None;Secure',
+                });
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );

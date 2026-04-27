@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const MARKER = process.env.TRAVELPAYOUTS_MARKER ?? "522867";
+const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 const TP_TOKEN = process.env.TRAVELPAYOUTS_TOKEN ?? "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY ?? process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
@@ -60,7 +60,7 @@ export async function GET() {
     detail: [
       `GEMINI_API_KEY: ${GEMINI_KEY ? "✅" : "❌ missing"}`,
       `TRAVELPAYOUTS_TOKEN: ${TP_TOKEN ? "✅" : "❌ missing"}`,
-      `TRAVELPAYOUTS_MARKER: ${MARKER || "❌ missing"}`,
+      `NEXT_PUBLIC_TRAVELPAYOUTS_MARKER: ${MARKER || "❌ missing"}`,
       `APP_URL: ${APP_URL}`,
     ].join(" | "),
   };
