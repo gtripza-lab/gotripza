@@ -27,7 +27,7 @@ const arabic = Cairo({
   display: "swap",
 });
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+const BASE = "https://gotripza.com";
 // Google Search Console verification (public token — safe to hardcode)
 const GSC_VERIFY = process.env.NEXT_PUBLIC_GSC_VERIFICATION
   ?? "pfI1Dg7jVz9s_y0IHGvW78r-IDgc3MDh0RT6rqoYJDQ";

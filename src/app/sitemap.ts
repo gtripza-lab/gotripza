@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
-const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+// Always use production domain
+const BASE = "https://gotripza.com";
 
 const TOP_DESTINATIONS = [
   "dubai", "istanbul", "cairo", "london", "paris",

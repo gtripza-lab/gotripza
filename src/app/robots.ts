@@ -1,7 +1,8 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+  // Always use production domain
+  const base = "https://gotripza.com";
   return {
     rules: [
       {
