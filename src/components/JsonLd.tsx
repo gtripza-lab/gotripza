@@ -56,7 +56,7 @@ export function OffersJsonLd({
   const offers = [
     ...flights.slice(0, 5).map((f) => ({
       "@type": "Offer",
-      name: `${f.airline} ${f.origin}â${f.destination}`,
+      name: `${f.airline} ${f.origin}→${f.destination}`,
       price: f.price,
       priceCurrency: currency,
       url: f.link,
@@ -104,7 +104,7 @@ export function FlightRichSnippet({
     position: i + 1,
     item: {
       "@type": "Flight",
-      name: `${f.airline} ${f.origin} â ${f.destination}`,
+      name: `${f.airline} ${f.origin} → ${f.destination}`,
       departureAirport: {
         "@type": "Airport",
         iataCode: f.origin,
@@ -133,7 +133,7 @@ export function FlightRichSnippet({
   const data = {
     "@context": "https://schema.org",
     "@type": "ItemList",
-    name: `Flights ${flights[0]?.origin ?? ""} â ${flights[0]?.destination ?? ""}`,
+    name: `Flights ${flights[0]?.origin ?? ""} → ${flights[0]?.destination ?? ""}`,
     itemListElement: items,
   };
 
