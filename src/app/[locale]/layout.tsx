@@ -6,7 +6,8 @@ import "../globals.css";
 import { isLocale, localeMeta, locales, type Locale } from "@/i18n/config";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+// GA4 Measurement ID (public — safe to hardcode)
+const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
 
 const sans = Inter({
   subsets: ["latin"],
