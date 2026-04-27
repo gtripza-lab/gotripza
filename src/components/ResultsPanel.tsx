@@ -1,12 +1,42 @@
 "use client";
 import { motion } from "framer-motion";
-import { Plane, Hotel as HotelIcon, ExternalLink, Star } from "lucide-react";
+import { Plane, Hotel as HotelIcon, ExternalLink, Star, Sparkles } from "lucide-react";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { TripIntent } from "@/lib/gemini";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
-import { formatPrice, cn } from "@/lib/utils";
+import { formatPrice, cn, type Currency } from "@/lib/utils";
 
 type Theme = "dark" | "light";
+
+/** Payment methods shown per currency/locale */
+function PaymentBadges({ currency, isLight }: { currency?: Currency; isLight: boolean }) {
+  const isSAR = currency === "SAR";
+  const methods = isSAR
+    ? ["ØªÙØ§Ø±Ø§", "ØªØ§Ø¨Ù", "ÙØ¯Ù", "Apple Pay"]
+    : ["Apple Pay", "PayPal", "Visa", "Mastercard"];
+
+  return (
+    <div className={cn("mt-4 flex flex-wrap items-center gap-2 border-t pt-3",
+      isLight ? "border-ink-950/10" : "border-white/8")}>
+      <span className={cn("text-xs", isLight ? "text-ink-950/40" : "text-white/40")}>
+        {isSAR ? "Ø·Ø±Ù Ø§ÙØ¯ÙØ¹:" : "Pay with:"}
+      </span>
+      {methods.map((m) => (
+        <span
+          key={m}
+          className={cn(
+            "rounded-md px-2 py-0.5 text-xs font-medium",
+            isLight
+              ? "bg-ink-950/5 text-ink-950/60"
+              : "bg-white/8 text-white/60",
+          )}
+        >
+          {m}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 export function ResultsPanel({
   intent,
@@ -14,12 +44,14 @@ export function ResultsPanel({
   hotels,
   dict,
   theme = "dark",
+  currency,
 }: {
   intent: TripIntent;
   flights: FlightOffer[];
   hotels: HotelOffer[];
   dict: Dictionary;
   theme?: Theme;
+  currency?: Currency;
 }) {
   const isLight = theme === "light";
   const card = isLight
@@ -51,11 +83,16 @@ export function ResultsPanel({
           </div>
           <h3 className={cn("font-semibold", titleColor)}>{dict.results.flights}</h3>
           <span className={cn("ms-auto text-xs", headingMute)}>
-            {intent.origin ?? "—"} → {intent.destination}
+            {intent.origin ?? "â"} â {intent.destination}
           </span>
         </header>
         {flights.length === 0 ? (
-          <EmptyState text="—" isLight={isLight} />
+          <MarketingEmpty
+            isLight={isLight}
+            icon={<Plane className="h-5 w-5" />}
+            line1="Curating premium flight offersâ¦"
+            line2="Live prices loading â results appear instantly."
+          />
         ) : (
           <ul className="space-y-3">
             {flights.slice(0, 5).map((f, i) => (
@@ -68,14 +105,14 @@ export function ResultsPanel({
               >
                 <div className="min-w-0">
                   <div className={cn("flex items-center gap-2 text-sm", titleColor)}>
-                    <span className="font-semibold">{f.airline || "—"}</span>
-                    <span className={subMute}>·</span>
+                    <span className="font-semibold">{f.airline || "â"}</span>
+                    <span className={subMute}>Â·</span>
                     <span className={isLight ? "text-ink-950/70" : "text-white/70"}>
                       {f.flight_number}
                     </span>
                   </div>
                   <div className={cn("mt-1 text-xs", subMute)}>
-                    {f.departure_at?.slice(0, 10)} · {f.origin} → {f.destination}
+                    {f.departure_at?.slice(0, 10)} Â· {f.origin} â {f.destination}
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -96,6 +133,7 @@ export function ResultsPanel({
             ))}
           </ul>
         )}
+        <PaymentBadges currency={currency} isLight={isLight} />
       </section>
 
       <section className={card}>
@@ -112,7 +150,12 @@ export function ResultsPanel({
           <span className={cn("ms-auto text-xs", headingMute)}>{intent.destination}</span>
         </header>
         {hotels.length === 0 ? (
-          <EmptyState text="—" isLight={isLight} />
+          <MarketingEmpty
+            isLight={isLight}
+            icon={<HotelIcon className="h-5 w-5" />}
+            line1="Sourcing top-rated hotel dealsâ¦"
+            line2="Best price guarantee â powered by GoTripza AI."
+          />
         ) : (
           <ul className="space-y-3">
             {hotels.slice(0, 5).map((h) => (
@@ -155,20 +198,48 @@ export function ResultsPanel({
             ))}
           </ul>
         )}
+        <PaymentBadges currency={currency} isLight={isLight} />
       </section>
     </motion.div>
   );
 }
 
-function EmptyState({ text, isLight }: { text: string; isLight: boolean }) {
+function MarketingEmpty({
+  isLight,
+  icon,
+  line1,
+  line2,
+}: {
+  isLight: boolean;
+  icon: React.ReactNode;
+  line1: string;
+  line2: string;
+}) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-dashed p-6 text-center text-sm",
-        isLight ? "border-ink-950/15 text-ink-950/40" : "border-white/10 text-white/40",
+        "flex flex-col items-center gap-3 rounded-xl border border-dashed p-6 text-center",
+        isLight ? "border-ink-950/15" : "border-white/10",
       )}
     >
-      {text}
+      <div
+        className={cn(
+          "flex h-10 w-10 items-center justify-center rounded-full",
+          isLight ? "bg-brand-primary/10 text-brand-deep" : "bg-brand-primary/15 text-brand-primary",
+        )}
+      >
+        {icon}
+      </div>
+      <div>
+        <p className={cn("flex items-center justify-center gap-1 text-sm font-medium",
+          isLight ? "text-ink-950/70" : "text-white/70")}>
+          <Sparkles className="h-3.5 w-3.5" />
+          {line1}
+        </p>
+        <p className={cn("mt-1 text-xs", isLight ? "text-ink-950/40" : "text-white/40")}>
+          {line2}
+        </p>
+      </div>
     </div>
   );
 }
