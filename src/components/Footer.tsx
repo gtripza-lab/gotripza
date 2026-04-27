@@ -1,0 +1,64 @@
+import Link from "next/link";
+import { Plane, BedDouble, Car, Ticket, Wallet, Headphones } from "lucide-react";
+import { Logo } from "./Logo";
+import { PaymentMethods } from "./PaymentMethods";
+import type { Dictionary } from "@/i18n/get-dictionary";
+import type { Locale } from "@/i18n/config";
+
+export function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
+  const icons = [Plane, BedDouble, Car, Ticket, Wallet, Headphones];
+  const legalBase = `/${locale}`;
+  return (
+    <footer className="relative mt-12">
+      <div className="relative overflow-hidden rounded-t-3xl border-t border-white/5 bg-ink-950">
+        <div className="absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_top,rgba(90,108,255,0.18),transparent_60%)]" />
+
+        <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 py-8 md:flex-row md:justify-between">
+          <div className="flex items-center gap-5">
+            <Logo />
+            <span className="hidden font-display text-lg text-white/80 md:inline">
+              {dict.footer.tagline}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-white/70">
+            {icons.map((Icon, i) => (
+              <span
+                key={i}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-primary/40 hover:bg-white/10 hover:text-white"
+              >
+                <Icon className="h-4 w-4" strokeWidth={1.5} />
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="relative mx-auto max-w-7xl border-t border-white/5 px-6 py-6">
+          <PaymentMethods dict={dict} variant="row" />
+        </div>
+
+        <div className="relative mx-auto max-w-7xl border-t border-white/5 px-6 py-5">
+          <p className="text-center text-[11px] leading-relaxed text-white/50">
+            <span className="font-semibold text-white/70">
+              {dict.footer.affiliateTitle}:
+            </span>{" "}
+            {dict.footer.affiliate}
+          </p>
+        </div>
+
+        <div className="border-t border-white/5">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-4 text-xs text-white/40 sm:flex-row">
+            <span>© {new Date().getFullYear()} GoTripza · {dict.footer.rights}</span>
+            <div className="flex items-center gap-4">
+              <Link href={`${legalBase}/privacy`} className="hover:text-white/70">
+                {dict.footer.privacy}
+              </Link>
+              <Link href={`${legalBase}/terms`} className="hover:text-white/70">
+                {dict.footer.terms}
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
