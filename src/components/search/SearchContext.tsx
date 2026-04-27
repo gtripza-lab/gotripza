@@ -43,6 +43,41 @@ type SearchContextValue = {
 
 const SearchContext = createContext<SearchContextValue | null>(null);
 
+/** Maps raw technical errors → friendly localised messages shown in the UI */
+function friendlyError(raw: string, locale: string): string {
+  const r = raw.toLowerCase();
+  if (
+    r.includes("rate") ||
+    r.includes("quota") ||
+    r.includes("429") ||
+    r.includes("resource_exhausted") ||
+    r.includes("too many")
+  )
+    return locale === "ar"
+      ? "النظام يعالج طلبات كثيرة الآن. انتظر لحظة وحاول مجدداً."
+      : "We're handling a lot of requests. Please try again in a moment.";
+  if (
+    r.includes("model") ||
+    r.includes("available") ||
+    r.includes("deprecated") ||
+    r.includes("gemini")
+  )
+    return locale === "ar"
+      ? "عذراً، حدث خطأ في معالجة طلبك. يرجى المحاولة مرة أخرى."
+      : "Sorry, something went wrong processing your request. Please try again.";
+  if (r.includes("parse") || r.includes("json") || r.includes("syntax"))
+    return locale === "ar"
+      ? "تعذّر فهم طلبك. حاول صياغته بشكل مختلف."
+      : "We couldn't understand your request. Try rephrasing it.";
+  if (r.includes("network") || r.includes("fetch") || r.includes("econnrefused") || r.includes("timeout"))
+    return locale === "ar"
+      ? "تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مجدداً."
+      : "Connection failed. Please check your internet and try again.";
+  return locale === "ar"
+    ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+    : "An unexpected error occurred. Please try again.";
+}
+
 export function SearchProvider({
   children,
   initialLocale = "ar",
@@ -67,7 +102,7 @@ export function SearchProvider({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ query: q }),
       });
-      const parsedJson = (await parseRes.json()) as {
+      let parsedJson: {
         intent?: TripIntent;
         locale?: "ar" | "en";
         message?: string;
@@ -76,7 +111,12 @@ export function SearchProvider({
         tips?: string | null;
         mock?: boolean;
         error?: string;
-      };
+      } = {};
+      try {
+        parsedJson = await parseRes.json();
+      } catch {
+        throw new Error("parse_failed");
+      }
       if (!parseRes.ok || !parsedJson.intent) {
         throw new Error(parsedJson.error ?? "parse_failed");
       }
@@ -95,13 +135,18 @@ export function SearchProvider({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ intent, currency: uiCurrency }),
       });
-      const searchJson = (await searchRes.json()) as {
+      let searchJson: {
         flights?: FlightOffer[];
         hotels?: HotelOffer[];
         mock?: boolean;
         currency?: Currency;
         error?: string;
-      };
+      } = {};
+      try {
+        searchJson = await searchRes.json();
+      } catch {
+        throw new Error("search_failed");
+      }
       if (!searchRes.ok) throw new Error(searchJson.error ?? "search_failed");
 
       setData({
@@ -130,7 +175,8 @@ export function SearchProvider({
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "unknown_error");
+      const raw = err instanceof Error ? err.message : "unknown_error";
+      setError(friendlyError(raw, initialLocale));
       setStatus("error");
     }
   }, [initialLocale]);
