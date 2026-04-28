@@ -12,6 +12,7 @@ import { Footer } from "@/components/Footer";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { SearchResults } from "@/components/SearchResults";
 import { SocialProof } from "@/components/SocialProof";
+import { StatsBar } from "@/components/StatsBar";
 
 export default async function LandingPage({
   params,
@@ -28,6 +29,7 @@ export default async function LandingPage({
       <main>
         <Hero dict={dict} />
         <SearchResults dict={dict} />
+        <StatsBar dict={dict} />
         <BrandStory dict={dict} />
         <MobileMockups dict={dict} />
         <ValuesGrid dict={dict} />

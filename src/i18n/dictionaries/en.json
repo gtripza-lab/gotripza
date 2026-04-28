@@ -5,46 +5,46 @@
     "packages": "Packages",
     "explore": "Explore",
     "signin": "Sign in",
-    "getStarted": "Get started"
+    "getStarted": "Start for free"
   },
   "hero": {
-    "badge": "Powered by AI",
-    "title1": "AI-Powered Travel.",
-    "title2": "Made for You.",
-    "subtitle": "Tell us what you need in your own words, and GoTripza will plan the perfect trip in seconds.",
-    "placeholder": "Where do you want to go?",
-    "cta": "Plan my trip",
+    "badge": "🤖 AI That Speaks Your Language",
+    "title1": "Find Cheaper Flights.",
+    "title2": "Just By Asking.",
+    "subtitle": "Tell us where you want to go, when, and your budget — our AI instantly compares hundreds of airlines and hotels to find you the best deal. In seconds.",
+    "placeholder": "e.g. Family trip to Istanbul next month, budget $1,500",
+    "cta": "Search for free",
     "voice": "Voice search",
-    "tagline": "Travel Smart. Anytime.",
+    "tagline": "Best Prices. In Seconds.",
     "suggestions": {
-      "title": "Try one of these:",
+      "title": "Try now:",
       "items": [
-        "Weekend escape",
-        "Family holiday",
-        "Honeymoon",
-        "Adventure"
+        "Dubai 3 nights best price",
+        "Honeymoon in Maldives",
+        "Family trip to Istanbul",
+        "Cheapest flight from Jeddah this week"
       ]
     }
   },
   "brandStory": {
-    "title": "Brand Story",
-    "body": "GoTripza is more than a booking platform. It's your AI travel companion that understands you, simplifies your choices, and gets you there — faster.",
+    "title": "Why GoTripza Exists",
+    "body": "We were tired of opening 10 tabs just to find a decent flight price. GoTripza was built so you can describe your trip in plain language — and we do the rest. No tab-switching. No hidden fees. No wasted time.",
     "highlights": [
-      "Smart planning.",
-      "Seamless booking.",
-      "Unforgettable journeys."
+      "Natural language search.",
+      "Real prices in your currency.",
+      "Hundreds of options, one search."
     ]
   },
   "mockups": {
-    "title": "From search to confirmation, in three taps",
-    "subtitle": "Ask, choose, enjoy.",
+    "title": "Search to booking in 3 steps",
+    "subtitle": "Ask, choose, and enjoy your trip.",
     "screens": {
       "search": {
         "greet": "Hi, Sarah!",
         "prompt": "Where do you want to go?",
         "input": "Describe your trip...",
-        "popular": "Popular Destinations",
-        "ai": "AI Recommends for You",
+        "popular": "Most booked destinations",
+        "ai": "AI picks for you",
         "place1": "Bali",
         "place1Sub": "Indonesia",
         "place2": "Santorini",
@@ -59,58 +59,96 @@
         "tabFastest": "Fastest",
         "tabCheapest": "Cheapest",
         "flight": "Flight",
-        "flightTime": "10:30 JED - 14:30 DXB",
+        "flightTime": "10:30 JED — 14:30 DXB",
         "flightDirect": "Direct · 4h",
         "hotel": "Hotel",
         "hotelName": "Modern Downtown Hotel",
-        "rating": "4.9 (1,330)",
+        "rating": "4.9 (1,330 reviews)",
         "nights": "4 Nights",
         "total": "Total Price",
         "book": "Book Now"
       },
       "confirm": {
-        "title": "Your Booking is Confirmed!",
+        "title": "✅ Booking Confirmed!",
         "ref": "Booking Reference",
         "flight": "Flight",
         "view": "View",
         "hotelLabel": "Hotel",
         "calendar": "Add to Calendar",
-        "wish": "We wish you a happy journey!"
+        "wish": "Have an amazing trip — GoTripza is always here for you!"
       }
     }
   },
   "values": {
-    "title": "Why GoTripza?",
+    "title": "Why GoTripza, not the rest?",
     "items": {
-      "ai": { "title": "AI-Powered Search", "desc": "We understand you better" },
-      "smart": { "title": "Smart Recommendation", "desc": "Only the best options for you" },
-      "fast": { "title": "Fast Booking", "desc": "Book in seconds with one tap" },
-      "support": { "title": "24/7 Support", "desc": "We're here whenever you need" },
-      "secure": { "title": "Secure & Trusted", "desc": "Your journey, our responsibility" }
+      "ai": {
+        "title": "Search in plain English",
+        "desc": "No forms, no dropdowns — just type what you want and we get it"
+      },
+      "smart": {
+        "title": "Prices in your currency",
+        "desc": "No currency surprises — the price you see is the price you pay"
+      },
+      "fast": {
+        "title": "100s of airlines compared",
+        "desc": "We scan hundreds of flights and hotels simultaneously for the best deal"
+      },
+      "support": {
+        "title": "Zero service fees",
+        "desc": "GoTripza is completely free — we only earn when you book via our partners"
+      },
+      "secure": {
+        "title": "All payment methods",
+        "desc": "Apple Pay, PayPal, Visa, Mastercard — all major methods accepted"
+      }
     }
   },
   "ourValues": {
-    "title": "Our Values",
+    "title": "What We Stand For",
     "items": {
-      "empathy": { "title": "Empathy", "desc": "We understand your journey" },
-      "simplicity": { "title": "Simplicity", "desc": "We make travel effortless" },
-      "inspiration": { "title": "Inspiration", "desc": "We help you discover the world" },
-      "trust": { "title": "Trust", "desc": "We keep your data and trips safe" },
-      "speed": { "title": "Speed", "desc": "We save your time for what matters" }
+      "empathy": {
+        "title": "Traveler first",
+        "desc": "Every decision we make starts with what's best for you"
+      },
+      "simplicity": {
+        "title": "Radical simplicity",
+        "desc": "One site, one search, one decision — done"
+      },
+      "inspiration": {
+        "title": "Discover the unexpected",
+        "desc": "Destinations you haven't considered, at prices that surprise you"
+      },
+      "trust": {
+        "title": "Full transparency",
+        "desc": "No hidden fees, no bait-and-switch — what you see is what you pay"
+      },
+      "speed": {
+        "title": "Seconds, not hours",
+        "desc": "What used to take hours of research, GoTripza does in seconds"
+      }
     }
   },
   "destinations": {
-    "title": "Every Journey Tells a Story",
-    "subtitle": "Discover, fly, stay, explore.",
+    "title": "Every Journey Has a Story",
+    "subtitle": "Discover your destination, book your ticket, live the moment.",
     "items": {
-      "story": "Every Journey Tells a Story",
-      "fly": "Fly Smart",
-      "stay": "Stay Perfect",
-      "explore": "Explore More"
+      "story": "Every journey has a story",
+      "fly": "Fly for less",
+      "stay": "Best stay, best price",
+      "explore": "Explore more"
     }
   },
+  "social": {
+    "travelers": "travelers used GoTripza",
+    "destinations": "destinations worldwide",
+    "saved": "saved by our users",
+    "travelersCount": "12,000+",
+    "destinationsCount": "500+",
+    "savedCount": "$2.5M+"
+  },
   "results": {
-    "loading": "Planning your perfect trip...",
+    "loading": "🔍 Scanning the best prices for you...",
     "flights": "Flights",
     "hotels": "Hotels",
     "bestValue": "Best Value",
@@ -123,18 +161,18 @@
     "perNight": "/ night"
   },
   "footer": {
-    "tagline": "One Search. Endless Possibilities.",
+    "tagline": "One search. Hundreds of options. Best price.",
     "rights": "All rights reserved",
     "privacy": "Privacy Policy",
     "terms": "Terms & Conditions",
     "affiliateTitle": "Affiliate Disclosure",
-    "affiliate": "GoTripza may earn a commission when you book through our trusted partners, at no additional cost to you."
+    "affiliate": "GoTripza earns a commission when you book through our trusted partners — at absolutely no extra cost to you."
   },
   "payments": {
-    "title": "Trusted payment methods"
+    "title": "Pay the way you prefer"
   },
   "errors": {
-    "parse": "Couldn't understand your request, try rephrasing.",
-    "network": "Connection error, please try again."
+    "parse": "We couldn't understand that — try adding your destination, dates, and number of travelers.",
+    "network": "Connection lost — check your internet and try again."
   }
 }
