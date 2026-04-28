@@ -13,6 +13,24 @@ function pickLocale(req: NextRequest): string {
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const host = req.headers.get("host") ?? "";
+
+  // ── Subdomain routing ──────────────────────────────────────────────────────
+  // search.gotripza.com → always serve the /[locale]/search page
+  if (host.startsWith("search.")) {
+    const locale = pickLocale(req);
+    // If already on a localised search path, let it through
+    const isLocalised = locales.some(
+      (l) => pathname === `/${l}/search` || pathname.startsWith(`/${l}/search`),
+    );
+    if (isLocalised) return NextResponse.next();
+
+    const url = req.nextUrl.clone();
+    url.pathname = `/${locale}/search`;
+    return NextResponse.redirect(url);
+  }
+
+  // ── Main domain locale redirect ────────────────────────────────────────────
   const hasLocale = locales.some(
     (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`),
   );
