@@ -108,6 +108,18 @@ export const metadata: Metadata = {
   category: "travel",
   creator: "GoTripza",
   publisher: "GoTripza",
+  themeColor: [
+    { media: "(prefers-color-scheme: dark)", color: "#0a0a14" },
+    { media: "(prefers-color-scheme: light)", color: "#5a6cff" },
+  ],
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "GoTripza",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export function generateStaticParams() {
