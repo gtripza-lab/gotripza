@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
 import type { Dictionary } from "@/i18n/get-dictionary";
@@ -8,11 +9,12 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
 import { cn } from "@/lib/utils";
 
 export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
+  const router = useRouter();
   const items = [
-    { label: dict.nav.flights, href: "#flights" },
-    { label: dict.nav.hotels, href: "#hotels" },
-    { label: dict.nav.packages, href: "#packages" },
-    { label: dict.nav.explore, href: "#explore" },
+    { label: dict.nav.flights,  href: `/${locale}/search#flights`  },
+    { label: dict.nav.hotels,   href: `/${locale}/search#hotels`   },
+    { label: dict.nav.packages, href: `/${locale}/search`          },
+    { label: dict.nav.explore,  href: "#explore"                   },
   ];
 
   // Switch nav theme based on scroll position so it reads well over both
@@ -70,7 +72,12 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
           >
             {dict.nav.signin}
           </button>
-          <button className="btn-primary !py-2 !text-sm">{dict.nav.getStarted}</button>
+          <button
+            onClick={() => router.push(`/${locale}/search`)}
+            className="btn-primary !py-2 !text-sm"
+          >
+            {dict.nav.getStarted}
+          </button>
         </div>
       </div>
     </header>
