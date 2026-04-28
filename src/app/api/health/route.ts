@@ -38,7 +38,7 @@ async function checkSupabase(): Promise<CheckResult> {
 }
 
 function checkAffiliateMarker(): CheckResult {
-  const testUrl = new URL("https://search.gotripza.com/flights/");
+  const testUrl = new URL("https://www.aviasales.com/");
   testUrl.searchParams.set("marker", MARKER);
   testUrl.searchParams.set("subid", "ai_chat");
   const hasMarker = testUrl.searchParams.get("marker") === MARKER;
@@ -83,7 +83,8 @@ export async function GET() {
     summary: {
       marker: MARKER,
       subid_chat: "ai_chat",
-      whitelabel: "https://search.gotripza.com",
+      flights_partner: "https://www.aviasales.com",
+      hotels_partner: "https://www.hotellook.com",
       app_url: APP_URL,
     },
   };

@@ -55,9 +55,9 @@ export async function POST(req: NextRequest) {
     const flights = flightsRes.status === "fulfilled" ? flightsRes.value : [];
     const hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
 
-    // Build fallback search URLs for when API returns no results
-    const flightSearchUrl = `https://search.gotripza.com/?origin=${origin}&destination=${destination}&marker=522867`;
-    const hotelSearchUrl = `https://search.gotripza.com/?tab=hotels&destination=${encodeURIComponent(hotelCity)}&marker=522867`;
+    // Build fallback search URLs — direct Travelpayouts partner links
+    const flightSearchUrl = `https://www.aviasales.com/?marker=522867&subid=${subid}&origin=${origin}&destination=${destination}`;
+    const hotelSearchUrl = `https://www.hotellook.com/search?destination=${encodeURIComponent(hotelCity)}&lang=en&marker=522867&subid=${subid}`;
 
     return NextResponse.json({
       flights,

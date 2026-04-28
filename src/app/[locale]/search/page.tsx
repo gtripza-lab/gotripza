@@ -23,8 +23,8 @@ export async function generateMetadata({
       : "Search flights and hotels with AI. Compare hundreds of providers instantly and get the best price.",
     alternates: {
       canonical: isAr
-        ? "https://search.gotripza.com?locale=ar"
-        : "https://search.gotripza.com?locale=en",
+        ? "https://gotripza.com/ar/search"
+        : "https://gotripza.com/en/search",
     },
   };
 }

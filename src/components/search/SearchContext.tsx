@@ -178,8 +178,8 @@ export function SearchProvider({
         wants,
         followup,
         currency: searchJson.currency ?? uiCurrency,
-        flightSearchUrl: (searchJson as Record<string, unknown>).flightSearchUrl as string ?? `https://search.gotripza.com/?marker=522867`,
-        hotelSearchUrl: (searchJson as Record<string, unknown>).hotelSearchUrl as string ?? `https://search.gotripza.com/?tab=hotels&marker=522867`,
+        flightSearchUrl: (searchJson as Record<string, unknown>).flightSearchUrl as string ?? `https://www.aviasales.com/?marker=522867`,
+        hotelSearchUrl: (searchJson as Record<string, unknown>).hotelSearchUrl as string ?? `https://www.hotellook.com/search?marker=522867`,
       });
       setStatus("ready");
       logEvent("results_rendered", {

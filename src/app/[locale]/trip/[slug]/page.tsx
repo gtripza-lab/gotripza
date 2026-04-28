@@ -133,11 +133,11 @@ export default async function TripPage({ params }: PageProps) {
   const iataDestination = resolveIata(destination) ?? destination;
   const hotelCityName = iataToCity(iataDestination);
 
-  // Build search fallback URLs (used when API returns empty)
+  // Build search fallback URLs — direct Travelpayouts partner links
   const flightSearchUrl = iataOrigin
-    ? `https://search.gotripza.com/?origin=${iataOrigin}&destination=${iataDestination}&marker=${MARKER}`
-    : `https://search.gotripza.com/?destination=${iataDestination}&marker=${MARKER}`;
-  const hotelSearchUrl = `https://search.gotripza.com/?tab=hotels&destination=${encodeURIComponent(hotelCityName)}&marker=${MARKER}`;
+    ? `https://www.aviasales.com/?marker=${MARKER}&subid=trip_page&origin=${iataOrigin}&destination=${iataDestination}`
+    : `https://www.aviasales.com/?marker=${MARKER}&subid=trip_page&destination=${iataDestination}`;
+  const hotelSearchUrl = `https://www.hotellook.com/search?destination=${encodeURIComponent(hotelCityName)}&lang=en&marker=${MARKER}&subid=trip_page`;
 
   // Fetch in parallel: description, photo, flights, hotels
   const [description, photo, flightsRes, hotelsRes] = await Promise.allSettled([
