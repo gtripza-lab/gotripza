@@ -3,7 +3,6 @@ import { useEffect, useRef } from "react";
 import { useSearch } from "./search/SearchContext";
 import { AISearchBar } from "./AISearchBar";
 import { SearchResults } from "./SearchResults";
-import { TravelpayoutsSearch } from "./TravelpayoutsSearch";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Locale } from "@/i18n/config";
 import { motion } from "framer-motion";
