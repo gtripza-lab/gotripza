@@ -169,7 +169,6 @@ export default function LocaleLayout({
             </Script>
           </>
          )}
-        <Script id="travelpayouts-drive" src="https://emrld.ltd/NTIyODY3.js?t=522867" strategy="beforeInteractive" />
       </body>
     </html>
   );
