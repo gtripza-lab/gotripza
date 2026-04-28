@@ -1,17 +1,15 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  // Always use production domain
-  const base = "https://gotripza.com";
   return {
     rules: [
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/api/admin/"],
+        disallow: ["/api/", "/_next/"],
       },
     ],
-    sitemap: `${base}/sitemap.xml`,
-    host: base,
+    sitemap: "https://gotripza.com/sitemap.xml",
+    host: "https://gotripza.com",
   };
 }

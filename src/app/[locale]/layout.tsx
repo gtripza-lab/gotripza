@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans, Cairo } from "next/font/google";
 import { notFound } from "next/navigation";
 import Script from "next/script";
@@ -108,18 +108,16 @@ export const metadata: Metadata = {
   category: "travel",
   creator: "GoTripza",
   publisher: "GoTripza",
+};
+
+export const viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0a0a14" },
     { media: "(prefers-color-scheme: light)", color: "#5a6cff" },
   ],
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
-    title: "GoTripza",
-  },
-  formatDetection: {
-    telephone: false,
-  },
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export function generateStaticParams() {

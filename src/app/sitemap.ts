@@ -1,31 +1,38 @@
 import type { MetadataRoute } from "next";
 
-// Always use production domain
-const BASE = "https://gotripza.com";
+const BASE_URL = "https://gotripza.com";
+const locales = ["en", "ar"] as const;
 
-const TOP_DESTINATIONS = [
-  "dubai", "istanbul", "cairo", "london", "paris",
-  "new-york", "bangkok", "singapore", "kuala-lumpur", "amsterdam",
-  "riyadh-to-dubai", "jeddah-to-istanbul", "riyadh-to-london",
-  "dubai-hotels", "istanbul-hotels", "cairo-hotels",
+const staticRoutes = [
+  { path: "", priority: 1.0, changeFrequency: "daily" as const },
+  { path: "/search", priority: 0.9, changeFrequency: "daily" as const },
+  { path: "/about", priority: 0.7, changeFrequency: "monthly" as const },
+  { path: "/contact", priority: 0.6, changeFrequency: "monthly" as const },
+  { path: "/disclosure", priority: 0.5, changeFrequency: "monthly" as const },
+  { path: "/privacy", priority: 0.5, changeFrequency: "monthly" as const },
+  { path: "/terms", priority: 0.5, changeFrequency: "monthly" as const },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date();
+  const entries: MetadataRoute.Sitemap = [];
 
-  const statics: MetadataRoute.Sitemap = [
-    { url: `${BASE}/ar`,       lastModified: now, changeFrequency: "daily",   priority: 1.0 },
-    { url: `${BASE}/en`,       lastModified: now, changeFrequency: "daily",   priority: 1.0 },
-    { url: `${BASE}/ar/terms`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE}/en/terms`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE}/ar/privacy`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
-    { url: `${BASE}/en/privacy`, lastModified: now, changeFrequency: "monthly", priority: 0.3 },
-  ];
+  for (const { path, priority, changeFrequency } of staticRoutes) {
+    for (const locale of locales) {
+      entries.push({
+        url: `${BASE_URL}/${locale}${path}`,
+        lastModified: new Date(),
+        changeFrequency,
+        priority,
+        alternates: {
+          languages: {
+            en: `${BASE_URL}/en${path}`,
+            ar: `${BASE_URL}/ar${path}`,
+            "x-default": `${BASE_URL}/en${path}`,
+          },
+        },
+      });
+    }
+  }
 
-  const trips: MetadataRoute.Sitemap = TOP_DESTINATIONS.flatMap((slug) => [
-    { url: `${BASE}/ar/trip/${slug}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.8 },
-    { url: `${BASE}/en/trip/${slug}`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.8 },
-  ]);
-
-  return [...statics, ...trips];
+  return entries;
 }
