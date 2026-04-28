@@ -15,8 +15,6 @@ import {
   Users,
   MapPin,
   ExternalLink,
-  Car,
-  Compass,
 } from "lucide-react";
 
 const MARKER = "522867";
@@ -104,16 +102,6 @@ export function SearchPageClient({
 
         {/* Hotels Search Form */}
         <HotelsSearchForm isAr={isAr} />
-
-        {/* ── More Services Grid ──────────────────────────────── */}
-        <MoreServicesGrid isAr={isAr} />
-
-        {/* Affiliate disclosure */}
-        <p className="text-center text-xs text-white/30">
-          {isAr
-            ? `GoTripza يحصل على عمولة من كل حجز (marker: ${MARKER}) — بدون تكلفة إضافية عليك`
-            : `GoTripza earns a commission on bookings (marker: ${MARKER}) — at no extra cost to you`}
-        </p>
       </section>
     </div>
   );
