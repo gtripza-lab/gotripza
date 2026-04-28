@@ -71,7 +71,7 @@ export default async function DisclosurePage({
               <Section title="كيف يعمل نموذج العمولات في GoTripza؟">
                 <p>GoTripza مسجلة كناشر في شبكة Travelpayouts للتحالف السياحي. عند قيامك بما يلي:</p>
                 <ul className="mt-3 list-disc space-y-2 pl-5">
-                  <li>النقر على زر "احجز الآن" لرحلة طيران أو فندق</li>
+                  <li>النقر على زر &quot;احجز الآن&quot; لرحلة طيران أو فندق</li>
                   <li>إتمام عملية الحجز على موقع الشريك خلال نافذة زمنية محددة</li>
                 </ul>
                 <p className="mt-3">
@@ -142,7 +142,7 @@ export default async function DisclosurePage({
               <Section title="How GoTripza's Commission Model Works">
                 <p>GoTripza is registered as a publisher in the Travelpayouts travel affiliate network. When you:</p>
                 <ul className="mt-3 list-disc space-y-2 pl-5">
-                  <li>Click a "Book Now" button for a flight or hotel</li>
+                  <li>Click a &quot;Book Now&quot; button for a flight or hotel</li>
                   <li>Complete a booking on the partner site within a specified time window</li>
                 </ul>
                 <p className="mt-3">
@@ -152,7 +152,7 @@ export default async function DisclosurePage({
 
               <Section title="Do Commissions Affect Recommendations?">
                 <p>
-                  <strong className="text-white/90">No.</strong> GoTripza's recommendations are determined entirely by AI algorithms and actual price/quality data. We do not highlight a particular option because it has a higher commission, nor do we suppress lower-commission options.
+                  <strong className="text-white/90">No.</strong> GoTripza&apos;s recommendations are determined entirely by AI algorithms and actual price/quality data. We do not highlight a particular option because it has a higher commission, nor do we suppress lower-commission options.
                 </p>
                 <p className="mt-3">
                   We always show: Best Value + Cheapest + Most Comfortable — based on real data, not commercial considerations.
@@ -161,7 +161,7 @@ export default async function DisclosurePage({
 
               <Section title="Does the User Pay More When Booking via GoTripza?">
                 <p>
-                  <strong className="text-white/90">No.</strong> The booking prices you find on the partner site when redirected from GoTripza are the same prices you'd find visiting their site directly. The commission is paid by the partner out of their margin, not added to your price.
+                  <strong className="text-white/90">No.</strong> The booking prices you find on the partner site when redirected from GoTripza are the same prices you&apos;d find visiting their site directly. The commission is paid by the partner out of their margin, not added to your price.
                 </p>
               </Section>
 

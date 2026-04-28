@@ -200,7 +200,7 @@ export default async function PrivacyPage({
                 </p>
                 <ul className="mt-3 list-disc space-y-2 pl-5">
                   <li>
-                    <strong className="text-white/90">Affiliate partners:</strong> When you click a booking link, you are directed to our partner's website (e.g. Aviasales or Hotellook), and session data may transfer to them under their own privacy policy.
+                    <strong className="text-white/90">Affiliate partners:</strong> When you click a booking link, you are directed to our partner&apos;s website (e.g. Aviasales or Hotellook), and session data may transfer to them under their own privacy policy.
                   </li>
                   <li>
                     <strong className="text-white/90">Technical service providers:</strong> We use Supabase for anonymous event logging and Vercel for site hosting. These providers are bound by data processing agreements.
