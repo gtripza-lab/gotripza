@@ -71,6 +71,8 @@ export async function GET() {
 
   const report = {
     status: allOk ? "healthy" : "degraded",
+    version: process.env.npm_package_version ?? "1.0.0",
+    uptime_seconds: Math.floor(process.uptime()),
     timestamp: new Date().toISOString(),
     checks: {
       environment: envCheck,

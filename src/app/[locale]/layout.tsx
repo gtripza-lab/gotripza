@@ -5,8 +5,8 @@ import Script from "next/script";
 import "../globals.css";
 import { isLocale, localeMeta, locales, type Locale } from "@/i18n/config";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
+import { BottomNav } from "@/components/BottomNav";
 
-// GA4 Measurement ID (public — safe to hardcode)
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
 
 const sans = Inter({
@@ -28,7 +28,6 @@ const arabic = Cairo({
 });
 
 const BASE = "https://gotripza.com";
-// Google Search Console verification (public token — safe to hardcode)
 const GSC_VERIFY = process.env.NEXT_PUBLIC_GSC_VERIFICATION
   ?? "pfI1Dg7jVz9s_y0IHGvW78r-IDgc3MDh0RT6rqoYJDQ";
 
@@ -40,7 +39,6 @@ export const metadata: Metadata = {
   description:
     "احجز أرخص تذاكر الطيران وأفضل فنادق مكة، دبي، لندن، وباريس. عروض طيران ناس وطيران أديل وسواها. حجز فنادق بأفضل الأسعار من السعودية. GoTripza — AI-powered travel booking from Saudi Arabia.",
   keywords: [
-    // Arabic SEO keywords
     "أرخص طيران",
     "أرخص طيران بتمارا",
     "حجز فنادق مكة",
@@ -57,7 +55,6 @@ export const metadata: Metadata = {
     "السعودية للطيران",
     "فلاي ناس",
     "حجز فندق بالتقسيط",
-    // English SEO keywords
     "cheap flights from Saudi Arabia",
     "book flights Saudi Arabia",
     "Riyadh to London flights",
@@ -108,9 +105,17 @@ export const metadata: Metadata = {
   category: "travel",
   creator: "GoTripza",
   publisher: "GoTripza",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "GoTripza",
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
-export const viewport = {
+export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: dark)", color: "#0a0a14" },
     { media: "(prefers-color-scheme: light)", color: "#5a6cff" },
@@ -143,8 +148,8 @@ export default function LocaleLayout({
         <OrganizationJsonLd />
         <WebsiteJsonLd />
         {children}
+        <BottomNav locale={locale as Locale} />
 
-        {/* Google Analytics GA4 */}
         {GA_ID && (
           <>
             <Script

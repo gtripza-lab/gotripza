@@ -4,7 +4,6 @@ import {
   Plane,
   Hotel as HotelIcon,
   Star,
-  Loader2,
   AlertTriangle,
   ArrowRight,
   Sparkles,
@@ -16,7 +15,9 @@ import {
 } from "lucide-react";
 import { useSearch } from "./search/SearchContext";
 import { logEvent } from "@/lib/events";
+import { trackClick } from "@/lib/trackClick";
 import { OffersJsonLd } from "./JsonLd";
+import { SearchSkeleton } from "./SearchSkeleton";
 import { formatPrice } from "@/lib/utils";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
@@ -27,7 +28,7 @@ export function SearchResults({ dict }: { dict: Dictionary }) {
   return (
     <section id="results" className="relative scroll-mt-24">
       <AnimatePresence mode="wait">
-        {status === "loading" && <LoadingState key="l" dict={dict} />}
+        {status === "loading" && <SearchSkeleton key="l" />}
         {status === "error" && <ErrorState key="e" message={error ?? dict.errors.parse} />}
         {status === "ready" && data && (
           <ReadyState key="r" dict={dict} data={data} />
@@ -37,21 +38,6 @@ export function SearchResults({ dict }: { dict: Dictionary }) {
   );
 }
 
-function LoadingState({ dict }: { dict: Dictionary }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      className="mx-auto max-w-6xl px-6 pb-20"
-    >
-      <div className="glass rounded-3xl p-8 text-center">
-        <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-mint" />
-        <p className="mt-3 text-sm text-white/80">{dict.results.loading}</p>
-      </div>
-    </motion.div>
-  );
-}
 
 function ErrorState({ message }: { message: string }) {
   return (
@@ -191,6 +177,7 @@ function ReadyState({
                 dict={dict}
                 locale={data.locale}
                 destination={data.intent.destination}
+                currency={data.currency}
                 searchUrl={flightSearchUrl}
               />
             )}
@@ -240,6 +227,7 @@ function ReadyState({
                 dict={dict}
                 locale={data.locale}
                 destination={data.intent.destination}
+                currency={data.currency}
                 searchUrl={hotelSearchUrl}
               />
             )}
@@ -298,6 +286,7 @@ function ThreeOptionFlights({
   dict,
   locale,
   destination,
+  currency,
   searchUrl,
 }: {
   flights: FlightOffer[];
@@ -305,6 +294,7 @@ function ThreeOptionFlights({
   dict: Dictionary;
   locale: "ar" | "en";
   destination: string;
+  currency: string;
   searchUrl: string;
 }) {
   const isAr = locale === "ar";
@@ -404,16 +394,10 @@ function ThreeOptionFlights({
                   href={flight.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() =>
-                    logEvent("book_clicked", {
-                      kind: "flight",
-                      option_type: type,
-                      destination,
-                      origin: flight.origin,
-                      airline: flight.airline,
-                      price: flight.price,
-                    })
-                  }
+                  onClick={() => {
+                    logEvent("book_clicked", { kind: "flight", option_type: type, destination, origin: flight.origin, airline: flight.airline, price: flight.price });
+                    void trackClick({ resultType: "flight", provider: flight.airline ?? "travelpayouts", origin: flight.origin, destination, price: flight.price, currency, affiliateUrl: flight.link, locale });
+                  }}
                   className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg ${l.btnGrad}`}
                 >
                   {dict.results.bookNow}
@@ -449,6 +433,7 @@ function ThreeOptionHotels({
   dict,
   locale,
   destination,
+  currency,
   searchUrl,
 }: {
   hotels: HotelOffer[];
@@ -457,6 +442,7 @@ function ThreeOptionHotels({
   dict: Dictionary;
   locale: "ar" | "en";
   destination: string;
+  currency: string;
   searchUrl: string;
 }) {
   const isAr = locale === "ar";
@@ -546,15 +532,10 @@ function ThreeOptionHotels({
                   href={hotel.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  onClick={() =>
-                    logEvent("book_clicked", {
-                      kind: "hotel",
-                      option_type: type,
-                      hotel: hotel.hotelName,
-                      destination,
-                      price: hotel.priceFrom,
-                    })
-                  }
+                  onClick={() => {
+                    logEvent("book_clicked", { kind: "hotel", option_type: type, hotel: hotel.hotelName, destination, price: hotel.priceFrom });
+                    void trackClick({ resultType: "hotel", provider: "hotellook", destination, price: hotel.priceFrom, currency, affiliateUrl: hotel.link, locale });
+                  }}
                   className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg ${l.btnGrad}`}
                 >
                   {dict.results.bookNow}

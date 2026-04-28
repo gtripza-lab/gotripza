@@ -1,5 +1,42 @@
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 
+export function ArticleJsonLd({
+  title,
+  description,
+  datePublished,
+  imageUrl,
+  url,
+}: {
+  title: string;
+  description: string;
+  datePublished: string;
+  imageUrl?: string;
+  url: string;
+}) {
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: title,
+    description,
+    datePublished,
+    author: { "@type": "Organization", name: "GoTripza", url: APP_URL },
+    publisher: {
+      "@type": "Organization",
+      name: "GoTripza",
+      logo: { "@type": "ImageObject", url: `${APP_URL}/logo.svg` },
+    },
+    url,
+    ...(imageUrl ? { image: { "@type": "ImageObject", url: imageUrl } } : {}),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
 export function OrganizationJsonLd() {
