@@ -29,20 +29,19 @@ export async function POST(req: NextRequest) {
     }
 
     // Resolve Arabic/English city names → IATA codes
-    const origin = resolveIata(intent.origin);
+    // Default origin to JED (Jeddah) when user didn't specify — ensures flights always run
+    const origin = resolveIata(intent.origin) ?? "JED";
     const destination = resolveIata(intent.destination) ?? intent.destination;
 
     const [flightsRes, hotelsRes] = await Promise.allSettled([
-      origin
-        ? searchFlights({
+      searchFlights({
             origin,
             destination,
             departure_date: intent.departure_date,
             return_date: intent.return_date,
             currency: currency.toLowerCase(),
             subid,
-          })
-        : Promise.resolve([]),
+          }),
       searchHotels({
         location: destination,
         checkIn: intent.departure_date,

@@ -9,7 +9,7 @@ if (!apiKey) {
 }
 
 const genAI = new GoogleGenerativeAI(apiKey ?? "");
-const MODEL_ID = "gemini-1.5-flash";
+const MODEL_ID = "gemini-2.0-flash-lite";
 
 export const TripIntentSchema = z.object({
   origin: z.string().nullable(),
