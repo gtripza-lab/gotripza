@@ -46,9 +46,18 @@ export function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
         </div>
 
         <div className="border-t border-white/5">
-          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-4 text-xs text-white/40 sm:flex-row">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-xs text-white/40 sm:flex-row">
             <span>© {new Date().getFullYear()} GoTripza · {dict.footer.rights}</span>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
+              <Link href={`${legalBase}/about`} className="hover:text-white/70">
+                {locale === "ar" ? "من نحن" : "About"}
+              </Link>
+              <Link href={`${legalBase}/contact`} className="hover:text-white/70">
+                {locale === "ar" ? "تواصل معنا" : "Contact"}
+              </Link>
+              <Link href={`${legalBase}/disclosure`} className="hover:text-white/70">
+                {locale === "ar" ? "إفصاح الشراكات" : "Affiliate Disclosure"}
+              </Link>
               <Link href={`${legalBase}/privacy`} className="hover:text-white/70">
                 {dict.footer.privacy}
               </Link>

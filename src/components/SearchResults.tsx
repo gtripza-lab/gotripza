@@ -1,5 +1,4 @@
 "use client";
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane,
@@ -10,17 +9,17 @@ import {
   ArrowRight,
   Sparkles,
   Clock,
-  ChevronRight,
   ExternalLink,
+  TrendingDown,
+  Award,
+  Zap,
 } from "lucide-react";
 import { useSearch } from "./search/SearchContext";
 import { logEvent } from "@/lib/events";
 import { OffersJsonLd } from "./JsonLd";
-import { formatPrice, cn } from "@/lib/utils";
+import { formatPrice } from "@/lib/utils";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
-
-type Tab = "best" | "fastest" | "cheapest";
 
 export function SearchResults({ dict }: { dict: Dictionary }) {
   const { status, data, error } = useSearch();
@@ -93,15 +92,11 @@ function ReadyState({
   const { reveal, dismissFollowup } = useSearch();
   const flightSearchUrl = data.flightSearchUrl;
   const hotelSearchUrl = data.hotelSearchUrl;
-  const [tab, setTab] = useState<Tab>("best");
 
   const isAr = data.locale === "ar";
   const showFlights = data.wants.includes("flights");
   const showHotels = data.wants.includes("hotels");
 
-  const sorted = sortFlights(data.flights, tab);
-  const bestFlight = sorted[0] ?? data.flights[0];
-  const bestHotelItem = data.hotels.length > 0 ? bestHotel(data.hotels) : undefined;
   const nights =
     computeNights(data.intent.departure_date, data.intent.return_date) ?? 4;
   const fmt = (n: number) => formatPrice(n, data.currency, data.locale);
@@ -112,7 +107,6 @@ function ReadyState({
     ? "flights"
     : null;
 
-  // Followup labels — more enticing than the generic Gemini text
   const followupQuestion =
     data.followup ??
     (missingSide === "hotels"
@@ -125,7 +119,6 @@ function ReadyState({
         : `Want to see available flights?`
       : null);
 
-  const yesLabel = isAr ? "نعم، أرني الفنادق" : "Yes, show hotels";
   const noLabel = isAr ? "لا، شكراً" : "No thanks";
 
   return (
@@ -143,7 +136,7 @@ function ReadyState({
       />
       <div className="mx-auto max-w-6xl px-6 pb-24 pt-4">
 
-        {/* Route chip + AI message */}
+        {/* Route chip */}
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/70 backdrop-blur-md">
             <Sparkles className="h-3 w-3 text-brand-mint" />
@@ -154,7 +147,7 @@ function ReadyState({
           </div>
         </div>
 
-        {/* AI contextual message */}
+        {/* AI message + tips */}
         {(data.message || data.tips) && (
           <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md">
             {data.message && (
@@ -171,44 +164,14 @@ function ReadyState({
 
         {/* ── FLIGHTS SECTION ─────────────────────────────────── */}
         {showFlights && (
-          <div className="mb-8">
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-primary/15">
-                <Plane className="h-4 w-4 text-brand-primary" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">
-                {isAr ? "رحلات الطيران" : "Flights"}
-              </h2>
-              {data.flights.length > 0 && (
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs text-white/60">
-                  {data.flights.length} {isAr ? "نتيجة" : "results"}
-                </span>
-              )}
-            </div>
-
-            {/* Sort tabs */}
-            {data.flights.length > 1 && (
-              <div className="mb-4 inline-flex rounded-full bg-white/[0.05] p-1 text-sm">
-                {(["best", "fastest", "cheapest"] as Tab[]).map((t) => (
-                  <button
-                    key={t}
-                    onClick={() => setTab(t)}
-                    className={cn(
-                      "rounded-full px-4 py-1.5 transition",
-                      tab === t
-                        ? "bg-white/10 font-semibold text-white"
-                        : "text-white/50 hover:text-white/80",
-                    )}
-                  >
-                    {t === "best"
-                      ? dict.results.bestValue
-                      : t === "fastest"
-                      ? dict.results.fastest
-                      : dict.results.cheapest}
-                  </button>
-                ))}
-              </div>
-            )}
+          <div className="mb-10">
+            <SectionHeader
+              icon={<Plane className="h-4 w-4 text-brand-primary" />}
+              title={isAr ? "رحلات الطيران" : "Flights"}
+              count={data.flights.length}
+              countLabel={isAr ? "نتيجة" : "results"}
+              accentClass="bg-brand-primary/15"
+            />
 
             {data.flights.length === 0 ? (
               <SearchCTA
@@ -222,63 +185,40 @@ function ReadyState({
                 btnLabel={isAr ? "ابحث عن رحلات الطيران" : "Search Flights"}
               />
             ) : (
-              <div className="space-y-3">
-                {/* Best flight — featured card */}
-                {bestFlight && (
-                  <FeaturedFlightCard
-                    flight={bestFlight}
-                    fmt={fmt}
-                    dict={dict}
-                    locale={data.locale}
-                    destination={data.intent.destination}
-                  />
-                )}
-                {/* Additional flights grid */}
-                {sorted.length > 1 && (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {sorted.slice(1, 6).map((f, i) => (
-                      <FlightCard
-                        key={`${f.flight_number}-${i}`}
-                        flight={f}
-                        fmt={fmt}
-                        dict={dict}
-                        destination={data.intent.destination}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ThreeOptionFlights
+                flights={data.flights}
+                fmt={fmt}
+                dict={dict}
+                locale={data.locale}
+                destination={data.intent.destination}
+                searchUrl={flightSearchUrl}
+              />
             )}
           </div>
         )}
 
-        {/* ── FOLLOWUP CARD (after flights, before hotels) ────── */}
-        {followupQuestion && missingSide && !showHotels && (
+        {/* ── FOLLOWUP (after flights, before hotels) ─────────── */}
+        {followupQuestion && missingSide === "hotels" && !showHotels && (
           <FollowupCard
             question={followupQuestion}
-            yesLabel={yesLabel}
+            yesLabel={isAr ? "نعم، أرني الفنادق" : "Yes, show hotels"}
             noLabel={noLabel}
-            onYes={() => reveal(missingSide as "flights" | "hotels")}
+            onYes={() => reveal("hotels")}
             onNo={dismissFollowup}
+            icon={<HotelIcon className="h-4 w-4 text-brand-primary" />}
           />
         )}
 
         {/* ── HOTELS SECTION ──────────────────────────────────── */}
         {showHotels && (
           <div className={showFlights ? "mt-10" : ""}>
-            <div className="mb-5 flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-mint/15">
-                <HotelIcon className="h-4 w-4 text-brand-mint" />
-              </div>
-              <h2 className="font-display text-2xl font-bold">
-                {isAr ? "الفنادق" : "Hotels"}
-              </h2>
-              {data.hotels.length > 0 && (
-                <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs text-white/60">
-                  {data.hotels.length} {isAr ? "فندق" : "hotels"}
-                </span>
-              )}
-            </div>
+            <SectionHeader
+              icon={<HotelIcon className="h-4 w-4 text-brand-mint" />}
+              title={isAr ? "الفنادق" : "Hotels"}
+              count={data.hotels.length}
+              countLabel={isAr ? "فندق" : "hotels"}
+              accentClass="bg-brand-mint/15"
+            />
 
             {data.hotels.length === 0 ? (
               <SearchCTA
@@ -293,39 +233,20 @@ function ReadyState({
                 accent="mint"
               />
             ) : (
-              <div className="space-y-3">
-                {/* Best hotel — featured card */}
-                {bestHotelItem && (
-                  <FeaturedHotelCard
-                    hotel={bestHotelItem}
-                    nights={nights}
-                    fmt={fmt}
-                    dict={dict}
-                    locale={data.locale}
-                    destination={data.intent.destination}
-                  />
-                )}
-                {/* Additional hotels grid */}
-                {data.hotels.length > 1 && (
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {data.hotels.slice(1, 7).map((h) => (
-                      <HotelCard
-                        key={h.hotelId}
-                        hotel={h}
-                        nights={nights}
-                        fmt={fmt}
-                        dict={dict}
-                        destination={data.intent.destination}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+              <ThreeOptionHotels
+                hotels={data.hotels}
+                nights={nights}
+                fmt={fmt}
+                dict={dict}
+                locale={data.locale}
+                destination={data.intent.destination}
+                searchUrl={hotelSearchUrl}
+              />
             )}
           </div>
         )}
 
-        {/* ── FOLLOWUP for flights (when only hotels shown) ───── */}
+        {/* ── FOLLOWUP for flights ─────────────────────────────── */}
         {followupQuestion && missingSide === "flights" && (
           <FollowupCard
             question={followupQuestion}
@@ -333,6 +254,7 @@ function ReadyState({
             noLabel={noLabel}
             onYes={() => reveal("flights")}
             onNo={dismissFollowup}
+            icon={<Plane className="h-4 w-4 text-brand-primary" />}
           />
         )}
       </div>
@@ -340,268 +262,320 @@ function ReadyState({
   );
 }
 
-/* ─── Featured Flight Card ───────────────────────────────────────────── */
-function FeaturedFlightCard({
-  flight,
-  fmt,
-  dict,
-  locale,
-  destination,
+/* ─── Section Header ──────────────────────────────────────────────────── */
+function SectionHeader({
+  icon,
+  title,
+  count,
+  countLabel,
+  accentClass,
 }: {
-  flight: FlightOffer;
-  fmt: (n: number) => string;
-  dict: Dictionary;
-  locale: "ar" | "en";
-  destination: string;
+  icon: React.ReactNode;
+  title: string;
+  count: number;
+  countLabel: string;
+  accentClass: string;
 }) {
-  const isAr = locale === "ar";
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-paper p-6 text-ink-950 shadow-card">
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-indigo-50/60" />
-      <div className="relative">
-        <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-100 to-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-800 shadow-sm">
-            <Sparkles className="h-3 w-3" />
-            {isAr ? "أفضل قيمة" : "Best Value"}
-          </div>
-          <span className="rounded-full bg-ink-950/5 px-3 py-0.5 text-xs font-medium text-ink-950/60">
-            {flight.airline} · {flight.flight_number}
-          </span>
-        </div>
-
-        {/* Route visual */}
-        <div className="mt-6 flex items-center gap-4">
-          <div className="text-center">
-            <div className="font-mono text-2xl font-bold">{flight.origin}</div>
-            <div className="mt-1 text-xs text-ink-950/50">
-              {flight.departure_at?.slice(11, 16) || "—"}
-            </div>
-          </div>
-          <div className="flex flex-1 items-center gap-2">
-            <div className="flex-1 border-t border-dashed border-ink-950/20" />
-            <div className="flex flex-col items-center">
-              <Plane className="h-4 w-4 text-brand-deep" />
-              {flight.duration && (
-                <span className="mt-0.5 text-[10px] text-ink-950/40">
-                  {durationLabel(flight.duration)}
-                </span>
-              )}
-            </div>
-            <div className="flex-1 border-t border-dashed border-ink-950/20" />
-          </div>
-          <div className="text-center">
-            <div className="font-mono text-2xl font-bold">{flight.destination}</div>
-            <div className="mt-1 text-xs text-ink-950/50">
-              {addHours(flight.departure_at, durationToHours(flight.duration))}
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex items-center justify-between border-t border-ink-950/8 pt-5">
-          <div>
-            <div className="text-xs text-ink-950/50">{dict.results.from}</div>
-            <div className="font-display text-3xl font-bold">{fmt(flight.price)}</div>
-          </div>
-          <a
-            href={flight.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() =>
-              logEvent("book_clicked", {
-                kind: "flight",
-                destination,
-                origin: flight.origin,
-                airline: flight.airline,
-                price: flight.price,
-              })
-            }
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-primary to-brand-deep px-6 py-3 font-semibold text-white shadow-glow transition hover:scale-[1.02]"
-          >
-            {dict.results.bookNow}
-            <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-          </a>
-        </div>
+    <div className="mb-5 flex items-center gap-3">
+      <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${accentClass}`}>
+        {icon}
       </div>
+      <h2 className="font-display text-2xl font-bold">{title}</h2>
+      {count > 0 && (
+        <span className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-xs text-white/60">
+          {count} {countLabel}
+        </span>
+      )}
     </div>
   );
 }
 
-/* ─── Flight Card (list item) ───────────────────────────────────────── */
-function FlightCard({
-  flight,
+/* ─── Three Option Flights ────────────────────────────────────────────── */
+function ThreeOptionFlights({
+  flights,
   fmt,
   dict,
+  locale,
   destination,
+  searchUrl,
 }: {
-  flight: FlightOffer;
+  flights: FlightOffer[];
   fmt: (n: number) => string;
   dict: Dictionary;
+  locale: "ar" | "en";
   destination: string;
+  searchUrl: string;
 }) {
+  const isAr = locale === "ar";
+  const options = pickThreeFlights(flights);
+
+  const labels = {
+    value: {
+      badge: isAr ? "أفضل قيمة" : "Best Value",
+      sub: isAr ? "سعر + وقت مثاليان" : "Price & time balanced",
+      icon: <Award className="h-4 w-4" />,
+      gradient: "from-amber-500/20 to-amber-600/10",
+      border: "border-amber-500/25",
+      badgeClass: "bg-amber-500/15 text-amber-300",
+      btnGrad: "from-amber-500 to-orange-600",
+    },
+    cheapest: {
+      badge: isAr ? "الأرخص" : "Cheapest",
+      sub: isAr ? "أقل سعر متاح" : "Lowest available price",
+      icon: <TrendingDown className="h-4 w-4" />,
+      gradient: "from-emerald-500/20 to-emerald-600/10",
+      border: "border-emerald-500/25",
+      badgeClass: "bg-emerald-500/15 text-emerald-300",
+      btnGrad: "from-emerald-500 to-teal-600",
+    },
+    comfortable: {
+      badge: isAr ? "الأريح" : "Most Comfortable",
+      sub: isAr ? "أقصر وقت طيران" : "Shortest flight time",
+      icon: <Zap className="h-4 w-4" />,
+      gradient: "from-sky-500/20 to-sky-600/10",
+      border: "border-sky-500/25",
+      badgeClass: "bg-sky-500/15 text-sky-300",
+      btnGrad: "from-sky-500 to-blue-600",
+    },
+  };
+
   return (
-    <div className="glass flex flex-col rounded-2xl p-4 transition hover:bg-white/[0.06]">
-      <div className="flex items-center gap-2 text-sm font-semibold">
-        <Plane className="h-4 w-4 text-brand-primary" />
-        {flight.airline || "—"}
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-3">
+        {options.map(({ type, flight }) => {
+          const l = labels[type];
+          return (
+            <motion.div
+              key={`${type}-${flight.flight_number}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className={`relative flex flex-col overflow-hidden rounded-2xl border bg-gradient-to-br p-5 ${l.border} ${l.gradient}`}
+            >
+              {/* Badge */}
+              <div className={`mb-4 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${l.badgeClass}`}>
+                {l.icon}
+                {l.badge}
+              </div>
+
+              {/* Airline + route */}
+              <div className="mb-1 flex items-center gap-2">
+                <Plane className="h-3.5 w-3.5 text-white/50" />
+                <span className="text-sm font-semibold text-white/90">
+                  {flight.airline || "—"}
+                </span>
+                <span className="text-xs text-white/40">{flight.flight_number}</span>
+              </div>
+
+              <div className="flex items-center gap-2 text-xs text-white/55">
+                <span className="font-mono font-bold">{flight.origin}</span>
+                <ArrowRight className="h-3 w-3 rtl:rotate-180" />
+                <span className="font-mono font-bold">{flight.destination}</span>
+                {flight.duration && (
+                  <>
+                    <span>·</span>
+                    <Clock className="h-3 w-3" />
+                    <span>{durationLabel(flight.duration)}</span>
+                  </>
+                )}
+              </div>
+
+              {flight.departure_at && (
+                <div className="mt-1 text-xs text-white/35">
+                  {flight.departure_at.slice(0, 10)}
+                  {" · "}
+                  {flight.departure_at.slice(11, 16)}
+                </div>
+              )}
+
+              {/* Price + CTA */}
+              <div className="mt-auto pt-4">
+                <div className="mb-3">
+                  <div className="text-[10px] uppercase tracking-wide text-white/40">
+                    {dict.results.from}
+                  </div>
+                  <div className="font-display text-2xl font-bold text-white">
+                    {fmt(flight.price)}
+                  </div>
+                  <div className="text-[11px] text-white/40">{l.sub}</div>
+                </div>
+                <a
+                  href={flight.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    logEvent("book_clicked", {
+                      kind: "flight",
+                      option_type: type,
+                      destination,
+                      origin: flight.origin,
+                      airline: flight.airline,
+                      price: flight.price,
+                    })
+                  }
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg ${l.btnGrad}`}
+                >
+                  {dict.results.bookNow}
+                  <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                </a>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
-      <div className="mt-2 flex items-center gap-2 text-xs text-white/55">
-        <span className="font-mono">{flight.origin}</span>
-        <ArrowRight className="h-3 w-3 rtl:rotate-180" />
-        <span className="font-mono">{flight.destination}</span>
-        {flight.duration && (
-          <>
-            <span>·</span>
-            <Clock className="h-3 w-3" />
-            <span>{durationLabel(flight.duration)}</span>
-          </>
-        )}
-      </div>
-      <div className="mt-4 flex items-center justify-between">
-        <span className="font-display text-xl font-bold">{fmt(flight.price)}</span>
+
+      {/* See all results link */}
+      <div className="flex justify-center">
         <a
-          href={flight.link}
+          href={searchUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() =>
-            logEvent("book_clicked", {
-              kind: "flight",
-              destination,
-              origin: flight.origin,
-              airline: flight.airline,
-              price: flight.price,
-            })
-          }
-          className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-primary to-brand-deep px-3 py-1.5 text-[11px] font-semibold text-white"
+          className="inline-flex items-center gap-1.5 text-xs text-white/40 transition hover:text-white/70"
         >
-          {dict.results.bookNow}
-          <ChevronRight className="h-3 w-3 rtl:rotate-180" />
+          {isAr ? "عرض جميع الرحلات المتاحة" : "View all available flights"}
+          <ExternalLink className="h-3 w-3" />
         </a>
       </div>
     </div>
   );
 }
 
-/* ─── Featured Hotel Card ────────────────────────────────────────────── */
-function FeaturedHotelCard({
-  hotel,
+/* ─── Three Option Hotels ─────────────────────────────────────────────── */
+function ThreeOptionHotels({
+  hotels,
   nights,
   fmt,
   dict,
   locale,
   destination,
+  searchUrl,
 }: {
-  hotel: HotelOffer;
+  hotels: HotelOffer[];
   nights: number;
   fmt: (n: number) => string;
   dict: Dictionary;
   locale: "ar" | "en";
   destination: string;
+  searchUrl: string;
 }) {
   const isAr = locale === "ar";
+  const options = pickThreeHotels(hotels);
+
+  const labels = {
+    value: {
+      badge: isAr ? "أفضل قيمة" : "Best Value",
+      sub: isAr ? "نجوم مرتفعة بسعر معقول" : "High stars, great price",
+      icon: <Award className="h-4 w-4" />,
+      gradient: "from-amber-500/20 to-amber-600/10",
+      border: "border-amber-500/25",
+      badgeClass: "bg-amber-500/15 text-amber-300",
+      btnGrad: "from-amber-500 to-orange-600",
+    },
+    cheapest: {
+      badge: isAr ? "الأرخص" : "Cheapest",
+      sub: isAr ? "أقل سعر للإقامة" : "Lowest rate available",
+      icon: <TrendingDown className="h-4 w-4" />,
+      gradient: "from-emerald-500/20 to-emerald-600/10",
+      border: "border-emerald-500/25",
+      badgeClass: "bg-emerald-500/15 text-emerald-300",
+      btnGrad: "from-emerald-500 to-teal-600",
+    },
+    comfortable: {
+      badge: isAr ? "الأفخم" : "Most Luxurious",
+      sub: isAr ? "أعلى تصنيف بالنجوم" : "Highest star rating",
+      icon: <Star className="h-4 w-4" />,
+      gradient: "from-purple-500/20 to-purple-600/10",
+      border: "border-purple-500/25",
+      badgeClass: "bg-purple-500/15 text-purple-300",
+      btnGrad: "from-purple-500 to-violet-600",
+    },
+  };
+
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-paper p-6 text-ink-950 shadow-card">
-      <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-emerald-50/60" />
-      <div className="relative">
-        <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 rounded-full border border-amber-300/40 bg-gradient-to-r from-amber-100 to-amber-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wider text-amber-800 shadow-sm">
-            <Sparkles className="h-3 w-3" />
-            {isAr ? "أرخص سعر مضمون" : "Best Price Guaranteed"}
-          </div>
-          {hotel.stars && (
-            <span className="inline-flex items-center gap-1 text-sm font-semibold text-amber-500">
-              <Star className="h-4 w-4 fill-current" />
-              {hotel.stars}
-            </span>
-          )}
-        </div>
+    <div className="space-y-4">
+      <div className="grid gap-4 sm:grid-cols-3">
+        {options.map(({ type, hotel }) => {
+          const l = labels[type];
+          return (
+            <motion.div
+              key={`${type}-${hotel.hotelId}`}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className={`relative flex flex-col overflow-hidden rounded-2xl border bg-gradient-to-br p-5 ${l.border} ${l.gradient}`}
+            >
+              {/* Badge */}
+              <div className={`mb-4 inline-flex w-fit items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-semibold ${l.badgeClass}`}>
+                {l.icon}
+                {l.badge}
+              </div>
 
-        <div className="mt-4">
-          <div className="font-display text-2xl font-bold">{hotel.hotelName}</div>
-          <div className="mt-1 flex items-center gap-2 text-xs text-ink-950/50">
-            <HotelIcon className="h-3.5 w-3.5" />
-            <span>{hotel.location.name}</span>
-            <span>·</span>
-            <span>{nights} {dict.results.nights}</span>
-          </div>
-        </div>
+              {/* Hotel info */}
+              <div className="mb-1 flex items-start justify-between gap-2">
+                <div className="truncate text-sm font-semibold text-white/90 leading-snug">
+                  {hotel.hotelName}
+                </div>
+                {hotel.stars && (
+                  <span className="inline-flex shrink-0 items-center gap-0.5 text-xs text-amber-300">
+                    <Star className="h-3 w-3 fill-current" />
+                    {hotel.stars}
+                  </span>
+                )}
+              </div>
 
-        <div className="mt-6 flex items-center justify-between border-t border-ink-950/8 pt-5">
-          <div>
-            <div className="text-xs text-ink-950/50">{dict.results.from}</div>
-            <div className="font-display text-3xl font-bold">{fmt(hotel.priceFrom)}</div>
-          </div>
-          <a
-            href={hotel.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() =>
-              logEvent("book_clicked", {
-                kind: "hotel",
-                hotel: hotel.hotelName,
-                destination,
-                price: hotel.priceFrom,
-              })
-            }
-            className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-primary to-brand-deep px-6 py-3 font-semibold text-white shadow-glow transition hover:scale-[1.02]"
-          >
-            {dict.results.bookNow}
-            <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-          </a>
-        </div>
-      </div>
-    </div>
-  );
-}
+              <div className="flex items-center gap-1.5 text-xs text-white/50">
+                <HotelIcon className="h-3 w-3" />
+                <span className="truncate">{hotel.location.name}</span>
+              </div>
 
-/* ─── Hotel Card (list item) ─────────────────────────────────────────── */
-function HotelCard({
-  hotel,
-  nights,
-  fmt,
-  dict,
-  destination,
-}: {
-  hotel: HotelOffer;
-  nights: number;
-  fmt: (n: number) => string;
-  dict: Dictionary;
-  destination: string;
-}) {
-  return (
-    <div className="glass flex flex-col rounded-2xl p-4 transition hover:bg-white/[0.06]">
-      <div className="flex items-center justify-between gap-2">
-        <div className="truncate text-sm font-semibold">{hotel.hotelName}</div>
-        {hotel.stars && (
-          <span className="inline-flex shrink-0 items-center gap-0.5 text-xs text-amber-300">
-            <Star className="h-3 w-3 fill-current" />
-            {hotel.stars}
-          </span>
-        )}
+              {/* Price + CTA */}
+              <div className="mt-auto pt-4">
+                <div className="mb-3">
+                  <div className="text-[10px] uppercase tracking-wide text-white/40">
+                    {dict.results.from}
+                  </div>
+                  <div className="font-display text-2xl font-bold text-white">
+                    {fmt(hotel.priceFrom)}
+                  </div>
+                  <div className="text-[11px] text-white/40">
+                    {nights} {dict.results.nights} · {l.sub}
+                  </div>
+                </div>
+                <a
+                  href={hotel.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() =>
+                    logEvent("book_clicked", {
+                      kind: "hotel",
+                      option_type: type,
+                      hotel: hotel.hotelName,
+                      destination,
+                      price: hotel.priceFrom,
+                    })
+                  }
+                  className={`flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02] hover:shadow-lg ${l.btnGrad}`}
+                >
+                  {dict.results.bookNow}
+                  <ArrowRight className="h-4 w-4 rtl:rotate-180" />
+                </a>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
-      <div className="mt-1 flex items-center gap-2 text-xs text-white/55">
-        <HotelIcon className="h-3 w-3" />
-        <span className="truncate">{hotel.location.name}</span>
-        <span>·</span>
-        <span>{nights} {dict.results.nights}</span>
-      </div>
-      <div className="mt-4 flex items-center justify-between">
-        <span className="font-display text-xl font-bold">{fmt(hotel.priceFrom)}</span>
+
+      {/* See all results link */}
+      <div className="flex justify-center">
         <a
-          href={hotel.link}
+          href={searchUrl}
           target="_blank"
           rel="noopener noreferrer"
-          onClick={() =>
-            logEvent("book_clicked", {
-              kind: "hotel",
-              hotel: hotel.hotelName,
-              destination,
-              price: hotel.priceFrom,
-            })
-          }
-          className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-brand-primary to-brand-deep px-3 py-1.5 text-[11px] font-semibold text-white"
+          className="inline-flex items-center gap-1.5 text-xs text-white/40 transition hover:text-white/70"
         >
-          {dict.results.bookNow}
-          <ChevronRight className="h-3 w-3 rtl:rotate-180" />
+          {isAr ? "عرض جميع الفنادق المتاحة" : "View all available hotels"}
+          <ExternalLink className="h-3 w-3" />
         </a>
       </div>
     </div>
@@ -615,12 +589,14 @@ function FollowupCard({
   noLabel,
   onYes,
   onNo,
+  icon,
 }: {
   question: string;
   yesLabel: string;
   noLabel: string;
   onYes: () => void;
   onNo: () => void;
+  icon: React.ReactNode;
 }) {
   return (
     <motion.div
@@ -630,7 +606,7 @@ function FollowupCard({
     >
       <p className="flex items-start gap-3 text-sm font-medium text-white/90">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary/20">
-          <HotelIcon className="h-4 w-4 text-brand-primary" />
+          {icon}
         </span>
         <span className="pt-1">{question}</span>
       </p>
@@ -655,7 +631,7 @@ function FollowupCard({
   );
 }
 
-/* ─── Search CTA (replaces empty state — links to live search) ───────── */
+/* ─── Search CTA (empty state) ───────────────────────────────────────── */
 function SearchCTA({
   isAr,
   icon,
@@ -710,59 +686,92 @@ function SearchCTA({
   );
 }
 
-/* ─── Empty State ────────────────────────────────────────────────────── */
-function EmptyState({
-  icon,
-  line1,
-  line2,
-}: {
-  icon: React.ReactNode;
-  line1: string;
-  line2: string;
-}) {
-  return (
-    <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-white/10 p-8 text-center">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-primary/15 text-brand-primary">
-        {icon}
-      </div>
-      <div>
-        <p className="flex items-center justify-center gap-1 text-sm font-medium text-white/70">
-          <Sparkles className="h-3.5 w-3.5 text-brand-mint" />
-          {line1}
-        </p>
-        <p className="mt-1 text-xs text-white/40">{line2}</p>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Helpers ────────────────────────────────────────────────────────── */
-function sortFlights(flights: FlightOffer[], tab: Tab): FlightOffer[] {
-  const arr = [...flights];
-  if (tab === "cheapest") arr.sort((a, b) => a.price - b.price);
-  if (tab === "fastest") arr.sort((a, b) => (a.duration ?? 0) - (b.duration ?? 0));
-  if (tab === "best") {
-    arr.sort((a, b) => a.price + (a.duration ?? 0) / 4 - (b.price + (b.duration ?? 0) / 4));
-  }
-  return arr;
+
+/** Pick up to 3 distinct flight options: Best Value, Cheapest, Most Comfortable */
+function pickThreeFlights(
+  flights: FlightOffer[],
+): Array<{ type: "value" | "cheapest" | "comfortable"; flight: FlightOffer }> {
+  if (!flights.length) return [];
+
+  const key = (f: FlightOffer) => `${f.flight_number}|${f.departure_at?.slice(0, 16) ?? ""}`;
+
+  const byValue = [...flights].sort(
+    (a, b) =>
+      a.price + (a.duration ?? 0) / 4 - (b.price + (b.duration ?? 0) / 4),
+  );
+  const byPrice = [...flights].sort((a, b) => a.price - b.price);
+  const byDuration = [...flights].sort(
+    (a, b) => (a.duration ?? 9999) - (b.duration ?? 9999),
+  );
+
+  const seen = new Set<string>();
+  const result: Array<{ type: "value" | "cheapest" | "comfortable"; flight: FlightOffer }> = [];
+
+  const tryAdd = (
+    type: "value" | "cheapest" | "comfortable",
+    sorted: FlightOffer[],
+  ) => {
+    for (const f of sorted) {
+      if (!seen.has(key(f))) {
+        seen.add(key(f));
+        result.push({ type, flight: f });
+        return;
+      }
+    }
+  };
+
+  tryAdd("value", byValue);
+  tryAdd("cheapest", byPrice);
+  tryAdd("comfortable", byDuration);
+
+  return result;
 }
 
-function bestHotel(hotels: HotelOffer[]): HotelOffer | undefined {
-  if (!hotels.length) return undefined;
-  return [...hotels].sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0))[0];
+/** Pick up to 3 distinct hotel options: Best Value, Cheapest, Most Luxurious */
+function pickThreeHotels(
+  hotels: HotelOffer[],
+): Array<{ type: "value" | "cheapest" | "comfortable"; hotel: HotelOffer }> {
+  if (!hotels.length) return [];
+
+  // Best value: high stars / price ratio
+  const byValue = [...hotels].sort(
+    (a, b) =>
+      (b.stars ?? 0) / (b.priceFrom || 1) -
+      (a.stars ?? 0) / (a.priceFrom || 1),
+  );
+  const byPrice = [...hotels].sort((a, b) => a.priceFrom - b.priceFrom);
+  const byStars = [...hotels].sort((a, b) => (b.stars ?? 0) - (a.stars ?? 0));
+
+  const seen = new Set<number>();
+  const result: Array<{ type: "value" | "cheapest" | "comfortable"; hotel: HotelOffer }> = [];
+
+  const tryAdd = (
+    type: "value" | "cheapest" | "comfortable",
+    sorted: HotelOffer[],
+  ) => {
+    for (const h of sorted) {
+      if (!seen.has(h.hotelId)) {
+        seen.add(h.hotelId);
+        result.push({ type, hotel: h });
+        return;
+      }
+    }
+  };
+
+  tryAdd("value", byValue);
+  tryAdd("cheapest", byPrice);
+  tryAdd("comfortable", byStars);
+
+  return result;
 }
 
 function computeNights(checkIn?: string | null, checkOut?: string | null): number | null {
   if (!checkIn || !checkOut) return null;
   const a = new Date(checkIn);
   const b = new Date(checkOut);
-  const diff = Math.round((b.getTime() - a.getTime()) / 86400_000);
+  const diff = Math.round((b.getTime() - a.getTime()) / 86_400_000);
   return diff > 0 ? diff : null;
-}
-
-function durationToHours(d?: number): number {
-  if (!d) return 4;
-  return Math.max(1, Math.round(d / 60));
 }
 
 function durationLabel(d?: number): string {
@@ -770,15 +779,4 @@ function durationLabel(d?: number): string {
   const h = Math.floor(d / 60);
   const m = d % 60;
   return `${h}h ${m}m`;
-}
-
-function addHours(iso?: string, hours = 4): string {
-  if (!iso) return "—";
-  try {
-    const d = new Date(iso);
-    d.setHours(d.getHours() + hours);
-    return d.toTimeString().slice(0, 5);
-  } catch {
-    return "—";
-  }
 }

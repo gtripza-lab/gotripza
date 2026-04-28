@@ -7,9 +7,8 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { generateDestinationDescription } from "@/lib/gemini";
 import { searchFlights, searchHotels } from "@/lib/travelpayouts";
-import { mockFlights, mockHotels } from "@/lib/mock-offers";
 import { fetchPhoto } from "@/lib/unsplash";
-import { resolveIata } from "@/lib/iata";
+import { resolveIata, iataToCity } from "@/lib/iata";
 import { formatPrice } from "@/lib/utils";
 import {
   BreadcrumbJsonLd,
@@ -129,8 +128,16 @@ export default async function TripPage({ params }: PageProps) {
   const dest = capitalize(destination);
   const orig = origin ? capitalize(origin) : null;
 
+  const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
   const iataOrigin = resolveIata(origin);
   const iataDestination = resolveIata(destination) ?? destination;
+  const hotelCityName = iataToCity(iataDestination);
+
+  // Build search fallback URLs (used when API returns empty)
+  const flightSearchUrl = iataOrigin
+    ? `https://search.gotripza.com/?origin=${iataOrigin}&destination=${iataDestination}&marker=${MARKER}`
+    : `https://search.gotripza.com/?destination=${iataDestination}&marker=${MARKER}`;
+  const hotelSearchUrl = `https://search.gotripza.com/?tab=hotels&destination=${encodeURIComponent(hotelCityName)}&marker=${MARKER}`;
 
   // Fetch in parallel: description, photo, flights, hotels
   const [description, photo, flightsRes, hotelsRes] = await Promise.allSettled([
@@ -139,43 +146,15 @@ export default async function TripPage({ params }: PageProps) {
     iataOrigin
       ? searchFlights({ origin: iataOrigin, destination: iataDestination, currency: currency.toLowerCase() })
       : Promise.resolve([]),
-    searchHotels({ location: iataDestination, currency: currency.toLowerCase() }),
+    searchHotels({ location: hotelCityName, currency: currency.toLowerCase() }),
   ]);
 
   const aiDescription =
     description.status === "fulfilled" && description.value ? description.value : null;
   const heroPhoto = photo.status === "fulfilled" ? photo.value : null;
 
-  let flights = flightsRes.status === "fulfilled" ? flightsRes.value : [];
-  let hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
-  const isMock = !flights.length || !hotels.length;
-
-  if (!flights.length) {
-    const mockIntent = {
-      origin: iataOrigin ?? "",
-      destination: iataDestination,
-      departure_date: null,
-      return_date: null,
-      adults: 2,
-      budget_usd: null,
-      trip_type: null,
-      notes: null,
-    };
-    flights = mockFlights(mockIntent, currency);
-  }
-  if (!hotels.length) {
-    const mockIntent = {
-      origin: iataOrigin ?? "",
-      destination: iataDestination,
-      departure_date: null,
-      return_date: null,
-      adults: 2,
-      budget_usd: null,
-      trip_type: null,
-      notes: null,
-    };
-    hotels = mockHotels(mockIntent, currency);
-  }
+  const flights = flightsRes.status === "fulfilled" ? flightsRes.value : [];
+  const hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
 
   const minFlight = flights.length ? Math.min(...flights.map((f) => f.price)) : undefined;
   const minHotel = hotels.length ? Math.min(...hotels.map((h) => h.priceFrom)) : undefined;
@@ -313,14 +292,6 @@ export default async function TripPage({ params }: PageProps) {
 
         {/* Results grid */}
         <section className="container mx-auto max-w-5xl px-4 pb-16">
-          {isMock && (
-            <p className="mb-4 text-xs text-white/30">
-              {isAr
-                ? "* الأسعار تقديرية — سجّل دخولك لرؤية الأسعار الفعلية"
-                : "* Indicative prices — sign in to see live fares"}
-            </p>
-          )}
-
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Flights */}
             {type !== "hotel" && (
@@ -338,39 +309,64 @@ export default async function TripPage({ params }: PageProps) {
                     </span>
                   )}
                 </header>
-                <ul className="space-y-3">
-                  {flights.slice(0, 6).map((f, i) => (
-                    <li
-                      key={`${f.flight_number}-${i}`}
-                      className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] p-3 transition hover:bg-white/[0.06]"
+                {flights.length === 0 ? (
+                  <div className="flex flex-col items-center gap-4 rounded-xl border border-brand-primary/20 bg-brand-primary/5 p-6 text-center">
+                    <Plane className="h-8 w-8 text-brand-primary/60" />
+                    <div>
+                      <p className="text-sm font-medium text-white/80">
+                        {isAr ? "ابحث عن أرخص تذكرة" : "Find the cheapest ticket"}
+                      </p>
+                      <p className="mt-1 text-xs text-white/45">
+                        {isAr
+                          ? `نقارن مئات شركات الطيران إلى ${dest}`
+                          : `We compare hundreds of airlines to ${dest}`}
+                      </p>
+                    </div>
+                    <a
+                      href={flightSearchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-primary to-brand-deep px-5 py-2 text-sm font-semibold text-white transition hover:scale-[1.02]"
                     >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 text-sm text-white">
-                          <span className="font-semibold">{f.airline || "—"}</span>
-                          <span className="text-white/50">·</span>
-                          <span className="text-white/70">{f.flight_number}</span>
+                      {isAr ? "ابحث الآن" : "Search Flights"}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {flights.slice(0, 6).map((f, i) => (
+                      <li
+                        key={`${f.flight_number}-${i}`}
+                        className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] p-3 transition hover:bg-white/[0.06]"
+                      >
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2 text-sm text-white">
+                            <span className="font-semibold">{f.airline || "—"}</span>
+                            <span className="text-white/50">·</span>
+                            <span className="text-white/70">{f.flight_number}</span>
+                          </div>
+                          <div className="mt-1 text-xs text-white/50">
+                            {f.departure_at?.slice(0, 10)} · {f.origin} → {f.destination}
+                          </div>
                         </div>
-                        <div className="mt-1 text-xs text-white/50">
-                          {f.departure_at?.slice(0, 10)} · {f.origin} → {f.destination}
+                        <div className="flex items-center gap-3">
+                          <span className="font-display text-lg font-bold">
+                            {formatPrice(f.price, currency)}
+                          </span>
+                          <a
+                            href={f.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-brand text-white"
+                            aria-label={dict.results.bookNow}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-display text-lg font-bold">
-                          {formatPrice(f.price, currency)}
-                        </span>
-                        <a
-                          href={f.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-brand text-white"
-                          aria-label={dict.results.bookNow}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 
@@ -386,41 +382,66 @@ export default async function TripPage({ params }: PageProps) {
                   </h2>
                   <span className="ms-auto text-xs text-white/50">{dest}</span>
                 </header>
-                <ul className="space-y-3">
-                  {hotels.slice(0, 6).map((h) => (
-                    <li
-                      key={h.hotelId}
-                      className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] p-3 transition hover:bg-white/[0.06]"
+                {hotels.length === 0 ? (
+                  <div className="flex flex-col items-center gap-4 rounded-xl border border-brand-mint/20 bg-brand-mint/5 p-6 text-center">
+                    <HotelIcon className="h-8 w-8 text-brand-mint/60" />
+                    <div>
+                      <p className="text-sm font-medium text-white/80">
+                        {isAr ? "ابحث عن أفضل فندق" : "Find the best hotel"}
+                      </p>
+                      <p className="mt-1 text-xs text-white/45">
+                        {isAr
+                          ? `آلاف الفنادق في ${dest} بأسعار مضمونة`
+                          : `Thousands of hotels in ${dest} with guaranteed prices`}
+                      </p>
+                    </div>
+                    <a
+                      href={hotelSearchUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-mint to-brand-deep px-5 py-2 text-sm font-semibold text-white transition hover:scale-[1.02]"
                     >
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold">{h.hotelName}</div>
-                        <div className="mt-1 flex items-center gap-2 text-xs text-white/50">
-                          {h.stars ? (
-                            <span className="inline-flex items-center gap-0.5 text-amber-500">
-                              <Star className="h-3 w-3 fill-current" />
-                              {h.stars}
-                            </span>
-                          ) : null}
-                          <span>{h.location.name}</span>
+                      {isAr ? "ابحث الآن" : "Search Hotels"}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {hotels.slice(0, 6).map((h) => (
+                      <li
+                        key={h.hotelId}
+                        className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] p-3 transition hover:bg-white/[0.06]"
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold">{h.hotelName}</div>
+                          <div className="mt-1 flex items-center gap-2 text-xs text-white/50">
+                            {h.stars ? (
+                              <span className="inline-flex items-center gap-0.5 text-amber-500">
+                                <Star className="h-3 w-3 fill-current" />
+                                {h.stars}
+                              </span>
+                            ) : null}
+                            <span>{h.location.name}</span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="font-display text-lg font-bold">
-                          {formatPrice(h.priceFrom, currency)}
-                        </span>
-                        <a
-                          href={h.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-brand text-white"
-                          aria-label={dict.results.bookNow}
-                        >
-                          <ExternalLink className="h-4 w-4" />
-                        </a>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                        <div className="flex items-center gap-3">
+                          <span className="font-display text-lg font-bold">
+                            {formatPrice(h.priceFrom, currency)}
+                          </span>
+                          <a
+                            href={h.link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-brand text-white"
+                            aria-label={dict.results.bookNow}
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </a>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
           </div>
