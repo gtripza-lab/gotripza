@@ -3,7 +3,10 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { TravelpayoutsSearch } from "@/components/TravelpayoutsSearch";
+import { SearchProvider } from "@/components/search/SearchContext";
+import { SearchPageClient } from "@/components/SearchPageClient";
+
+export const dynamic = "force-dynamic"; // always read fresh searchParams
 
 export async function generateMetadata({
   params,
@@ -13,45 +16,61 @@ export async function generateMetadata({
   const isAr = params.locale === "ar";
   return {
     title: isAr
-      ? "بحث متقدم عن رحلات الطيران والفنادق | GoTripza"
-      : "Advanced Flight & Hotel Search | GoTripza",
+      ? "بحث ذكي عن رحلات الطيران والفنادق | GoTripza"
+      : "AI Flight & Hotel Search | GoTripza",
     description: isAr
-      ? "ابحث عن أرخص تذاكر الطيران والفنادق من السعودية. مقارنة فورية لمئات الشركات."
-      : "Search cheap flights and hotels from Saudi Arabia. Instant comparison of hundreds of providers.",
+      ? "ابحث بالعربي عن أرخص تذاكر الطيران والفنادق. ذكاء اصطناعي يفهمك ويقارن مئات الشركات فوراً بالريال السعودي."
+      : "Search flights and hotels with AI. Compare hundreds of providers instantly and get the best price.",
+    alternates: {
+      canonical: isAr
+        ? "https://search.gotripza.com?locale=ar"
+        : "https://search.gotripza.com?locale=en",
+    },
   };
 }
 
 export default async function SearchPage({
   params,
+  searchParams,
 }: {
   params: { locale: string };
+  searchParams?: { q?: string; locale?: string };
 }) {
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
 
-  return (
-    <>
-      <Navbar dict={dict} locale={locale as Locale} />
-      <main className="min-h-screen bg-ink-950 pt-8 pb-20">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mb-10 text-center">
-            <h1 className="font-display text-3xl font-bold text-white sm:text-4xl">
-              {locale === "ar"
-                ? "البحث المتقدم عن رحلات الطيران والفنادق"
-                : "Advanced Flight & Hotel Search"}
-            </h1>
-            <p className="mt-3 text-white/55">
-              {locale === "ar"
-                ? "قارن بين مئات شركات الطيران والفنادق في ثوانٍ"
-                : "Compare hundreds of airlines and hotels in seconds"}
-            </p>
-          </div>
+  // Read the query forwarded from the homepage redirect
+  const initialQuery = (searchParams?.q ?? "").trim();
 
-          <TravelpayoutsSearch locale={locale as Locale} />
+  return (
+    <SearchProvider initialLocale={locale as Locale}>
+      <Navbar dict={dict} locale={locale as Locale} />
+
+      <main className="min-h-screen bg-ink-950 pb-24 pt-10">
+        {/* Page header */}
+        <div className="mx-auto mb-8 max-w-7xl px-4 sm:px-6">
+          <h1 className="font-display text-2xl font-bold text-white sm:text-3xl">
+            {locale === "ar"
+              ? "🔍 ابحث عن رحلتك المثالية"
+              : "🔍 Find Your Perfect Trip"}
+          </h1>
+          <p className="mt-2 text-sm text-white/50">
+            {locale === "ar"
+              ? "ذكاء اصطناعي + أسعار مباشرة من مئات شركات الطيران والفنادق"
+              : "AI-powered search + live prices from hundreds of airlines & hotels"}
+          </p>
         </div>
+
+        {/* Main search + results + live widgets — all with marker 522867 */}
+        <SearchPageClient
+          initialQuery={initialQuery}
+          dict={dict}
+          locale={locale as Locale}
+        />
       </main>
+
       <Footer dict={dict} locale={locale as Locale} />
-    </>
+    </SearchProvider>
   );
 }

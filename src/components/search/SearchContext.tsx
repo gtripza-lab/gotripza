@@ -92,6 +92,19 @@ export function SearchProvider({
 
   const search = useCallback(async (q: string) => {
     if (!q.trim()) return;
+
+    // ── Redirect to search subdomain when on the main domain ──────────────
+    // This keeps the homepage clean and funnels all searches to search.gotripza.com
+    if (typeof window !== "undefined") {
+      const host = window.location.hostname;
+      const isMainDomain =
+        host === "gotripza.com" || host === "www.gotripza.com";
+      if (isMainDomain) {
+        window.location.href = `https://search.gotripza.com?q=${encodeURIComponent(q)}`;
+        return;
+      }
+    }
+
     setStatus("loading");
     setError(null);
     const uiCurrency = currencyForLocale(initialLocale);
