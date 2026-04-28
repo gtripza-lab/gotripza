@@ -68,7 +68,7 @@ export function DestinationsGridClient({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {ITEMS.map(({ key, icon: Icon, gradient, fallbackUrl, fallbackAlt }, i) => {
+        {ITEMS.map(({ key, icon: Icon, fallbackUrl, fallbackAlt }, i) => {
           const photo = photos[key];
           // Use API photo if available, otherwise use the hardcoded fallback
           const imgUrl = photo?.url || fallbackUrl;
