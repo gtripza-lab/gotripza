@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchFlights, searchHotels } from "@/lib/travelpayouts";
-import { mockFlights, mockHotels } from "@/lib/mock-offers";
 import type { TripIntent } from "@/lib/gemini";
 import type { Currency } from "@/lib/utils";
-import { resolveIata } from "@/lib/iata";
+import { resolveIata, iataToCity } from "@/lib/iata";
 
 export const runtime = "nodejs";
 
@@ -28,22 +27,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "destination_required" }, { status: 400 });
     }
 
-    // Resolve Arabic/English city names → IATA codes
-    // Default origin to JED (Jeddah) when user didn't specify — ensures flights always run
+    // Resolve Arabic/English city names → IATA codes (for flights)
     const origin = resolveIata(intent.origin) ?? "JED";
     const destination = resolveIata(intent.destination) ?? intent.destination;
+    // Hotellook API needs readable English city name, NOT IATA code
+    const hotelCity = iataToCity(destination);
 
     const [flightsRes, hotelsRes] = await Promise.allSettled([
       searchFlights({
-            origin,
-            destination,
-            departure_date: intent.departure_date,
-            return_date: intent.return_date,
-            currency: currency.toLowerCase(),
-            subid,
-          }),
+        origin,
+        destination,
+        departure_date: intent.departure_date,
+        return_date: intent.return_date,
+        currency: currency.toLowerCase(),
+        subid,
+      }),
       searchHotels({
-        location: destination,
+        location: hotelCity,
         checkIn: intent.departure_date,
         checkOut: intent.return_date,
         adults: intent.adults,
@@ -52,20 +52,21 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    let flights = flightsRes.status === "fulfilled" ? flightsRes.value : [];
-    let hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
+    const flights = flightsRes.status === "fulfilled" ? flightsRes.value : [];
+    const hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
 
-    let mock = false;
-    if (flights.length === 0) {
-      flights = mockFlights(intent, currency);
-      mock = true;
-    }
-    if (hotels.length === 0) {
-      hotels = mockHotels(intent, currency);
-      mock = true;
-    }
+    // Build fallback search URLs for when API returns no results
+    const flightSearchUrl = `https://search.gotripza.com/?origin=${origin}&destination=${destination}&marker=522867`;
+    const hotelSearchUrl = `https://search.gotripza.com/?tab=hotels&destination=${encodeURIComponent(hotelCity)}&marker=522867`;
 
-    return NextResponse.json({ flights, hotels, mock, currency });
+    return NextResponse.json({
+      flights,
+      hotels,
+      mock: false,
+      currency,
+      flightSearchUrl,
+      hotelSearchUrl,
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "search_failed";
     return NextResponse.json({ error: message }, { status: 500 });

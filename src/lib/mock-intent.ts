@@ -2,58 +2,103 @@ import "server-only";
 import type { TripIntent } from "./gemini";
 
 const CITY_TO_IATA: Record<string, string> = {
-  // Arabic
-  "جدة": "JED",
-  "الرياض": "RUH",
+  // ── Saudi Arabia ──────────────────────────────────────────
+  "جدة": "JED", "مكة": "JED", "مكة المكرمة": "JED", "مكه": "JED",
+  "الرياض": "RUH", "رياض": "RUH",
+  "الدمام": "DMM", "دمام": "DMM",
+  "المدينة": "MED", "المدينة المنورة": "MED", "مدينة": "MED",
+  "الطائف": "TIF", "طائف": "TIF",
+  "أبها": "AHB", "ابها": "AHB",
+  "تبوك": "TUU",
+  "الجوف": "AJF",
+  "جيزان": "GIZ",
+  "نجران": "EAM",
+  "حائل": "HAS",
+  "القصيم": "ELQ", "بريدة": "ELQ",
+  // ── UAE / Gulf ────────────────────────────────────────────
   "دبي": "DXB",
-  "أبوظبي": "AUH",
-  "ابوظبي": "AUH",
-  "الدوحة": "DOH",
-  "القاهرة": "CAI",
+  "أبوظبي": "AUH", "ابوظبي": "AUH", "أبو ظبي": "AUH", "ابو ظبي": "AUH",
+  "الشارقة": "SHJ", "شارقة": "SHJ",
+  "الكويت": "KWI", "كويت": "KWI",
+  "البحرين": "BAH", "بحرين": "BAH",
+  "الدوحة": "DOH", "دوحة": "DOH", "قطر": "DOH",
+  "مسقط": "MCT", "عمان": "MCT",
+  // ── Middle East ────────────────────────────────────────────
+  "القاهرة": "CAI", "مصر": "CAI",
   "الإسكندرية": "ALY",
-  "اسطنبول": "IST",
-  "إسطنبول": "IST",
-  "باريس": "PAR",
-  "لندن": "LON",
-  "روما": "ROM",
+  "بيروت": "BEY", "لبنان": "BEY",
+  "عمّان": "AMM", "الأردن": "AMM",
+  "بغداد": "BGW",
+  "دمشق": "DAM",
+  // ── Europe ────────────────────────────────────────────────
+  "لندن": "LHR",
+  "باريس": "CDG",
+  "روما": "FCO",
   "مدريد": "MAD",
   "برشلونة": "BCN",
-  "طوكيو": "TYO",
-  "بانكوك": "BKK",
-  "بالي": "DPS",
-  "كوالالمبور": "KUL",
-  "سنغافورة": "SIN",
-  "المالديف": "MLE",
-  "الملديف": "MLE",
-  "نيويورك": "NYC",
-  "لوس انجلوس": "LAX",
+  "برلين": "BER",
+  "أمستردام": "AMS",
+  "إسطنبول": "IST", "اسطنبول": "IST",
+  "أنطاليا": "AYT", "انطاليا": "AYT",
   "سانتوريني": "JTR",
-  "أنطاليا": "AYT",
-  "انطاليا": "AYT",
-  // English (lowercase keys)
-  jeddah: "JED",
+  "فيينا": "VIE",
+  "زيورخ": "ZRH",
+  "أثينا": "ATH",
+  // ── Asia ──────────────────────────────────────────────────
+  "بانكوك": "BKK", "تايلاند": "BKK",
+  "سنغافورة": "SIN",
+  "كوالالمبور": "KUL", "ماليزيا": "KUL",
+  "بالي": "DPS",
+  "طوكيو": "NRT", "اليابان": "NRT",
+  "سيول": "ICN",
+  "المالديف": "MLE", "الملديف": "MLE", "مالديف": "MLE",
+  "تبليسي": "TBS", "جورجيا": "TBS",
+  "باكو": "GYD", "أذربيجان": "GYD",
+  "دلهي": "DEL", "الهند": "DEL",
+  "كولومبو": "CMB", "سريلانكا": "CMB",
+  "هونغ كونغ": "HKG",
+  // ── Africa ────────────────────────────────────────────────
+  "مراكش": "RAK",
+  "الدار البيضاء": "CMN", "المغرب": "CMN",
+  // ── Americas ──────────────────────────────────────────────
+  "نيويورك": "JFK",
+  "لوس أنجلوس": "LAX", "لوس انجلوس": "LAX",
+  "ميامي": "MIA",
+  // ── English (lowercase) ────────────────────────────────────
+  jeddah: "JED", mecca: "JED",
   riyadh: "RUH",
+  dammam: "DMM",
+  medina: "MED", madinah: "MED",
+  taif: "TIF",
   dubai: "DXB",
   "abu dhabi": "AUH",
+  sharjah: "SHJ",
+  kuwait: "KWI",
+  bahrain: "BAH",
   doha: "DOH",
+  muscat: "MCT",
   cairo: "CAI",
   alexandria: "ALY",
   istanbul: "IST",
-  paris: "PAR",
-  london: "LON",
-  rome: "ROM",
+  paris: "CDG",
+  london: "LHR",
+  rome: "FCO",
   madrid: "MAD",
   barcelona: "BCN",
-  tokyo: "TYO",
+  tokyo: "NRT",
   bangkok: "BKK",
   bali: "DPS",
   "kuala lumpur": "KUL",
   singapore: "SIN",
   maldives: "MLE",
-  "new york": "NYC",
+  "new york": "JFK",
   "los angeles": "LAX",
+  miami: "MIA",
   santorini: "JTR",
   antalya: "AYT",
+  tbilisi: "TBS",
+  baku: "GYD",
+  marrakech: "RAK",
 };
 
 const AR_MONTHS: Record<string, number> = {
@@ -178,9 +223,9 @@ export function heuristicParse(query: string): TripIntent {
   const origin =
     findCity(query, ["من", "from"]) ?? null;
   const destination =
-    findCity(query, ["إلى", "الى", "لـ", "ل ", "to"]) ??
+    findCity(query, ["إلى", "الى", "لـ", "ل ", "to", "in", "for"]) ??
     findAnyCity(query) ??
-    "DXB";
+    "";
 
   const month = findMonth(query);
   let departure_date: string | null = null;

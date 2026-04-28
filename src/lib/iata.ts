@@ -207,6 +207,53 @@ function normalize(s: string): string {
     .trim();
 }
 
+/** Reverse map: IATA code → English city name for APIs that need a readable name (e.g. Hotellook) */
+const IATA_TO_CITY: Record<string, string> = {
+  // Saudi Arabia
+  JED: "Jeddah", RUH: "Riyadh", DMM: "Dammam", MED: "Medina",
+  TIF: "Taif", AHB: "Abha", TUU: "Tabuk", AJF: "Al-Jouf",
+  GIZ: "Jizan", EAM: "Najran", HAS: "Hail", ELQ: "Buraidah",
+  // UAE / Gulf
+  DXB: "Dubai", AUH: "Abu Dhabi", SHJ: "Sharjah", RKT: "Ras Al Khaimah",
+  DOH: "Doha", KWI: "Kuwait City", BAH: "Manama", MCT: "Muscat",
+  // Middle East
+  AMM: "Amman", BEY: "Beirut", CAI: "Cairo", BGW: "Baghdad",
+  DAM: "Damascus", SAH: "Sanaa", KRT: "Khartoum",
+  // Europe
+  LHR: "London", CDG: "Paris", FCO: "Rome", MAD: "Madrid",
+  BCN: "Barcelona", FRA: "Frankfurt", AMS: "Amsterdam", BRU: "Brussels",
+  VIE: "Vienna", ZRH: "Zurich", GVA: "Geneva", WAW: "Warsaw",
+  PRG: "Prague", BUD: "Budapest", ATH: "Athens", IST: "Istanbul",
+  AYT: "Antalya", LIS: "Lisbon", DUB: "Dublin", ARN: "Stockholm",
+  OSL: "Oslo", CPH: "Copenhagen", HEL: "Helsinki", BER: "Berlin",
+  MXP: "Milan",
+  // Asia
+  BKK: "Bangkok", SIN: "Singapore", KUL: "Kuala Lumpur", CGK: "Jakarta",
+  DPS: "Bali", MNL: "Manila", HKG: "Hong Kong", NRT: "Tokyo",
+  ICN: "Seoul", PEK: "Beijing", PVG: "Shanghai", DEL: "New Delhi",
+  BOM: "Mumbai", CMB: "Colombo", MLE: "Maldives", KHI: "Karachi",
+  LHE: "Lahore", TBS: "Tbilisi", GYD: "Baku",
+  // Africa
+  NBO: "Nairobi", CPT: "Cape Town", JNB: "Johannesburg",
+  ADD: "Addis Ababa", DAR: "Dar es Salaam", RAK: "Marrakech",
+  CMN: "Casablanca", TUN: "Tunis", ALG: "Algiers",
+  // Americas
+  JFK: "New York", LAX: "Los Angeles", MIA: "Miami", ORD: "Chicago",
+  SFO: "San Francisco", IAD: "Washington", BOS: "Boston",
+  YYZ: "Toronto", YVR: "Vancouver", MEX: "Mexico City",
+  GRU: "Sao Paulo", EZE: "Buenos Aires",
+  // Oceania
+  SYD: "Sydney", MEL: "Melbourne", AKL: "Auckland",
+};
+
+/**
+ * Convert an IATA airport code to a readable English city name.
+ * Used when calling APIs like Hotellook that expect city names, not codes.
+ */
+export function iataToCity(code: string): string {
+  return IATA_TO_CITY[code.toUpperCase()] ?? code;
+}
+
 /**
  * Resolve a city/country name (Arabic or English) to its IATA code.
  * Returns the input unchanged if it is already a 3-letter IATA code

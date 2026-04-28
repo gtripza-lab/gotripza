@@ -11,6 +11,7 @@ import {
   Sparkles,
   Clock,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react";
 import { useSearch } from "./search/SearchContext";
 import { logEvent } from "@/lib/events";
@@ -85,9 +86,13 @@ function ReadyState({
     wants: ("flights" | "hotels")[];
     followup: string | null;
     currency: import("@/lib/utils").Currency;
+    flightSearchUrl: string;
+    hotelSearchUrl: string;
   };
 }) {
   const { reveal, dismissFollowup } = useSearch();
+  const flightSearchUrl = data.flightSearchUrl;
+  const hotelSearchUrl = data.hotelSearchUrl;
   const [tab, setTab] = useState<Tab>("best");
 
   const isAr = data.locale === "ar";
@@ -206,10 +211,15 @@ function ReadyState({
             )}
 
             {data.flights.length === 0 ? (
-              <EmptyState
-                icon={<Plane className="h-5 w-5" />}
-                line1={isAr ? "جارٍ تحميل أفضل أسعار الطيران…" : "Loading best flight prices…"}
-                line2={isAr ? "نقارن مئات الخيارات لك" : "Comparing hundreds of options for you"}
+              <SearchCTA
+                isAr={isAr}
+                icon={<Plane className="h-5 w-5 text-brand-primary" />}
+                title={isAr ? "ابحث عن رحلتك مباشرة" : "Search Flights Directly"}
+                desc={isAr
+                  ? `نقارن مئات شركات الطيران للوصول إلى أفضل سعر لـ ${data.intent.destination}`
+                  : `We compare hundreds of airlines for the best price to ${data.intent.destination}`}
+                url={flightSearchUrl}
+                btnLabel={isAr ? "ابحث عن رحلات الطيران" : "Search Flights"}
               />
             ) : (
               <div className="space-y-3">
@@ -271,10 +281,16 @@ function ReadyState({
             </div>
 
             {data.hotels.length === 0 ? (
-              <EmptyState
-                icon={<HotelIcon className="h-5 w-5" />}
-                line1={isAr ? "جارٍ البحث عن أفضل العروض الفندقية…" : "Searching for the best hotel deals…"}
-                line2={isAr ? "ضمان أفضل سعر بذكاء GoTripza" : "Best price guarantee by GoTripza AI"}
+              <SearchCTA
+                isAr={isAr}
+                icon={<HotelIcon className="h-5 w-5 text-brand-mint" />}
+                title={isAr ? "ابحث عن فندقك مباشرة" : "Search Hotels Directly"}
+                desc={isAr
+                  ? `نعرض لك آلاف الفنادق في ${data.intent.destination} بأفضل الأسعار المضمونة`
+                  : `Browse thousands of hotels in ${data.intent.destination} with best price guarantee`}
+                url={hotelSearchUrl}
+                btnLabel={isAr ? "ابحث عن فنادق" : "Search Hotels"}
+                accent="mint"
               />
             ) : (
               <div className="space-y-3">
@@ -636,6 +652,61 @@ function FollowupCard({
         </button>
       </div>
     </motion.div>
+  );
+}
+
+/* ─── Search CTA (replaces empty state — links to live search) ───────── */
+function SearchCTA({
+  isAr,
+  icon,
+  title,
+  desc,
+  url,
+  btnLabel,
+  accent = "primary",
+}: {
+  isAr: boolean;
+  icon: React.ReactNode;
+  title: string;
+  desc: string;
+  url: string;
+  btnLabel: string;
+  accent?: "primary" | "mint";
+}) {
+  const grad =
+    accent === "mint"
+      ? "from-brand-mint to-brand-deep"
+      : "from-brand-primary to-brand-deep";
+  const border =
+    accent === "mint" ? "border-brand-mint/20" : "border-brand-primary/20";
+  const bg =
+    accent === "mint"
+      ? "from-brand-mint/5 to-brand-deep/5"
+      : "from-brand-primary/5 to-brand-deep/5";
+  return (
+    <div
+      className={`flex flex-col items-center gap-5 rounded-2xl border bg-gradient-to-br p-8 text-center ${border} ${bg}`}
+    >
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06]">
+        {icon}
+      </div>
+      <div className="max-w-xs">
+        <p className="text-base font-semibold text-white/90">{title}</p>
+        <p className="mt-1.5 text-xs leading-relaxed text-white/50">{desc}</p>
+      </div>
+      <a
+        href={url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r px-6 py-2.5 text-sm font-semibold text-white shadow-glow transition hover:scale-[1.02] ${grad}`}
+      >
+        {btnLabel}
+        <ExternalLink className="h-3.5 w-3.5 rtl:rotate-180" />
+      </a>
+      <p className="text-[11px] text-white/30">
+        {isAr ? "مدعوم بـ GoTripza · بدون تكلفة إضافية" : "Powered by GoTripza · no extra cost"}
+      </p>
+    </div>
   );
 }
 
