@@ -10,10 +10,27 @@ import {
 
 export const runtime = "nodejs";
 
-function looksLikeKeyError(message: string) {
-  return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED/i.test(
+/** Any Gemini / network / parse error → fall back gracefully */
+function isGeminiError(message: string) {
+  return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid/i.test(
     message,
   );
+}
+
+function heuristicFallback(query: string, notice: string) {
+  const locale = detectLocale(query);
+  const intent = heuristicParse(query);
+  const wants = detectWants(query);
+  return NextResponse.json({
+    intent,
+    locale,
+    message: welcomeMessage(locale),
+    wants,
+    followup: followupMessage(locale, wants),
+    tips: null,
+    mock: true,
+    notice,
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -44,22 +61,12 @@ export async function POST(req: NextRequest) {
       mock: false,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "parse_failed";
-    if (looksLikeKeyError(message)) {
-      const locale = detectLocale(query);
-      const intent = heuristicParse(query);
-      const wants = detectWants(query);
-      return NextResponse.json({
-        intent,
-        locale,
-        message: welcomeMessage(locale),
-        wants,
-        followup: followupMessage(locale, wants),
-        tips: null,
-        mock: true,
-        notice: "gemini_key_invalid_using_heuristic",
-      });
-    }
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[parse] Gemini error, using heuristic fallback:", message);
+    // Always fall back to heuristic — never expose a 500 to the user
+    return heuristicFallback(
+      query,
+      isGeminiError(message) ? "gemini_error_using_heuristic" : "unknown_error_using_heuristic",
+    );
   }
 }
