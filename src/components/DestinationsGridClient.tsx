@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Mountain, Plane, Building2, Compass, type LucideIcon } from "lucide-react";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { UnsplashPhoto } from "@/lib/unsplash";
+import { UnsplashAttribution } from "./UnsplashAttribution";
 
 type ItemKey = "story" | "fly" | "stay" | "explore";
 
@@ -73,9 +74,6 @@ export function DestinationsGridClient({
           // Use API photo if available, otherwise use the hardcoded fallback
           const imgUrl = photo?.url || fallbackUrl;
           const imgAlt = photo?.alt || fallbackAlt || dict.destinations.items[key];
-          const photographer = photo?.url ? photo.photographer : null;
-          const photoLink = photo?.url ? photo.link : null;
-
           return (
             <motion.div
               key={key}
@@ -107,17 +105,12 @@ export function DestinationsGridClient({
                 <h3 className="font-display text-lg font-bold leading-tight text-white">
                   {dict.destinations.items[key]}
                 </h3>
-                {photographer && photoLink && (
-                  <a
-                    href={photoLink}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="mt-1 inline-block text-[10px] uppercase tracking-wider text-white/50 hover:text-white/80"
-                  >
-                    © {photographer} / Unsplash
-                  </a>
-                )}
               </div>
+
+              {/* Unsplash attribution — required by API guidelines */}
+              {photo?.url && (
+                <UnsplashAttribution photo={photo} triggerDownload />
+              )}
             </motion.div>
           );
         })}
