@@ -9,27 +9,27 @@
     "getStarted": "Start free"
   },
   "hero": {
-    "badge": "Advanced AI Travel Search",
-    "title1": "Your trip starts",
-    "title2": "with one sentence.",
-    "subtitle": "Describe your destination, dates, and budget — we compare hundreds of airlines and hotels and show you the best price in seconds.",
+    "badge": "Powered by Advanced AI Travel Intelligence",
+    "title1": "Describe your trip.",
+    "title2": "We answer in seconds.",
+    "subtitle": "No complex forms — just type your destination, dates, and budget. We compare hundreds of airlines and hotels and show you the best price instantly.",
     "placeholder": "e.g. Family trip to Istanbul in June, budget $1,500",
-    "cta": "Search free",
+    "cta": "Search free — takes seconds",
     "voice": "Voice search",
     "tagline": "Best price. Always.",
     "suggestions": {
       "title": "Try:",
       "items": [
         "Dubai 3 nights best price",
-        "Honeymoon in Maldives",
-        "Family trip to Istanbul",
+        "Honeymoon in Maldives budget $3,000",
+        "Family trip to Istanbul June",
         "Cheapest flight from Riyadh this week"
       ]
     }
   },
   "brandStory": {
     "title": "How GoTripza Works",
-    "body": "Tell us about your trip in plain language — GoTripza reads your request, compares prices across hundreds of verified airlines and hotels, and shows you the optimal choice in your currency. No complexity. No fees.",
+    "body": "Tell us about your trip in plain language — GoTripza reads your request, evaluates your budget, checks visa requirements and weather, then compares prices across hundreds of verified airlines and hotels. All in under 10 seconds. No fees — we only earn when you complete a booking.",
     "highlights": [
       "180+ airlines",
       "Real-time comparison",
@@ -42,7 +42,7 @@
     "screens": {
       "search": {
         "greet": "Hi, Sarah!",
-        "prompt": "Where do you want to go?",
+        "prompt": "Where's your next trip?",
         "input": "Describe your trip...",
         "popular": "Most booked right now",
         "ai": "AI picks for you",
@@ -54,7 +54,7 @@
         "featureSub": "5 Nights · Flights + Hotel"
       },
       "trip": {
-        "title": "Trip to Dubai",
+        "title": "Your Trip to Dubai",
         "dates": "May 26 — May 31 · 2 Adults",
         "tabBest": "Best Value",
         "tabFastest": "Fastest",
@@ -70,7 +70,7 @@
         "book": "Book Now"
       },
       "confirm": {
-        "title": "Booking Confirmed",
+        "title": "Booking Confirmed ✓",
         "ref": "Booking Reference",
         "flight": "Flight",
         "view": "View",
@@ -81,11 +81,11 @@
     }
   },
   "values": {
-    "title": "Why GoTripza?",
+    "title": "Why travelers choose GoTripza",
     "items": {
       "ai": {
         "title": "Search in plain language",
-        "desc": "Type what you want — no forms, no dropdowns"
+        "desc": "Type what you want — no forms, no dropdowns, no friction"
       },
       "smart": {
         "title": "Prices in your currency",
@@ -93,10 +93,10 @@
       },
       "fast": {
         "title": "180+ airlines in one search",
-        "desc": "We reach the best price across all sources"
+        "desc": "We reach the best price across all sources at once"
       },
       "support": {
-        "title": "Completely free",
+        "title": "Completely free to use",
         "desc": "No service fees — we only earn when you book"
       },
       "secure": {
@@ -109,26 +109,53 @@
     "title": "What We Guarantee",
     "items": {
       "empathy": {
-        "title": "Best available price",
+        "title": "Best available price — guaranteed",
         "desc": "We show real prices from multiple sources — the cheapest is never hidden"
       },
       "simplicity": {
-        "title": "No hidden fees",
-        "desc": "The price you see is the price at the partner site"
+        "title": "No hidden fees. Ever.",
+        "desc": "The price you see is the price at the partner site — no markup"
       },
       "inspiration": {
         "title": "Options for every budget",
-        "desc": "Economy to luxury — you choose"
+        "desc": "Economy to luxury — you choose what fits"
       },
       "trust": {
         "title": "Your privacy protected",
-        "desc": "We never store or share your personal data"
+        "desc": "We never store or share your personal data with any third party"
       },
       "speed": {
-        "title": "Results in 10 seconds",
-        "desc": "From your first word to full price listings — no waiting"
+        "title": "Results in under 10 seconds",
+        "desc": "From your first word to full price listings — zero waiting"
       }
     }
+  },
+  "trust": {
+    "title": "Trusted by thousands of travelers",
+    "verified": "Verified Partner",
+    "secure": "SSL Encrypted",
+    "noFees": "No Hidden Fees",
+    "partners": "Certified Partners",
+    "testimonials": [
+      {
+        "name": "Mohammed Al-Otaibi",
+        "city": "Riyadh",
+        "text": "Saved $320 compared to the airline's own website. Results in seconds — this is how travel search should work.",
+        "rating": 5
+      },
+      {
+        "name": "Sara Al-Shammari",
+        "city": "Jeddah",
+        "text": "Finally a search tool that understands what I actually want. Typed in Arabic, got perfect results instantly.",
+        "rating": 5
+      },
+      {
+        "name": "Faisal Al-Dosari",
+        "city": "Dammam",
+        "text": "Best price comparison tool I've used. Booked the family trip through GoTripza — excellent experience.",
+        "rating": 5
+      }
+    ]
   },
   "destinations": {
     "title": "Destinations Worth Remembering",
@@ -159,7 +186,11 @@
     "from": "From",
     "to": "To",
     "nights": "nights",
-    "perNight": "/ night"
+    "perNight": "/ night",
+    "carRentals": "Car Rentals",
+    "activities": "Activities & Experiences",
+    "carRentalsDesc": "Compare car rental prices at your destination",
+    "activitiesDesc": "Discover top activities and guided tours"
   },
   "footer": {
     "tagline": "Best price. In seconds.",

@@ -8,6 +8,7 @@ import { getPost, getPostSlugs } from "@/lib/blog";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { ArticleJsonLd } from "@/components/JsonLd";
+import { BlogSearchCTA } from "@/components/BlogSearchCTA";
 
 export async function generateStaticParams({
   params,
@@ -120,23 +121,7 @@ export default async function BlogPostPage({
           <MDXRemote source={post.content} />
         </article>
 
-        <div className="mt-16 rounded-2xl border border-brand-primary/20 bg-brand-primary/5 p-6">
-          <p className="font-display text-lg font-bold">
-            {isAr ? "ابحث عن رحلتك الآن" : "Search your trip now"}
-          </p>
-          <p className="mt-1 text-sm text-white/55">
-            {isAr
-              ? "GoTripza يقارن مئات الأسعار في ثوانٍ — بالريال، بدون رسوم."
-              : "GoTripza compares hundreds of prices in seconds — in your currency, with no fees."}
-          </p>
-          <a
-            href={`/${locale}`}
-            className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-primary to-brand-deep px-6 py-2.5 text-sm font-semibold text-white transition hover:scale-[1.02]"
-          >
-            {isAr ? "ابحث مجاناً" : "Search free"}
-            {isAr ? <ArrowLeft className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
-          </a>
-        </div>
+        <BlogSearchCTA locale={locale as Locale} />
       </main>
       <Footer dict={dict} locale={locale as Locale} />
     </>

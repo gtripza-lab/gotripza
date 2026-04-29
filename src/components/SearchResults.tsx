@@ -24,6 +24,8 @@ import {
   DollarSign,
   TrendingUp,
   MessageCircleQuestion,
+  Car,
+  Compass,
 } from "lucide-react";
 import { useSearch } from "./search/SearchContext";
 import { logEvent } from "@/lib/events";
@@ -288,8 +290,89 @@ function ReadyState({
             icon={<Plane className="h-4 w-4 text-brand-primary" />}
           />
         )}
+
+        {/* ── AFFILIATE UPSELL ROW: Car Rentals + Activities ──── */}
+        <AffiliateUpsellRow
+          destination={data.intent.destination}
+          isAr={isAr}
+        />
       </div>
     </motion.div>
+  );
+}
+
+/* ─── Affiliate Upsell Row (Car Rentals + Activities) ───────────────── */
+function AffiliateUpsellRow({
+  destination,
+  isAr,
+}: {
+  destination: string;
+  isAr: boolean;
+}) {
+  const MARKER = "522867";
+  const carUrl = `https://www.discovercars.com/?a_aid=${MARKER}&a_bid=cars&destination=${encodeURIComponent(destination)}`;
+  const activitiesUrl = `https://www.getyourguide.com/s/?q=${encodeURIComponent(destination)}&partner_id=${MARKER}`;
+
+  return (
+    <div className="mt-12 grid gap-4 sm:grid-cols-2">
+      {/* Car Rentals */}
+      <motion.a
+        href={carUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        onClick={() =>
+          logEvent("affiliate_upsell_clicked", { type: "car_rental", destination })
+        }
+        className="group flex items-center gap-4 rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 to-sky-600/5 p-5 transition hover:border-sky-400/40 hover:from-sky-500/15"
+      >
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/15">
+          <Car className="h-5 w-5 text-sky-400" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-white/90">
+            {isAr ? "تأجير سيارات في " + destination : "Car Rentals in " + destination}
+          </p>
+          <p className="mt-0.5 text-xs text-white/50">
+            {isAr
+              ? "قارن أسعار أكثر من ٩٠٠ شركة تأجير حول العالم"
+              : "Compare 900+ car rental companies worldwide"}
+          </p>
+        </div>
+        <ArrowRight className="h-4 w-4 shrink-0 text-sky-400 transition group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
+      </motion.a>
+
+      {/* Activities */}
+      <motion.a
+        href={activitiesUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, delay: 0.08 }}
+        onClick={() =>
+          logEvent("affiliate_upsell_clicked", { type: "activities", destination })
+        }
+        className="group flex items-center gap-4 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 p-5 transition hover:border-emerald-400/40 hover:from-emerald-500/15"
+      >
+        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+          <Compass className="h-5 w-5 text-emerald-400" />
+        </div>
+        <div className="flex-1">
+          <p className="text-sm font-semibold text-white/90">
+            {isAr ? "أنشطة وجولات في " + destination : "Activities & Tours in " + destination}
+          </p>
+          <p className="mt-0.5 text-xs text-white/50">
+            {isAr
+              ? "آلاف الأنشطة والجولات الموثوقة من GetYourGuide"
+              : "Thousands of verified experiences via GetYourGuide"}
+          </p>
+        </div>
+        <ArrowRight className="h-4 w-4 shrink-0 text-emerald-400 transition group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
+      </motion.a>
+    </div>
   );
 }
 

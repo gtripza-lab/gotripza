@@ -191,6 +191,13 @@ export function SearchProvider({
         confidence_score: parsedJson.confidence?.score ?? null,
       });
 
+      // Persist search history — best-effort, never blocks UX
+      fetch("/api/history", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query: q, destination: intent.destination, locale: initialLocale }),
+      }).catch(() => null);
+
       requestAnimationFrame(() => {
         const el = document.getElementById("results");
         if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });

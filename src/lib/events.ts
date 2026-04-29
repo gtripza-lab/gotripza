@@ -6,7 +6,8 @@ export type EventName =
   | "results_rendered"
   | "book_clicked"
   | "followup_revealed"
-  | "followup_dismissed";
+  | "followup_dismissed"
+  | "affiliate_upsell_clicked";
 
 export type EventPayload = Record<string, unknown>;
 

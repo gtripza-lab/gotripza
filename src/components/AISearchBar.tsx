@@ -1,9 +1,32 @@
 "use client";
-import { motion } from "framer-motion";
-import { Mic, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mic, Sparkles, ArrowRight, Loader2, Clock, X } from "lucide-react";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { useSearch } from "./search/SearchContext";
 import { cn } from "@/lib/utils";
+
+const LS_KEY = "gotripza_recent_searches";
+const MAX_RECENT = 4;
+
+function loadRecent(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveRecent(q: string) {
+  try {
+    const prev = loadRecent().filter((r) => r !== q);
+    localStorage.setItem(LS_KEY, JSON.stringify([q, ...prev].slice(0, MAX_RECENT)));
+  } catch { /* swallow */ }
+}
+
+function clearRecent() {
+  try { localStorage.removeItem(LS_KEY); } catch { /* swallow */ }
+}
 
 type Theme = "dark" | "light";
 
@@ -17,13 +40,25 @@ export function AISearchBar({
   const { query, setQuery, status, search } = useSearch();
   const loading = status === "loading";
   const isLight = theme === "light";
+  const [recent, setRecent] = useState<string[]>([]);
+  const isAr = typeof document !== "undefined" && document.documentElement.dir === "rtl";
+
+  useEffect(() => {
+    setRecent(loadRecent());
+  }, []);
+
+  const handleSearch = (q: string) => {
+    saveRecent(q);
+    setRecent(loadRecent());
+    search(q);
+  };
 
   return (
     <div className="w-full">
       <motion.form
         onSubmit={(e) => {
           e.preventDefault();
-          search(query);
+          handleSearch(query);
         }}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -102,7 +137,7 @@ export function AISearchBar({
             type="button"
             onClick={() => {
               setQuery(item);
-              search(item);
+              handleSearch(item);
             }}
             className={isLight ? "chip-light" : "chip"}
           >
@@ -110,6 +145,50 @@ export function AISearchBar({
           </button>
         ))}
       </motion.div>
+
+      {/* Recent searches */}
+      <AnimatePresence>
+        {recent.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.25 }}
+            className="mt-3 flex flex-wrap items-center gap-2"
+          >
+            <Clock className={cn("h-3.5 w-3.5 shrink-0", isLight ? "text-ink-950/35" : "text-white/30")} />
+            <span className={cn("text-xs", isLight ? "text-ink-950/40" : "text-white/35")}>
+              {isAr ? "بحث سابق:" : "Recent:"}
+            </span>
+            {recent.map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => {
+                  setQuery(r);
+                  handleSearch(r);
+                }}
+                className={cn(
+                  "max-w-[180px] truncate rounded-full border px-3 py-1 text-xs transition",
+                  isLight
+                    ? "border-ink-950/10 bg-ink-950/[0.03] text-ink-950/60 hover:bg-ink-950/[0.06]"
+                    : "border-white/10 bg-white/[0.04] text-white/50 hover:bg-white/[0.08]",
+                )}
+              >
+                {r}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => { clearRecent(); setRecent([]); }}
+              aria-label={isAr ? "مسح السجل" : "Clear history"}
+              className={cn("rounded-full p-1 transition", isLight ? "text-ink-950/30 hover:text-ink-950/60" : "text-white/25 hover:text-white/50")}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

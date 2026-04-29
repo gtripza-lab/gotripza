@@ -13,6 +13,7 @@ import { SearchProvider } from "@/components/search/SearchContext";
 import { SearchResults } from "@/components/SearchResults";
 import { SocialProof } from "@/components/SocialProof";
 import { StatsBar } from "@/components/StatsBar";
+import { TrustSection } from "@/components/TrustSection";
 
 export default async function LandingPage({
   params,
@@ -35,6 +36,7 @@ export default async function LandingPage({
         <ValuesGrid dict={dict} />
         <OurValues dict={dict} />
         <DestinationsGrid dict={dict} />
+        <TrustSection dict={dict} locale={locale as Locale} />
       </main>
       <SocialProof locale={locale as Locale} />
       <Footer dict={dict} locale={locale as Locale} />
