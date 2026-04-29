@@ -176,7 +176,7 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
           </>
         )}
       </AnimatePresence>
-      {/* Auth Modal */}
+
       <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} locale={locale} />
     </>
   );
