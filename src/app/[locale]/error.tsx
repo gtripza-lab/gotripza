@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import { useParams } from "next/navigation";
 
 export default function LocaleError({
   error,
@@ -10,40 +11,55 @@ export default function LocaleError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  const params = useParams();
+  const locale = (params?.locale as string) ?? "ar";
+  const isAr = locale === "ar";
+
   useEffect(() => {
-    // Log the error to an error reporting service in the future
     console.error("[GoTripza Error]", error);
   }, [error]);
 
   return (
-    <main className="min-h-[80vh] flex items-center justify-center px-6">
+    <main
+      dir={isAr ? "rtl" : "ltr"}
+      className="min-h-[80vh] flex items-center justify-center px-6"
+    >
       <div className="text-center max-w-md">
         <p className="text-6xl mb-4 select-none">⚠️</p>
         <h1 className="font-display text-3xl font-bold mb-3 text-white">
-          Something went wrong
+          {isAr ? "حدث خطأ غير متوقع" : "Something went wrong"}
         </h1>
         <p className="text-white/55 mb-8 leading-relaxed text-sm">
-          An unexpected error occurred. Please try again — if the problem
-          persists, contact us at{" "}
-          <a
-            href="mailto:hello@gotripza.com"
-            className="text-brand-primary hover:underline"
-          >
-            hello@gotripza.com
-          </a>
+          {isAr ? (
+            <>
+              حدث خطأ غير متوقع. يرجى المحاولة مجدداً — إذا استمرت المشكلة،
+              تواصل معنا على{" "}
+              <a href="mailto:hello@gotripza.com" className="text-brand-primary hover:underline">
+                hello@gotripza.com
+              </a>
+            </>
+          ) : (
+            <>
+              An unexpected error occurred. Please try again — if the problem
+              persists, contact us at{" "}
+              <a href="mailto:hello@gotripza.com" className="text-brand-primary hover:underline">
+                hello@gotripza.com
+              </a>
+            </>
+          )}
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <button
             onClick={reset}
             className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-primary px-6 py-3 text-sm font-semibold text-white transition hover:bg-brand-primary/90"
           >
-            ↺ Try Again
+            {isAr ? "↺ حاول مجدداً" : "↺ Try Again"}
           </button>
           <Link
-            href="/en"
+            href={`/${locale}`}
             className="inline-flex items-center justify-center gap-2 rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white/70 transition hover:border-white/30 hover:text-white"
           >
-            ← Go Home
+            {isAr ? "← الرئيسية" : "← Go Home"}
           </Link>
         </div>
       </div>

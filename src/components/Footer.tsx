@@ -50,13 +50,13 @@ export function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
             <span>© {new Date().getFullYear()} GoTripza · {dict.footer.rights}</span>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
               <Link href={`${legalBase}/about`} className="hover:text-white/70">
-                {locale === "ar" ? "من نحن" : "About"}
+                {dict.footer.about}
               </Link>
               <Link href={`${legalBase}/contact`} className="hover:text-white/70">
-                {locale === "ar" ? "تواصل معنا" : "Contact"}
+                {dict.footer.contact}
               </Link>
               <Link href={`${legalBase}/disclosure`} className="hover:text-white/70">
-                {locale === "ar" ? "إفصاح الشراكات" : "Affiliate Disclosure"}
+                {dict.footer.affiliateDisclosure}
               </Link>
               <Link href={`${legalBase}/privacy`} className="hover:text-white/70">
                 {dict.footer.privacy}
