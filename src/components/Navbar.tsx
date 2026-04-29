@@ -27,6 +27,7 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [authOpen, setAuthOpen]     = useState(false);
 
+
   useEffect(() => {
     const onScroll = () => {
       setOverDark(window.scrollY > window.innerHeight * 0.7);
