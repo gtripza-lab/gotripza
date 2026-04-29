@@ -160,7 +160,7 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
               <div className="mt-auto flex flex-col gap-3 pt-8">
                 <LocaleSwitcher current={locale} overDark />
                 <button
-                  onClick={() => { setDrawerOpen(false); }}
+                  onClick={() => { setDrawerOpen(false); setAuthOpen(true); }}
                   className="w-full rounded-xl border border-white/10 bg-white/[0.05] py-2.5 text-sm text-white/70 hover:bg-white/[0.09] transition"
                 >
                   {dict.nav.signin}
