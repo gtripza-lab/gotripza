@@ -4,6 +4,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AdminDashboard } from "@/components/AdminDashboard";
+import { AdminLoginForm } from "@/components/AdminLoginForm";
 
 export const metadata = { title: "Admin — GoTripza", robots: "noindex,nofollow" };
 
@@ -17,15 +18,17 @@ export default async function AdminPage({
   const { locale } = params;
   if (!isLocale(locale)) notFound();
 
-  // Use server-only env var (no NEXT_PUBLIC_ prefix — never exposed to client bundle)
   const adminKey = process.env.ADMIN_KEY ?? "gotripza_admin_2025";
+  const isAr = locale === "ar";
+
+  // Not authenticated — show login form
   if (searchParams.key !== adminKey) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center gap-3">
-        <p className="text-white/30 text-sm">401 — Access denied.</p>
-        <p className="text-white/20 text-xs">
-          Append <code className="mx-1 rounded bg-white/10 px-1.5 py-0.5 text-white/50">?key=…</code> to the URL.
-        </p>
+      <div
+        className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0f]"
+        dir={isAr ? "rtl" : "ltr"}
+      >
+        <AdminLoginForm locale={locale as Locale} />
       </div>
     );
   }

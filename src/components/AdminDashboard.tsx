@@ -1,6 +1,7 @@
 import type { Locale } from "@/i18n/config";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { AdminCharts } from "./AdminCharts";
+import { AdminSEO } from "./AdminSEO";
 
 type ClickRow = {
   result_type: string;
@@ -8,7 +9,7 @@ type ClickRow = {
   destination: string;
   price: number | null;
   currency: string | null;
-  clicked_at: string;
+  created_at: string;
 };
 
 type ProviderStat = { provider: string; clicks: number; revenue_est: number };
@@ -27,9 +28,9 @@ async function fetchStats() {
   const weekStart  = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [allRes, todayRes, weekRes] = await Promise.all([
-    db.from("booking_clicks").select("result_type,provider,destination,price,currency,clicked_at"),
-    db.from("booking_clicks").select("id", { count: "exact", head: true }).gte("clicked_at", todayStart),
-    db.from("booking_clicks").select("id", { count: "exact", head: true }).gte("clicked_at", weekStart),
+    db.from("booking_clicks").select("result_type,provider,destination,price,currency,created_at"),
+    db.from("booking_clicks").select("id", { count: "exact", head: true }).gte("created_at", todayStart),
+    db.from("booking_clicks").select("id", { count: "exact", head: true }).gte("created_at", weekStart),
   ]);
 
   const rows: ClickRow[] = (allRes.data as ClickRow[]) ?? [];
@@ -57,7 +58,7 @@ async function fetchStats() {
     dailyMap.set(d.toISOString().slice(0, 10), 0);
   }
   for (const r of rows) {
-    const day = r.clicked_at.slice(0, 10);
+    const day = r.created_at.slice(0, 10);
     if (dailyMap.has(day)) dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
   }
   const daily: DailyStat[] = Array.from(dailyMap.entries()).map(([date, clicks]) => ({ date, clicks }));
@@ -149,6 +150,9 @@ export async function AdminDashboard({ locale }: { locale: Locale }) {
 
       {/* Charts (client component) */}
       <AdminCharts daily={stats.daily} byProvider={stats.byProvider} isAr={isAr} />
+
+      {/* SEO Content Management */}
+      <AdminSEO locale={locale} />
     </main>
   );
 }

@@ -9,6 +9,7 @@ import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Locale } from "@/i18n/config";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { cn } from "@/lib/utils";
+import { AuthModal } from "./AuthModal";
 
 export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const router = useRouter();
@@ -18,12 +19,13 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
     { label: dict.nav.flights,  href: `/${locale}/search#flights`  },
     { label: dict.nav.hotels,   href: `/${locale}/search#hotels`   },
     { label: dict.nav.packages, href: `/${locale}/search`          },
-    { label: dict.nav.explore,  href: "#explore"                   },
+    { label: isAr ? "الوجهات" : "Destinations", href: `/${locale}/destinations` },
     { label: dict.nav.blog,     href: `/${locale}/blog`            },
   ];
 
-  const [overDark, setOverDark] = useState(false);
+  const [overDark, setOverDark]     = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [authOpen, setAuthOpen]     = useState(false);
 
   useEffect(() => {
     const onScroll = () => {
@@ -75,11 +77,12 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
           <div className="flex items-center gap-2">
             <LocaleSwitcher current={locale} overDark={overDark} />
             <button
+              onClick={() => setAuthOpen(true)}
               className={cn(
-                "hidden rounded-full px-4 py-2 text-sm md:inline-flex",
+                "hidden rounded-full px-4 py-2 text-sm md:inline-flex transition",
                 overDark
-                  ? "text-white/80 hover:text-white"
-                  : "text-ink-950/70 hover:text-ink-950",
+                  ? "text-white/80 hover:text-white hover:bg-white/[0.06]"
+                  : "text-ink-950/70 hover:text-ink-950 hover:bg-ink-950/5",
               )}
             >
               {dict.nav.signin}
@@ -156,6 +159,12 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
               <div className="mt-auto flex flex-col gap-3 pt-8">
                 <LocaleSwitcher current={locale} overDark />
                 <button
+                  onClick={() => { setDrawerOpen(false); setAuthOpen(true); }}
+                  className="w-full rounded-xl border border-white/10 bg-white/[0.05] py-2.5 text-sm text-white/70 hover:bg-white/[0.09] transition"
+                >
+                  {dict.nav.signin}
+                </button>
+                <button
                   onClick={() => { setDrawerOpen(false); router.push(`/${locale}/search`); }}
                   className="btn-primary w-full !py-2.5 !text-sm"
                 >
@@ -166,6 +175,8 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
           </>
         )}
       </AnimatePresence>
+      {/* Auth Modal */}
+      <AuthModal open={authOpen} onClose={() => setAuthOpen(false)} locale={locale} />
     </>
   );
 }
