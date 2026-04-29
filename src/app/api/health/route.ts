@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const MARKER = process.env.TRAVELPAYOUTS_MARKER ?? "522867";
 const TP_TOKEN = process.env.TRAVELPAYOUTS_TOKEN ?? "";
@@ -24,18 +25,42 @@ async function checkTravelpayouts(): Promise<CheckResult> {
 
 async function checkSupabase(): Promise<CheckResult> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  // Use service-role key (server-only) to bypass RLS; fall back to anon key
   const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
   if (!url || !key) return { ok: false, detail: "SUPABASE env vars missing" };
   try {
-    const res = await fetch(`${url}/rest/v1/`, {
-      headers: { apikey: key, Authorization: `Bearer ${key}` },
+    // Query the events table (SELECT 0 rows) — fastest non-privileged check
+    const res = await fetch(`${url}/rest/v1/events?select=id&limit=1`, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        "Accept": "application/json",
+      },
       signal: AbortSignal.timeout(4000),
     });
     return { ok: res.ok, detail: `HTTP ${res.status}` };
   } catch (e) {
     return { ok: false, detail: (e as Error).message };
+  }
+}
+
+async function checkGemini(): Promise<CheckResult> {
+  const key = process.env.GEMINI_API_KEY ?? process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  if (!key) return { ok: false, detail: "GEMINI_API_KEY missing" };
+  try {
+    const genAI = new GoogleGenerativeAI(key);
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const res = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: 'Reply with only the word "ok"' }] }],
+      generationConfig: { maxOutputTokens: 4, temperature: 0 },
+    });
+    const text = res.response.text().trim().toLowerCase();
+    return { ok: text.includes("ok"), detail: `model=gemini-2.5-flash response="${text}"` };
+  } catch (e) {
+    return { ok: false, detail: (e as Error).message.slice(0, 120) };
   }
 }
 
@@ -52,9 +77,10 @@ function checkAffiliateMarker(): CheckResult {
 }
 
 export async function GET() {
-  const [tpCheck, supabaseCheck] = await Promise.all([
+  const [tpCheck, supabaseCheck, geminiCheck] = await Promise.all([
     checkTravelpayouts(),
     checkSupabase(),
+    checkGemini(),
   ]);
 
   const envCheck: CheckResult = {
@@ -69,7 +95,7 @@ export async function GET() {
 
   const affiliateCheck = checkAffiliateMarker();
 
-  const allOk = envCheck.ok && tpCheck.ok && affiliateCheck.ok;
+  const allOk = envCheck.ok && tpCheck.ok && affiliateCheck.ok && geminiCheck.ok && supabaseCheck.ok;
 
   const report = {
     status: allOk ? "healthy" : "degraded",
@@ -78,6 +104,7 @@ export async function GET() {
     timestamp: new Date().toISOString(),
     checks: {
       environment: envCheck,
+      gemini_ai: geminiCheck,
       travelpayouts_api: tpCheck,
       supabase: supabaseCheck,
       affiliate_marker: affiliateCheck,

@@ -11,7 +11,7 @@ if (!apiKey) {
 const genAI = new GoogleGenerativeAI(apiKey ?? "");
 
 // Primary model: gemini-2.5-flash — best price/performance for complex reasoning
-const MODEL_INTELLIGENCE = "gemini-2.5-flash-preview-05-20";
+const MODEL_INTELLIGENCE = "gemini-2.5-flash";
 // Lite model: for simple tasks (tips, descriptions)
 const MODEL_LITE = "gemini-2.0-flash-lite";
 
