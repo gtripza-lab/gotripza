@@ -1,5 +1,88 @@
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 
+const APP_URL_TOP = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+
+/** FAQ schema for destination / visa / budget pages */
+export function FaqJsonLd({ items }: { items: { q: string; a: string }[] }) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
+/** HowTo schema for visa application pages */
+export function HowToJsonLd({
+  name,
+  description,
+  steps,
+}: {
+  name: string;
+  description: string;
+  steps: string[];
+}) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name,
+    description,
+    step: steps.map((text, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      text,
+    })),
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
+/** Comparison page schema */
+export function ComparisonJsonLd({
+  nameA,
+  nameB,
+  pageUrl,
+}: {
+  nameA: string;
+  nameB: string;
+  pageUrl: string;
+}) {
+  const data = {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: `${nameA} vs ${nameB}`,
+    url: pageUrl,
+    publisher: { "@type": "Organization", name: "GoTripza", url: APP_URL_TOP },
+    breadcrumb: {
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: APP_URL_TOP },
+        { "@type": "ListItem", position: 2, name: "Compare", item: `${APP_URL_TOP}/compare` },
+        { "@type": "ListItem", position: 3, name: `${nameA} vs ${nameB}`, item: pageUrl },
+      ],
+    },
+  };
+  return (
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+    />
+  );
+}
+
 export function ArticleJsonLd({
   title,
   description,
