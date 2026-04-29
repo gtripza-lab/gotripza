@@ -8,13 +8,7 @@ import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { BottomNav } from "@/components/BottomNav";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
-export const metadata: Metadata = {
-  verification: {
-    other: {
-      'travelpayouts-verification': 'https://emrld.ltd/NTIyODY3.js?t=522867',
-    },
-  },
-};
+
 const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
@@ -149,10 +143,7 @@ export default function LocaleLayout({
   return (
     <html lang={locale} dir={dir} className="dark">
       <head>
-        <script 
-          async 
-          src="https://emrld.ltd/NTIyODY3.js?t=522867"
-        ></script>
+        <script async src="https://emrld.ltd/NTIyODY3.js?t=522867"></script>
       </head>
       <body
         className={`${sans.variable} ${display.variable} ${arabic.variable} antialiased font-sans`}
