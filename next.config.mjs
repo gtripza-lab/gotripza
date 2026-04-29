@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
   experimental: { webpackBuildWorker: false },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "source.unsplash.com" },
+      { protocol: "https", hostname: "photo.hotellook.com" },
+      { protocol: "https", hostname: "*.hotellook.com" },
     ],
   },
   async headers() {
@@ -15,24 +15,12 @@ const nextConfig = {
         source: "/(.*)",
         headers: [
           {
-            key: "Content-Security-Policy",
-            value: [
-              "default-src 'self'",
-              // Scripts — our code + analytics + TP widgets
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://tp.media https://*.travelpayouts.com https://*.jetradar.com https://*.aviasales.com",
-              // Styles
-              "style-src 'self' 'unsafe-inline'",
-              // Images from Unsplash + TP CDN
-              "img-src 'self' data: blob: https: https://images.unsplash.com https://*.tp.media https://*.travelpayouts.com",
-              // Frames — allow our WL + Travelpayouts widget CDN
-              "frame-src 'self' https://search.gotripza.com https://*.tp.media https://*.travelpayouts.com https://*.jetradar.com https://hotellook.com https://*.hotellook.com https://www.googletagmanager.com",
-              // Connections — API + analytics + TP
-              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.travelpayouts.com https://tp.media https://api.travelpayouts.com https://hotellook.com",
-              // Fonts
-              "font-src 'self' data:",
-              // Form submissions
-              "form-action 'self' https://search.gotripza.com https://hotellook.com",
-            ].join("; "),
+            key: "Strict-Transport-Security",
+            value: "max-age=63072000; includeSubDomains; preload",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "SAMEORIGIN",
           },
           {
             key: "X-Content-Type-Options",
@@ -41,6 +29,23 @@ const nextConfig = {
           {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(self), geolocation=(self)",
+          },
+          {
+            key: "Content-Security-Policy",
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://tp.media https://*.travelpayouts.com https://*.jetradar.com https://*.aviasales.com https://emrld.ltd",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https: https://images.unsplash.com https://*.tp.media https://*.travelpayouts.com https://photo.hotellook.com https://*.hotellook.com",
+              "frame-src 'self' https://search.gotripza.com https://*.tp.media https://*.travelpayouts.com https://*.jetradar.com https://hotellook.com https://*.hotellook.com https://www.googletagmanager.com",
+              "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.travelpayouts.com https://tp.media https://api.travelpayouts.com https://hotellook.com https://engine.hotellook.com https://*.supabase.co",
+              "font-src 'self' data:",
+              "form-action 'self' https://search.gotripza.com https://hotellook.com",
+            ].join("; "),
           },
         ],
       },

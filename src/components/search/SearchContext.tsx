@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { TripIntent } from "@/lib/gemini";
+import type { TripIntent, BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { Locale } from "@/i18n/config";
 import { currencyForLocale, type Currency } from "@/lib/utils";
@@ -29,6 +29,12 @@ type SearchData = {
   currency: Currency;
   flightSearchUrl: string;
   hotelSearchUrl: string;
+  // Intelligence fields
+  budget_verdict: BudgetVerdict | null;
+  confidence: ConfidenceScore | null;
+  destination_intel: DestinationIntel | null;
+  clarification_needed: boolean;
+  clarification_question: string | null;
 };
 
 type SearchContextValue = {
@@ -45,36 +51,20 @@ type SearchContextValue = {
 
 const SearchContext = createContext<SearchContextValue | null>(null);
 
-/** Maps raw technical errors → friendly localised messages shown in the UI */
 function friendlyError(raw: string, locale: string): string {
   const r = raw.toLowerCase();
-  if (
-    r.includes("rate") ||
-    r.includes("quota") ||
-    r.includes("429") ||
-    r.includes("resource_exhausted") ||
-    r.includes("too many")
-  )
+  if (r.includes("rate") || r.includes("quota") || r.includes("429") || r.includes("resource_exhausted"))
     return locale === "ar"
       ? "النظام يعالج طلبات كثيرة الآن. انتظر لحظة وحاول مجدداً."
       : "We're handling a lot of requests. Please try again in a moment.";
-  if (
-    r.includes("model") ||
-    r.includes("available") ||
-    r.includes("deprecated") ||
-    r.includes("gemini")
-  )
-    return locale === "ar"
-      ? "عذراً، حدث خطأ في معالجة طلبك. يرجى المحاولة مرة أخرى."
-      : "Sorry, something went wrong processing your request. Please try again.";
-  if (r.includes("parse") || r.includes("json") || r.includes("syntax"))
-    return locale === "ar"
-      ? "تعذّر فهم طلبك. حاول صياغته بشكل مختلف."
-      : "We couldn't understand your request. Try rephrasing it.";
   if (r.includes("network") || r.includes("fetch") || r.includes("econnrefused") || r.includes("timeout"))
     return locale === "ar"
       ? "تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مجدداً."
       : "Connection failed. Please check your internet and try again.";
+  if (r.includes("parse") || r.includes("json") || r.includes("syntax"))
+    return locale === "ar"
+      ? "تعذّر فهم طلبك. حاول صياغته بشكل مختلف."
+      : "We couldn't understand your request. Try rephrasing it.";
   return locale === "ar"
     ? "عذراً، حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
     : "An unexpected error occurred. Please try again.";
@@ -95,8 +85,7 @@ export function SearchProvider({
   const search = useCallback(async (q: string) => {
     if (!q.trim()) return;
 
-    // ── Redirect to /[locale]/search when on the main domain homepage ─────
-    // Keeps the homepage clean — full AI search experience is on /search
+    // Redirect to /search on the main domain homepage
     if (typeof window !== "undefined") {
       const host = window.location.hostname;
       const isMainDomain =
@@ -114,13 +103,15 @@ export function SearchProvider({
     setError(null);
     const uiCurrency = currencyForLocale(initialLocale);
     logEvent("search_submitted", { query: q, locale: initialLocale, currency: uiCurrency });
+
     try {
       const parseRes = await fetch("/api/parse", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ query: q }),
       });
-      let parsedJson: {
+
+      type ParseResponse = {
         intent?: TripIntent;
         locale?: "ar" | "en";
         message?: string;
@@ -129,23 +120,24 @@ export function SearchProvider({
         tips?: string | null;
         mock?: boolean;
         error?: string;
-      } = {};
-      try {
-        parsedJson = await parseRes.json();
-      } catch {
-        throw new Error("parse_failed");
-      }
-      if (!parseRes.ok || !parsedJson.intent) {
-        throw new Error(parsedJson.error ?? "parse_failed");
-      }
-      const intent = parsedJson.intent;
+        budget_verdict?: BudgetVerdict | null;
+        confidence?: ConfidenceScore | null;
+        destination_intel?: DestinationIntel | null;
+        clarification_needed?: boolean;
+        clarification_question?: string | null;
+      };
+
+      let parsedJson: ParseResponse = {};
+      try { parsedJson = await parseRes.json(); } catch { throw new Error("parse_failed"); }
+      if (!parseRes.ok || !parsedJson.intent) throw new Error(parsedJson.error ?? "parse_failed");
+
+      const intent = parsedJson.intent!;
       const locale = parsedJson.locale ?? "en";
       const message = parsedJson.message ?? "";
       const tips = parsedJson.tips ?? null;
-      const wants: Side[] =
-        Array.isArray(parsedJson.wants) && parsedJson.wants.length
-          ? (parsedJson.wants.filter((w) => w === "flights" || w === "hotels") as Side[])
-          : ["flights", "hotels"];
+      const wants: Side[] = Array.isArray(parsedJson.wants) && parsedJson.wants.length
+        ? (parsedJson.wants.filter((w) => w === "flights" || w === "hotels") as Side[])
+        : ["flights", "hotels"];
       const followup = parsedJson.followup ?? null;
 
       const searchRes = await fetch("/api/search", {
@@ -153,18 +145,19 @@ export function SearchProvider({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ intent, currency: uiCurrency }),
       });
-      let searchJson: {
+
+      type SearchResponse = {
         flights?: FlightOffer[];
         hotels?: HotelOffer[];
         mock?: boolean;
         currency?: Currency;
         error?: string;
-      } = {};
-      try {
-        searchJson = await searchRes.json();
-      } catch {
-        throw new Error("search_failed");
-      }
+        flightSearchUrl?: string;
+        hotelSearchUrl?: string;
+      };
+
+      let searchJson: SearchResponse = {};
+      try { searchJson = await searchRes.json(); } catch { throw new Error("search_failed"); }
       if (!searchRes.ok) throw new Error(searchJson.error ?? "search_failed");
 
       setData({
@@ -178,16 +171,24 @@ export function SearchProvider({
         wants,
         followup,
         currency: searchJson.currency ?? uiCurrency,
-        flightSearchUrl: (searchJson as Record<string, unknown>).flightSearchUrl as string ?? `https://www.aviasales.com/?marker=522867`,
-        hotelSearchUrl: (searchJson as Record<string, unknown>).hotelSearchUrl as string ?? `https://www.hotellook.com/search?marker=522867`,
+        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=522867`,
+        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://www.hotellook.com/search?marker=522867`,
+        // Intelligence
+        budget_verdict: parsedJson.budget_verdict ?? null,
+        confidence: parsedJson.confidence ?? null,
+        destination_intel: parsedJson.destination_intel ?? null,
+        clarification_needed: parsedJson.clarification_needed ?? false,
+        clarification_question: parsedJson.clarification_question ?? null,
       });
       setStatus("ready");
+
       logEvent("results_rendered", {
         destination: intent.destination,
         flights: searchJson.flights?.length ?? 0,
         hotels: searchJson.hotels?.length ?? 0,
         wants,
         mock: Boolean(parsedJson.mock || searchJson.mock),
+        confidence_score: parsedJson.confidence?.score ?? null,
       });
 
       requestAnimationFrame(() => {
@@ -203,15 +204,7 @@ export function SearchProvider({
 
   const reveal = useCallback((side: Side) => {
     logEvent("followup_revealed", { side });
-    setData((d) =>
-      d
-        ? {
-            ...d,
-            wants: Array.from(new Set([...d.wants, side])) as Side[],
-            followup: null,
-          }
-        : d,
-    );
+    setData((d) => d ? { ...d, wants: Array.from(new Set([...d.wants, side])) as Side[], followup: null } : d);
   }, []);
 
   const dismissFollowup = useCallback(() => {
@@ -220,17 +213,7 @@ export function SearchProvider({
   }, []);
 
   const value = useMemo<SearchContextValue>(
-    () => ({
-      query,
-      setQuery,
-      status,
-      data,
-      error,
-      search,
-      reveal,
-      dismissFollowup,
-      uiLocale: initialLocale,
-    }),
+    () => ({ query, setQuery, status, data, error, search, reveal, dismissFollowup, uiLocale: initialLocale }),
     [query, status, data, error, search, reveal, dismissFollowup, initialLocale],
   );
 

@@ -17,11 +17,15 @@ export default async function AdminPage({
   const { locale } = params;
   if (!isLocale(locale)) notFound();
 
-  const adminKey = process.env.NEXT_PUBLIC_ADMIN_KEY ?? "gotripza_admin_2025";
+  // Use server-only env var (no NEXT_PUBLIC_ prefix — never exposed to client bundle)
+  const adminKey = process.env.ADMIN_KEY ?? "gotripza_admin_2025";
   if (searchParams.key !== adminKey) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-white/50 text-sm">
-        401 — Access denied. Append <code className="mx-1 text-white/80">?key=…</code> to the URL.
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3">
+        <p className="text-white/30 text-sm">401 — Access denied.</p>
+        <p className="text-white/20 text-xs">
+          Append <code className="mx-1 rounded bg-white/10 px-1.5 py-0.5 text-white/50">?key=…</code> to the URL.
+        </p>
       </div>
     );
   }

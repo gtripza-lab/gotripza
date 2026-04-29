@@ -1,4 +1,5 @@
 "use client";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Plane,
@@ -12,6 +13,17 @@ import {
   TrendingDown,
   Award,
   Zap,
+  ShieldCheck,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Thermometer,
+  Stamp,
+  Shirt,
+  Calendar,
+  DollarSign,
+  TrendingUp,
+  MessageCircleQuestion,
 } from "lucide-react";
 import { useSearch } from "./search/SearchContext";
 import { logEvent } from "@/lib/events";
@@ -21,6 +33,7 @@ import { SearchSkeleton } from "./SearchSkeleton";
 import { formatPrice } from "@/lib/utils";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
+import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
 
 export function SearchResults({ dict }: { dict: Dictionary }) {
   const { status, data, error } = useSearch();
@@ -73,6 +86,11 @@ function ReadyState({
     currency: import("@/lib/utils").Currency;
     flightSearchUrl: string;
     hotelSearchUrl: string;
+    budget_verdict: BudgetVerdict | null;
+    confidence: ConfidenceScore | null;
+    destination_intel: DestinationIntel | null;
+    clarification_needed: boolean;
+    clarification_question: string | null;
   };
 }) {
   const { reveal, dismissFollowup } = useSearch();
@@ -133,9 +151,17 @@ function ReadyState({
           </div>
         </div>
 
+        {/* ── CLARIFICATION CARD ─────────────────────────────── */}
+        {data.clarification_needed && data.clarification_question && (
+          <ClarificationCard
+            question={data.clarification_question}
+            isAr={isAr}
+          />
+        )}
+
         {/* AI message + tips */}
         {(data.message || data.tips) && (
-          <div className="mb-8 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md">
+          <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.04] p-5 backdrop-blur-md">
             {data.message && (
               <p className="text-sm font-medium text-white/90">{data.message}</p>
             )}
@@ -146,6 +172,23 @@ function ReadyState({
               </p>
             )}
           </div>
+        )}
+
+        {/* ── INTELLIGENCE ROW: Confidence + Budget Verdict ───── */}
+        {(data.confidence || data.budget_verdict) && (
+          <div className="mb-6 grid gap-4 sm:grid-cols-2">
+            {data.confidence && (
+              <ConfidenceWidget confidence={data.confidence} isAr={isAr} />
+            )}
+            {data.budget_verdict && (
+              <BudgetVerdictBanner verdict={data.budget_verdict} isAr={isAr} />
+            )}
+          </div>
+        )}
+
+        {/* ── DESTINATION INTEL PANEL ─────────────────────────── */}
+        {data.destination_intel && (
+          <DestinationIntelPanel intel={data.destination_intel} isAr={isAr} destination={data.intent.destination} />
         )}
 
         {/* ── FLIGHTS SECTION ─────────────────────────────────── */}
@@ -247,6 +290,348 @@ function ReadyState({
         )}
       </div>
     </motion.div>
+  );
+}
+
+/* ─── Clarification Card ─────────────────────────────────────────────── */
+function ClarificationCard({ question, isAr }: { question: string; isAr: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] p-5 backdrop-blur-md"
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-amber-400/15">
+        <MessageCircleQuestion className="h-4 w-4 text-amber-300" />
+      </span>
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wide text-amber-300/80">
+          {isAr ? "توضيح مطلوب" : "Clarification Needed"}
+        </p>
+        <p className="mt-1 text-sm text-white/80">{question}</p>
+        <p className="mt-2 text-xs text-white/40">
+          {isAr
+            ? "النتائج أدناه تعتمد على أفضل تفسير متاح. أعد صياغة بحثك لنتائج أدق."
+            : "Results below use the most likely interpretation. Refine your query for better accuracy."}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ─── Confidence Score Widget ────────────────────────────────────────── */
+function ConfidenceWidget({ confidence, isAr }: { confidence: ConfidenceScore; isAr: boolean }) {
+  const score = confidence.score;
+
+  const colorConfig =
+    score >= 8
+      ? { ring: "border-emerald-500/30", bg: "from-emerald-500/15 to-emerald-600/5", scoreColor: "text-emerald-400", barColor: "bg-emerald-500" }
+      : score >= 6
+      ? { ring: "border-sky-500/30", bg: "from-sky-500/15 to-sky-600/5", scoreColor: "text-sky-400", barColor: "bg-sky-500" }
+      : score >= 4
+      ? { ring: "border-amber-500/30", bg: "from-amber-500/15 to-amber-600/5", scoreColor: "text-amber-400", barColor: "bg-amber-500" }
+      : { ring: "border-rose-500/30", bg: "from-rose-500/15 to-rose-600/5", scoreColor: "text-rose-400", barColor: "bg-rose-500" };
+
+  const impactIcon = (impact: "positive" | "neutral" | "negative") =>
+    impact === "positive" ? "+" : impact === "negative" ? "−" : "·";
+
+  const impactColor = (impact: "positive" | "neutral" | "negative") =>
+    impact === "positive"
+      ? "text-emerald-400"
+      : impact === "negative"
+      ? "text-rose-400"
+      : "text-white/40";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`rounded-2xl border bg-gradient-to-br p-5 ${colorConfig.ring} ${colorConfig.bg}`}
+    >
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-white/60" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-white/60">
+            {isAr ? "مؤشر الثقة" : "Confidence Score"}
+          </span>
+        </div>
+        <div className={`font-display text-2xl font-bold ${colorConfig.scoreColor}`}>
+          {score.toFixed(1)}
+          <span className="text-sm text-white/30">/10</span>
+        </div>
+      </div>
+
+      {/* Bar */}
+      <div className="mb-3 h-1.5 w-full overflow-hidden rounded-full bg-white/[0.06]">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${(score / 10) * 100}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className={`h-full rounded-full ${colorConfig.barColor}`}
+        />
+      </div>
+
+      <p className="mb-3 text-xs font-medium text-white/70">
+        {isAr ? confidence.label_ar : confidence.label_en}
+      </p>
+
+      {confidence.factors.length > 0 && (
+        <ul className="space-y-1">
+          {confidence.factors.slice(0, 4).map((f, i) => (
+            <li key={i} className="flex items-start gap-1.5 text-[11px] text-white/50">
+              <span className={`mt-px font-bold ${impactColor(f.impact)}`}>{impactIcon(f.impact)}</span>
+              <span>{isAr ? f.factor_ar : f.factor_en}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </motion.div>
+  );
+}
+
+/* ─── Budget Verdict Banner ──────────────────────────────────────────── */
+function BudgetVerdictBanner({ verdict, isAr }: { verdict: BudgetVerdict; isAr: boolean }) {
+  const v = verdict.verdict;
+  const colorConfig =
+    v === "generous"
+      ? { ring: "border-emerald-500/30", bg: "from-emerald-500/15 to-emerald-600/5", icon: "text-emerald-400", badge: "bg-emerald-500/15 text-emerald-300" }
+      : v === "realistic"
+      ? { ring: "border-sky-500/30", bg: "from-sky-500/15 to-sky-600/5", icon: "text-sky-400", badge: "bg-sky-500/15 text-sky-300" }
+      : v === "tight"
+      ? { ring: "border-amber-500/30", bg: "from-amber-500/15 to-amber-600/5", icon: "text-amber-400", badge: "bg-amber-500/15 text-amber-300" }
+      : { ring: "border-rose-500/30", bg: "from-rose-500/15 to-rose-600/5", icon: "text-rose-400", badge: "bg-rose-500/15 text-rose-300" };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`rounded-2xl border bg-gradient-to-br p-5 ${colorConfig.ring} ${colorConfig.bg}`}
+    >
+      <div className="mb-3 flex items-center gap-2">
+        <DollarSign className={`h-4 w-4 ${colorConfig.icon}`} />
+        <span className="text-xs font-semibold uppercase tracking-wide text-white/60">
+          {isAr ? "تقييم الميزانية" : "Budget Assessment"}
+        </span>
+        <span className={`ml-auto rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${colorConfig.badge}`}>
+          {isAr ? verdict.label_ar : verdict.label_en}
+        </span>
+      </div>
+
+      <p className="text-xs leading-relaxed text-white/70">
+        {isAr ? verdict.explanation_ar : verdict.explanation_en}
+      </p>
+
+      {verdict.suggested_budget_usd && (v === "tight" || v === "insufficient") && (
+        <p className="mt-2 flex items-center gap-1.5 text-[11px] text-white/50">
+          <TrendingUp className="h-3 w-3" />
+          {isAr
+            ? `الميزانية الموصى بها: $${verdict.suggested_budget_usd.toLocaleString()}`
+            : `Recommended budget: $${verdict.suggested_budget_usd.toLocaleString()}`}
+        </p>
+      )}
+
+      {verdict.alternative_destinations.length > 0 && (v === "tight" || v === "insufficient") && (
+        <div className="mt-3">
+          <p className="mb-1.5 text-[11px] text-white/40">
+            {isAr ? "وجهات بديلة مناسبة لميزانيتك:" : "Budget-friendly alternatives:"}
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {verdict.alternative_destinations.map((dest) => (
+              <span
+                key={dest}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-0.5 text-[11px] text-white/60"
+              >
+                {dest}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+/* ─── Destination Intel Panel ────────────────────────────────────────── */
+function DestinationIntelPanel({
+  intel,
+  isAr,
+  destination,
+}: {
+  intel: DestinationIntel;
+  isAr: boolean;
+  destination: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  const safetyColor =
+    intel.safety_level === "excellent"
+      ? "text-emerald-400 bg-emerald-500/15"
+      : intel.safety_level === "good"
+      ? "text-sky-400 bg-sky-500/15"
+      : intel.safety_level === "moderate"
+      ? "text-amber-400 bg-amber-500/15"
+      : "text-rose-400 bg-rose-500/15";
+
+  const safetyLabel = {
+    excellent: isAr ? "ممتاز" : "Excellent",
+    good: isAr ? "جيد" : "Good",
+    moderate: isAr ? "متوسط" : "Moderate",
+    caution: isAr ? "تنبيه" : "Caution",
+  }[intel.safety_level];
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mb-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-md"
+    >
+      {/* Header — always visible */}
+      <button
+        type="button"
+        onClick={() => setExpanded((p) => !p)}
+        className="flex w-full items-center justify-between gap-3 p-5 transition hover:bg-white/[0.02]"
+      >
+        <div className="flex items-center gap-2">
+          <MapPin className="h-4 w-4 text-brand-mint" />
+          <span className="text-sm font-semibold text-white/90">
+            {isAr ? `دليل الوجهة · ${destination}` : `Destination Guide · ${destination}`}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${safetyColor}`}>
+            {isAr ? "الأمان:" : "Safety:"} {safetyLabel}
+          </span>
+          {expanded ? (
+            <ChevronUp className="h-4 w-4 text-white/40" />
+          ) : (
+            <ChevronDown className="h-4 w-4 text-white/40" />
+          )}
+        </div>
+      </button>
+
+      {/* Expandable body */}
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="grid gap-4 px-5 pb-5 sm:grid-cols-2 lg:grid-cols-3">
+
+              {/* Weather & Best Months */}
+              <IntelCard
+                icon={<Thermometer className="h-4 w-4 text-sky-400" />}
+                title={isAr ? "الطقس والموسم" : "Weather & Season"}
+              >
+                <p className="text-xs leading-relaxed text-white/65">
+                  {isAr ? intel.weather_now_ar : intel.weather_now_en}
+                </p>
+                <p className="mt-1.5 flex items-start gap-1.5 text-[11px] text-white/40">
+                  <Calendar className="mt-0.5 h-3 w-3 shrink-0" />
+                  {isAr ? intel.best_months_ar : intel.best_months_en}
+                </p>
+              </IntelCard>
+
+              {/* Visa */}
+              {(intel.visa_note_ar || intel.visa_note_en || intel.visa_required_for_saudis !== null) && (
+                <IntelCard
+                  icon={<Stamp className="h-4 w-4 text-purple-400" />}
+                  title={isAr ? "التأشيرة (السعوديون)" : "Visa (Saudis)"}
+                >
+                  {intel.visa_required_for_saudis !== null && (
+                    <span className={`mb-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${intel.visa_required_for_saudis ? "bg-amber-500/15 text-amber-300" : "bg-emerald-500/15 text-emerald-300"}`}>
+                      {intel.visa_required_for_saudis
+                        ? (isAr ? "تأشيرة مطلوبة" : "Visa required")
+                        : (isAr ? "بدون تأشيرة" : "Visa-free")}
+                    </span>
+                  )}
+                  {(isAr ? intel.visa_note_ar : intel.visa_note_en) && (
+                    <p className="text-xs leading-relaxed text-white/60">
+                      {isAr ? intel.visa_note_ar : intel.visa_note_en}
+                    </p>
+                  )}
+                </IntelCard>
+              )}
+
+              {/* Clothing tip */}
+              {(intel.clothing_tip_ar || intel.clothing_tip_en) && (
+                <IntelCard
+                  icon={<Shirt className="h-4 w-4 text-rose-300" />}
+                  title={isAr ? "نصيحة اللباس" : "Clothing Tip"}
+                >
+                  <p className="text-xs leading-relaxed text-white/65">
+                    {isAr ? intel.clothing_tip_ar : intel.clothing_tip_en}
+                  </p>
+                  {intel.local_currency && (
+                    <p className="mt-1.5 text-[11px] text-white/40">
+                      {isAr ? "العملة المحلية:" : "Local currency:"} {intel.local_currency}
+                      {intel.time_zone && ` · ${intel.time_zone}`}
+                    </p>
+                  )}
+                </IntelCard>
+              )}
+
+              {/* Neighborhoods */}
+              {((isAr ? intel.top_neighborhoods_ar : intel.top_neighborhoods_en).length > 0) && (
+                <IntelCard
+                  icon={<MapPin className="h-4 w-4 text-brand-mint" />}
+                  title={isAr ? "أفضل المناطق للإقامة" : "Best Neighborhoods"}
+                >
+                  <ul className="space-y-1">
+                    {(isAr ? intel.top_neighborhoods_ar : intel.top_neighborhoods_en).map((n) => (
+                      <li key={n} className="flex items-center gap-1.5 text-xs text-white/65">
+                        <span className="h-1.5 w-1.5 rounded-full bg-brand-mint/60" />
+                        {n}
+                      </li>
+                    ))}
+                  </ul>
+                </IntelCard>
+              )}
+
+              {/* Activities */}
+              {((isAr ? intel.top_activities_ar : intel.top_activities_en).length > 0) && (
+                <IntelCard
+                  icon={<Zap className="h-4 w-4 text-amber-400" />}
+                  title={isAr ? "أبرز الأنشطة" : "Top Activities"}
+                >
+                  <ul className="space-y-1">
+                    {(isAr ? intel.top_activities_ar : intel.top_activities_en).map((a) => (
+                      <li key={a} className="flex items-center gap-1.5 text-xs text-white/65">
+                        <span className="h-1.5 w-1.5 rounded-full bg-amber-400/60" />
+                        {a}
+                      </li>
+                    ))}
+                  </ul>
+                </IntelCard>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
+function IntelCard({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] p-4">
+      <div className="mb-2.5 flex items-center gap-2">
+        {icon}
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-white/50">{title}</span>
+      </div>
+      {children}
+    </div>
   );
 }
 

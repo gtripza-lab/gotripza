@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseTripQuery, getLiveTips } from "@/lib/gemini";
+import { getTravelIntelligence } from "@/lib/gemini";
 import {
   heuristicParse,
   detectLocale,
@@ -10,7 +10,6 @@ import {
 
 export const runtime = "nodejs";
 
-/** Any Gemini / network / parse error → fall back gracefully */
 function isGeminiError(message: string) {
   return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid/i.test(
     message,
@@ -28,6 +27,12 @@ function heuristicFallback(query: string, notice: string) {
     wants,
     followup: followupMessage(locale, wants),
     tips: null,
+    // Intelligence fields — null in fallback mode
+    budget_verdict: null,
+    confidence: null,
+    destination_intel: null,
+    clarification_needed: false,
+    clarification_question: null,
     mock: true,
     notice,
   });
@@ -46,24 +51,30 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await parseTripQuery(query);
-    const tips = await getLiveTips(result.intent.destination, result.locale);
-    // Defensive: if Gemini omitted followup but wants is narrow, synthesize one.
-    const followup =
-      result.followup ?? followupMessage(result.locale, result.wants);
+    const intel = await getTravelIntelligence(query);
+
+    // Live tips: run in parallel — best effort, never blocks
+    const { getLiveTips } = await import("@/lib/gemini");
+    const tips = await getLiveTips(intel.intent.destination, intel.locale).catch(() => null);
+
     return NextResponse.json({
-      intent: result.intent,
-      locale: result.locale,
-      message: result.message,
-      wants: result.wants,
-      followup,
+      intent: intel.intent,
+      locale: intel.locale,
+      message: intel.message,
+      wants: intel.wants,
+      followup: intel.followup,
       tips,
+      // Full intelligence fields
+      budget_verdict: intel.budget_verdict ?? null,
+      confidence: intel.confidence ?? null,
+      destination_intel: intel.destination_intel ?? null,
+      clarification_needed: intel.clarification_needed ?? false,
+      clarification_question: intel.clarification_question ?? null,
       mock: false,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[parse] Gemini error, using heuristic fallback:", message);
-    // Always fall back to heuristic — never expose a 500 to the user
+    console.error("[parse] Intelligence engine error, using heuristic fallback:", message);
     return heuristicFallback(
       query,
       isGeminiError(message) ? "gemini_error_using_heuristic" : "unknown_error_using_heuristic",
