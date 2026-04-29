@@ -302,6 +302,9 @@ function ReadyState({
 }
 
 /* ─── Affiliate Upsell Row (Car Rentals + Activities) ───────────────── */
+// Always falls back to hardcoded 522867 so the marker is NEVER lost
+const TP_MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
+
 function AffiliateUpsellRow({
   destination,
   isAr,
@@ -309,7 +312,7 @@ function AffiliateUpsellRow({
   destination: string;
   isAr: boolean;
 }) {
-  const MARKER = "522867";
+  const MARKER = TP_MARKER;
   const carUrl = `https://www.discovercars.com/?a_aid=${MARKER}&a_bid=cars&destination=${encodeURIComponent(destination)}`;
   const activitiesUrl = `https://www.getyourguide.com/s/?q=${encodeURIComponent(destination)}&partner_id=${MARKER}`;
 
@@ -622,13 +625,13 @@ function DestinationIntelPanel({
               {(intel.visa_note_ar || intel.visa_note_en || intel.visa_required_for_saudis !== null) && (
                 <IntelCard
                   icon={<Stamp className="h-4 w-4 text-purple-400" />}
-                  title={isAr ? "التأشيرة (السعوديون)" : "Visa (Saudis)"}
+                  title={isAr ? "معلومات التأشيرة" : "Visa Info"}
                 >
                   {intel.visa_required_for_saudis !== null && (
                     <span className={`mb-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${intel.visa_required_for_saudis ? "bg-amber-500/15 text-amber-300" : "bg-emerald-500/15 text-emerald-300"}`}>
                       {intel.visa_required_for_saudis
                         ? (isAr ? "تأشيرة مطلوبة" : "Visa required")
-                        : (isAr ? "بدون تأشيرة" : "Visa-free")}
+                        : (isAr ? "تأشيرة عند الوصول / مجاناً" : "Visa-on-arrival / Visa-free")}
                     </span>
                   )}
                   {(isAr ? intel.visa_note_ar : intel.visa_note_en) && (

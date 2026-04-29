@@ -4,7 +4,8 @@ import { Plane, BedDouble } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
 
-const MARKER = "522867";
+// Always read from env — fallback ensures marker is never lost even if env is missing
+const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
 type Tab = "flights" | "hotels";
 
@@ -13,14 +14,21 @@ type Tab = "flights" | "hotels";
  * Tab 1 → Aviasales (flights) white-label with marker
  * Tab 2 → Hotellook (hotels) white-label with marker
  *
- * Uses iframe embed — works without API keys.
  * Affiliate marker is always injected so every booking is tracked.
+ * currency is geo-detected by the server and passed down as a prop.
  */
-export function TravelpayoutsSearch({ locale }: { locale: Locale }) {
+export function TravelpayoutsSearch({
+  locale,
+  currency: propCurrency,
+}: {
+  locale: Locale;
+  currency?: string;
+}) {
   const [tab, setTab] = useState<Tab>("flights");
   const isAr = locale === "ar";
   const lang = isAr ? "ar" : "en";
-  const currency = isAr ? "SAR" : "USD";
+  // Use geo-detected currency from parent; fall back to USD (universally safe)
+  const currency = propCurrency ?? "USD";
 
   // Travelpayouts official white-label URLs with marker
   const flightsUrl = `https://www.aviasales.com/?marker=${MARKER}&locale=${lang}&currency=${currency}`;

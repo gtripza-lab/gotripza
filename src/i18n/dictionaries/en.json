@@ -131,28 +131,28 @@
     }
   },
   "trust": {
-    "title": "Trusted by thousands of travelers",
+    "title": "Trusted by travelers worldwide",
     "verified": "Verified Partner",
     "secure": "SSL Encrypted",
     "noFees": "No Hidden Fees",
     "partners": "Certified Partners",
     "testimonials": [
       {
-        "name": "Mohammed Al-Otaibi",
-        "city": "Riyadh",
-        "text": "Saved $320 compared to the airline's own website. Results in seconds — this is how travel search should work.",
+        "name": "James Carter",
+        "city": "London",
+        "text": "Saved £280 vs booking directly. The AI understood my trip perfectly — results in under 10 seconds.",
         "rating": 5
       },
       {
-        "name": "Sara Al-Shammari",
-        "city": "Jeddah",
-        "text": "Finally a search tool that understands what I actually want. Typed in Arabic, got perfect results instantly.",
+        "name": "Sophie Martin",
+        "city": "Paris",
+        "text": "Best travel search I've ever used. Compared hundreds of options in seconds and got a price I couldn't find anywhere else.",
         "rating": 5
       },
       {
-        "name": "Faisal Al-Dosari",
-        "city": "Dammam",
-        "text": "Best price comparison tool I've used. Booked the family trip through GoTripza — excellent experience.",
+        "name": "Kenji Tanaka",
+        "city": "Tokyo",
+        "text": "Used GoTripza to plan a trip to Bali — it handled dates, hotels, and flights perfectly. Genuinely impressive.",
         "rating": 5
       }
     ]

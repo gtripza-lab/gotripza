@@ -14,6 +14,7 @@ import { SearchResults } from "@/components/SearchResults";
 import { SocialProof } from "@/components/SocialProof";
 import { StatsBar } from "@/components/StatsBar";
 import { TrustSection } from "@/components/TrustSection";
+import { detectGeo } from "@/lib/geo";
 
 export default async function LandingPage({
   params,
@@ -23,9 +24,10 @@ export default async function LandingPage({
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
+  const { currency } = detectGeo();
 
   return (
-    <SearchProvider initialLocale={locale as Locale}>
+    <SearchProvider initialLocale={locale as Locale} initialCurrency={currency}>
       <Navbar dict={dict} locale={locale as Locale} />
       <main>
         <Hero dict={dict} />

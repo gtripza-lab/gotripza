@@ -84,7 +84,7 @@ async function fetchFlightPage(
 }
 
 export async function searchFlights(params: {
-  origin: string;
+  origin?: string | null;
   destination: string;
   departure_date?: string | null;
   return_date?: string | null;
@@ -92,6 +92,8 @@ export async function searchFlights(params: {
   subid?: string;
 }): Promise<FlightOffer[]> {
   const currency = params.currency ?? "usd";
+  // If no origin specified, skip flight search (can't query without origin)
+  if (!params.origin) return [];
 
   // First attempt: with dates (if provided and in range)
   const results = await fetchFlightPage(
@@ -106,7 +108,7 @@ export async function searchFlights(params: {
 
   // Second attempt: without specific dates (broader cache hit)
   const fallback = await fetchFlightPage(
-    params.origin,
+    params.origin!,
     params.destination,
     null,
     null,

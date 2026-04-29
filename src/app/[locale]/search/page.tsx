@@ -5,6 +5,7 @@ import { Footer } from "@/components/Footer";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { SearchPageClient } from "@/components/SearchPageClient";
+import { detectGeo } from "@/lib/geo";
 
 export const dynamic = "force-dynamic"; // always read fresh searchParams
 
@@ -19,8 +20,8 @@ export async function generateMetadata({
       ? "بحث ذكي عن رحلات الطيران والفنادق | GoTripza"
       : "AI Flight & Hotel Search | GoTripza",
     description: isAr
-      ? "ابحث بالعربي عن أرخص تذاكر الطيران والفنادق. ذكاء اصطناعي يفهمك ويقارن مئات الشركات فوراً بالريال السعودي."
-      : "Search flights and hotels with AI. Compare hundreds of providers instantly and get the best price.",
+      ? "ابحث عن أرخص تذاكر الطيران والفنادق حول العالم. ذكاء اصطناعي يفهمك ويقارن مئات الشركات فوراً بعملتك."
+      : "Search flights and hotels worldwide with AI. Compare hundreds of providers instantly and get the best price in your currency.",
     alternates: {
       canonical: isAr
         ? "https://gotripza.com/ar/search"
@@ -39,12 +40,13 @@ export default async function SearchPage({
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
+  const { currency } = detectGeo();
 
   // Read the query forwarded from the homepage redirect
   const initialQuery = (searchParams?.q ?? "").trim();
 
   return (
-    <SearchProvider initialLocale={locale as Locale}>
+    <SearchProvider initialLocale={locale as Locale} initialCurrency={currency}>
       <Navbar dict={dict} locale={locale as Locale} />
 
       <main className="min-h-screen bg-ink-950 pb-24 pt-10">

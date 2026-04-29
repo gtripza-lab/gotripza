@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
       : "ai_chat";
 
     // Resolve Arabic/English city names → IATA codes (for flights)
-    const origin = resolveIata(intent.origin) ?? "JED";
+    // If user didn't specify origin, pass empty string — Aviasales will show cheapest from anywhere
+    const origin = resolveIata(intent.origin) ?? "";
     const destination = resolveIata(intent.destination) ?? intent.destination;
     // Hotellook API needs readable English city name, NOT IATA code
     const hotelCity = iataToCity(destination);
@@ -84,7 +85,9 @@ export async function POST(req: NextRequest) {
     const hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
 
     // Build fallback search URLs — direct Travelpayouts partner links
-    const flightSearchUrl = `https://www.aviasales.com/?marker=${MARKER}&subid=${subid}&origin=${origin}&destination=${destination}`;
+    const flightSearchUrl = origin
+      ? `https://www.aviasales.com/?marker=${MARKER}&subid=${subid}&origin=${origin}&destination=${destination}`
+      : `https://www.aviasales.com/?marker=${MARKER}&subid=${subid}&destination=${destination}`;
     const hotelSearchUrl = `https://www.hotellook.com/search?destination=${encodeURIComponent(hotelCity)}&lang=en&marker=${MARKER}&subid=${subid}`;
 
     return NextResponse.json({

@@ -3,11 +3,24 @@ import type { FlightOffer, HotelOffer } from "./travelpayouts";
 import type { TripIntent } from "./gemini";
 import type { Currency } from "./utils";
 
-const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "";
-const SAR_PER_USD = 3.75;
+// Always fall back to 522867 — marker must NEVER be empty in any mode
+const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
+
+// Approximate FX rates vs USD
+const FX: Record<string, number> = {
+  USD: 1,
+  SAR: 3.75,
+  AED: 3.67,
+  EUR: 0.93,
+  GBP: 0.79,
+  TRY: 32.5,
+  EGP: 30.9,
+  MAD: 10.1,
+};
 
 function fx(usd: number, currency: Currency) {
-  return currency === "SAR" ? Math.round(usd * SAR_PER_USD) : Math.round(usd);
+  const rate = FX[currency] ?? 1;
+  return Math.round(usd * rate);
 }
 
 const AIRLINES = [
@@ -60,7 +73,7 @@ export function mockFlights(
   currency: Currency = "USD",
 ): FlightOffer[] {
   const { dep } = defaultDates(intent);
-  const origin = intent.origin ?? "DXB";
+  const origin = intent.origin ?? intent.destination;
   return AIRLINES.map((a, i) => {
     const usd = 280 + i * 65 + (intent.notes === "cheap" ? -40 : 0);
     return {

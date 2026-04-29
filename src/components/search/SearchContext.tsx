@@ -73,9 +73,11 @@ function friendlyError(raw: string, locale: string): string {
 export function SearchProvider({
   children,
   initialLocale = "ar",
+  initialCurrency,
 }: {
   children: ReactNode;
   initialLocale?: Locale;
+  initialCurrency?: Currency;
 }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -101,7 +103,8 @@ export function SearchProvider({
 
     setStatus("loading");
     setError(null);
-    const uiCurrency = currencyForLocale(initialLocale);
+    // Use geo-detected currency if provided, otherwise fall back to locale-based detection
+    const uiCurrency = initialCurrency ?? currencyForLocale(initialLocale);
     logEvent("search_submitted", { query: q, locale: initialLocale, currency: uiCurrency });
 
     try {
@@ -171,8 +174,8 @@ export function SearchProvider({
         wants,
         followup,
         currency: searchJson.currency ?? uiCurrency,
-        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=522867`,
-        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://www.hotellook.com/search?marker=522867`,
+        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=${process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867"}`,
+        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://www.hotellook.com/search?marker=${process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867"}`,
         // Intelligence
         budget_verdict: parsedJson.budget_verdict ?? null,
         confidence: parsedJson.confidence ?? null,
@@ -207,7 +210,7 @@ export function SearchProvider({
       setError(friendlyError(raw, initialLocale));
       setStatus("error");
     }
-  }, [initialLocale]);
+  }, [initialLocale, initialCurrency]);
 
   const reveal = useCallback((side: Side) => {
     logEvent("followup_revealed", { side });
