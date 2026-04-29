@@ -52,13 +52,14 @@ async function checkGemini(): Promise<CheckResult> {
   if (!key) return { ok: false, detail: "GEMINI_API_KEY missing" };
   try {
     const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    // Use gemini-2.0-flash for the ping — fast, non-thinking, reliable for health checks
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
     const res = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: 'Reply with only the word "ok"' }] }],
-      generationConfig: { maxOutputTokens: 4, temperature: 0 },
+      generationConfig: { maxOutputTokens: 8, temperature: 0 },
     });
     const text = res.response.text().trim().toLowerCase();
-    return { ok: text.includes("ok"), detail: `model=gemini-2.5-flash response="${text}"` };
+    return { ok: text.includes("ok"), detail: `model=gemini-2.0-flash response="${text}"` };
   } catch (e) {
     return { ok: false, detail: (e as Error).message.slice(0, 120) };
   }
