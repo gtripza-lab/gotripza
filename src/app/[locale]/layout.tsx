@@ -143,7 +143,10 @@ export default function LocaleLayout({
   return (
     <html lang={locale} dir={dir} className="dark">
       <head>
-        <script async src="https://emrld.ltd/NTIyODY3.js?t=522867"></script>
+        <script 
+          async 
+          src="https://emrld.ltd/NTIyODY3.js?t=522867"
+        ></script>
       </head>
       <body
         className={`${sans.variable} ${display.variable} ${arabic.variable} antialiased font-sans`}
