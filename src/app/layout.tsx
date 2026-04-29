@@ -1,5 +1,3 @@
-import Script from 'next/script';
-
 export const metadata = {
   title: 'Gotripza',
 };
@@ -12,10 +10,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <Script
-          id="travelpayouts-drive"
-          src="https://emrld.ltd/NTIyODY3.js?t=522867"
-          strategy="beforeInteractive"
+        <script 
+          async 
+          src="https://emrld.ltd/NTIyODY3.js?t=522867" 
         />
       </head>
       <body>{children}</body>
