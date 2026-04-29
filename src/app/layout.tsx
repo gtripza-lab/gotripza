@@ -10,10 +10,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script 
-          async 
-          src="https://emrld.ltd/NTIyODY3.js?t=522867" 
-        />
+        <script async src="https://emrld.ltd/NTIyODY3.js?t=522867"></script>
       </head>
       <body>{children}</body>
     </html>
