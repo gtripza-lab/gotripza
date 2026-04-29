@@ -8,7 +8,13 @@ import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { BottomNav } from "@/components/BottomNav";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
-
+export const metadata: Metadata = {
+  verification: {
+    other: {
+      'travelpayouts-verification': 'https://emrld.ltd/NTIyODY3.js?t=522867',
+    },
+  },
+};
 const sans = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
