@@ -8,16 +8,11 @@ export default function RootLayout({
   return (
     <html lang="ar">
       <head>
-        <Script id="travelpayouts-drive" strategy="afterInteractive">
-          {`
-            (function () {
-              var script = document.createElement("script");
-              script.async = 1;
-              script.src = "https://emrld.ltd/NTIyODY3.js?t=522867";
-              document.head.appendChild(script);
-            })();
-          `}
-        </Script>
+        <Script
+          id="travelpayouts-drive"
+          src="https://emrld.ltd/NTIyODY3.js?t=522867"
+          strategy="afterInteractive"
+        />
       </head>
 
       <body>
