@@ -6,6 +6,7 @@ import "../globals.css";
 import { isLocale, localeMeta, locales, type Locale } from "@/i18n/config";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { BottomNav } from "@/components/BottomNav";
+import { TravelpayoutsProvider } from "@/components/TravelpayoutsProvider";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
 
@@ -142,14 +143,13 @@ export default function LocaleLayout({
 
   return (
     <html lang={locale} dir={dir} className="dark">
-      <head>
-        <script async src="https://emrld.ltd/NTIyODY3.js?t=522867"></script>
-      </head>
       <body
         className={`${sans.variable} ${display.variable} ${arabic.variable} antialiased font-sans`}
       >
         <OrganizationJsonLd />
         <WebsiteJsonLd />
+        {/* Re-fires Travelpayouts tracking on every client-side navigation */}
+        <TravelpayoutsProvider />
         {children}
         <BottomNav locale={locale as Locale} />
 
