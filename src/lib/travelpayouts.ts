@@ -1,7 +1,18 @@
 import "server-only";
 
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
-const TOKEN = process.env.TRAVELPAYOUTS_TOKEN ?? "";
+const TOKEN  = process.env.TRAVELPAYOUTS_TOKEN ?? "";
+
+// ── Startup check ────────────────────────────────────────────────────────────
+// If TOKEN is missing, all cached-price API calls will return empty.
+// Action: add TRAVELPAYOUTS_TOKEN=<your-token> in Vercel → Settings → Env Vars
+if (!TOKEN && process.env.NODE_ENV !== "test") {
+  console.warn(
+    "[GoTripza] TRAVELPAYOUTS_TOKEN is not set. " +
+    "Flight and hotel price APIs will return empty results. " +
+    "Set this variable in your Vercel environment settings.",
+  );
+}
 
 export type FlightOffer = {
   origin: string;
@@ -67,8 +78,16 @@ async function fetchFlightPage(
     next: { revalidate: 300 },
     headers: { "Accept": "application/json" },
   });
-  if (!res.ok) throw new Error(`Flights API ${res.status}`);
-  const json = (await res.json()) as { data?: Array<Record<string, unknown>>, success?: boolean };
+  if (!res.ok) {
+    console.warn(`[GoTripza] Flights API error ${res.status} for ${origin}→${destination}`);
+    return [];
+  }
+  let json: { data?: Array<Record<string, unknown>>; success?: boolean; error?: string };
+  try { json = await res.json() as typeof json; } catch { return []; }
+  if (json.success === false) {
+    console.warn(`[GoTripza] Flights API success=false: ${json.error ?? "unknown"} (TOKEN may be missing)`);
+    return [];
+  }
 
   return (json.data ?? []).map((d): FlightOffer => ({
     origin: String(d.origin ?? origin),
@@ -145,10 +164,14 @@ async function fetchHotelPage(
     next: { revalidate: 300 },
     headers: { "Accept": "application/json" },
   });
-  if (!res.ok) throw new Error(`Hotels API ${res.status}`);
-  const json = (await res.json()) as Array<Record<string, unknown>>;
+  if (!res.ok) {
+    console.warn(`[GoTripza] Hotels API error ${res.status} for location="${location}"`);
+    return [];
+  }
+  let json: unknown;
+  try { json = await res.json(); } catch { return []; }
 
-  return (Array.isArray(json) ? json : []).map((h): HotelOffer => ({
+  return (Array.isArray(json) ? json as Record<string, unknown>[] : []).map((h): HotelOffer => ({
     hotelId: Number(h.hotelId ?? 0),
     hotelName: String(h.hotelName ?? ""),
     stars: h.stars ? Number(h.stars) : undefined,

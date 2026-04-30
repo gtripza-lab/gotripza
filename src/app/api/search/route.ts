@@ -28,6 +28,23 @@ function isRateLimited(ip: string): boolean {
 
 export const runtime = "nodejs";
 
+/**
+ * Infer the most likely departure airport from the user's currency.
+ * This is used only when the user doesn't specify an origin city.
+ * Gives Arabic-speaking users real flight results out of the box.
+ */
+function inferOriginFromCurrency(currency: string): string {
+  if (currency === "SAR") return "RUH"; // Saudi Riyal → Riyadh
+  if (currency === "AED") return "DXB"; // Dirham     → Dubai
+  if (currency === "KWD") return "KWI"; // Kuwaiti D  → Kuwait City
+  if (currency === "QAR") return "DOH"; // Qatari R   → Doha
+  if (currency === "BHD") return "BAH"; // Bahraini D → Manama
+  if (currency === "OMR") return "MCT"; // Omani R    → Muscat
+  if (currency === "EGP") return "CAI"; // Egyptian P → Cairo
+  // Default — Dubai is the best-connected Middle-East hub for English users
+  return "DXB";
+}
+
 function normCurrency(input: string | undefined): Currency {
   return input === "SAR" ? "SAR" : "USD";
 }
@@ -56,9 +73,16 @@ export async function POST(req: NextRequest) {
       : "ai_chat";
 
     // Resolve Arabic/English city names → IATA codes (for flights)
-    // If user didn't specify origin, pass empty string — Aviasales will show cheapest from anywhere
-    const origin = resolveIata(intent.origin) ?? "";
     const destination = resolveIata(intent.destination) ?? intent.destination;
+
+    // Smart origin fallback — when user doesn't specify a departure city,
+    // infer from currency so Arabic-speaking users get relevant results.
+    // Without origin the flights API returns nothing.
+    const rawOrigin = resolveIata(intent.origin);
+    // Pass the raw currency string (not the normalised Currency type) so the
+    // multi-currency inference (AED, KWD, etc.) works correctly.
+    const rawCurrencyStr = (rawCurrency ?? "USD") as string;
+    const origin = rawOrigin ?? inferOriginFromCurrency(rawCurrencyStr);
     // Hotellook API needs readable English city name, NOT IATA code
     const hotelCity = iataToCity(destination);
 
@@ -84,10 +108,17 @@ export async function POST(req: NextRequest) {
     const flights = flightsRes.status === "fulfilled" ? flightsRes.value : [];
     const hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
 
-    // Build fallback search URLs — direct Travelpayouts partner links
+    // Build Aviasales deep-link search URLs.
+    // Format: /search/{ORIGIN}{DAYS_OUT}{DEST}1  → pre-fills the form
+    // e.g.  /search/RUH1001DPS1 = Riyadh → Bali, depart in 100 days, 1 adult
+    const daysOut = intent.departure_date
+      ? Math.max(1, Math.round((new Date(intent.departure_date).getTime() - Date.now()) / 86_400_000))
+      : 30;
+
     const flightSearchUrl = origin
-      ? `https://www.aviasales.com/?marker=${MARKER}&subid=${subid}&origin=${origin}&destination=${destination}`
+      ? `https://www.aviasales.com/search/${origin}${daysOut}${destination}${intent.adults ?? 1}?marker=${MARKER}&subid=${subid}`
       : `https://www.aviasales.com/?marker=${MARKER}&subid=${subid}&destination=${destination}`;
+
     const hotelSearchUrl = `https://www.hotellook.com/search?destination=${encodeURIComponent(hotelCity)}&lang=en&marker=${MARKER}&subid=${subid}`;
 
     return NextResponse.json({

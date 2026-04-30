@@ -1,30 +1,40 @@
 "use client";
 import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Star, BadgeCheck, Zap } from "lucide-react";
+import Link from "next/link";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 type Props = { dict: Dictionary; locale: "ar" | "en" };
 
+// Each badge links to a page that proves the claim:
+// "Verified Partner"   → /about   (our partner network)
+// "SSL Encrypted"      → /privacy  (data protection details)
+// "No Hidden Fees"     → /disclosure (how we earn / no surcharge)
+// "Certified Partners" → /about   (Travelpayouts partner info)
 const TRUST_BADGES = [
   {
     icon: <ShieldCheck className="h-5 w-5 text-emerald-400" />,
     key: "verified" as const,
-    bg: "bg-emerald-500/10 border-emerald-500/20",
+    bg: "bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-400/40 hover:bg-emerald-500/15",
+    pageKey: "/about",
   },
   {
     icon: <Lock className="h-5 w-5 text-sky-400" />,
     key: "secure" as const,
-    bg: "bg-sky-500/10 border-sky-500/20",
+    bg: "bg-sky-500/10 border-sky-500/20 hover:border-sky-400/40 hover:bg-sky-500/15",
+    pageKey: "/privacy",
   },
   {
-    icon: <BadgeCheck className="h-5 w-5 text-purple-400" />,
+    icon: <BadgeCheck className="h-5 w-5 text-brand-violet" />,
     key: "noFees" as const,
-    bg: "bg-purple-500/10 border-purple-500/20",
+    bg: "bg-brand-violet/10 border-brand-violet/20 hover:border-brand-violet/40 hover:bg-brand-violet/15",
+    pageKey: "/disclosure",
   },
   {
     icon: <Zap className="h-5 w-5 text-amber-400" />,
     key: "partners" as const,
-    bg: "bg-amber-500/10 border-amber-500/20",
+    bg: "bg-amber-500/10 border-amber-500/20 hover:border-amber-400/40 hover:bg-amber-500/15",
+    pageKey: "/about",
   },
 ];
 
@@ -55,19 +65,23 @@ export function TrustSection({ dict, locale }: Props) {
           </h2>
         </motion.div>
 
-        {/* Trust badges row */}
+        {/* Trust badges row — each is a real link */}
         <div className="mb-14 flex flex-wrap justify-center gap-3">
-          {TRUST_BADGES.map(({ icon, key, bg }, i) => (
+          {TRUST_BADGES.map(({ icon, key, bg, pageKey }, i) => (
             <motion.div
               key={key}
               initial={{ opacity: 0, y: 12 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.4, delay: i * 0.07 }}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md ${bg}`}
             >
-              {icon}
-              {trust[key]}
+              <Link
+                href={`/${locale}${pageKey}`}
+                className={`inline-flex cursor-pointer items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium text-white/80 backdrop-blur-md transition ${bg}`}
+              >
+                {icon}
+                {trust[key]}
+              </Link>
             </motion.div>
           ))}
         </div>

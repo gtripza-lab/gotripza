@@ -207,13 +207,14 @@ function ReadyState({
             {data.flights.length === 0 ? (
               <SearchCTA
                 isAr={isAr}
-                icon={<Plane className="h-5 w-5 text-brand-primary" />}
-                title={isAr ? "ابحث عن رحلتك مباشرة" : "Search Flights Directly"}
+                icon={<Plane className="h-4 w-4" />}
+                title={isAr ? "عرض أسعار الطيران المباشرة" : "View Live Flight Prices"}
                 desc={isAr
-                  ? `نقارن مئات شركات الطيران للوصول إلى أفضل سعر لـ ${data.intent.destination}`
-                  : `We compare hundreds of airlines for the best price to ${data.intent.destination}`}
+                  ? `انقر للبحث المباشر عن أفضل أسعار الطيران إلى ${data.intent.destination} — نقارن أكثر من ١٨٠ شركة طيران فوراً`
+                  : `Click to search live prices to ${data.intent.destination} — we compare 180+ airlines instantly`}
                 url={flightSearchUrl}
-                btnLabel={isAr ? "ابحث عن رحلات الطيران" : "Search Flights"}
+                btnLabel={isAr ? "عرض أسعار الطيران" : "View Flight Prices"}
+                destination={data.intent.destination}
               />
             ) : (
               <ThreeOptionFlights
@@ -255,14 +256,15 @@ function ReadyState({
             {data.hotels.length === 0 ? (
               <SearchCTA
                 isAr={isAr}
-                icon={<HotelIcon className="h-5 w-5 text-brand-mint" />}
-                title={isAr ? "ابحث عن فندقك مباشرة" : "Search Hotels Directly"}
+                icon={<HotelIcon className="h-4 w-4" />}
+                title={isAr ? "عرض أسعار الفنادق المباشرة" : "View Live Hotel Prices"}
                 desc={isAr
-                  ? `نعرض لك آلاف الفنادق في ${data.intent.destination} بأفضل الأسعار المضمونة`
-                  : `Browse thousands of hotels in ${data.intent.destination} with best price guarantee`}
+                  ? `آلاف الفنادق في ${data.intent.destination} بضمان أفضل سعر — انقر للعرض الفوري`
+                  : `Thousands of hotels in ${data.intent.destination} with best price guarantee — click to view live`}
                 url={hotelSearchUrl}
-                btnLabel={isAr ? "ابحث عن فنادق" : "Search Hotels"}
+                btnLabel={isAr ? "عرض أسعار الفنادق" : "View Hotel Prices"}
                 accent="mint"
+                destination={data.intent.destination}
               />
             ) : (
               <ThreeOptionHotels
@@ -1083,7 +1085,7 @@ function FollowupCard({
   );
 }
 
-/* ─── Search CTA (empty state) ───────────────────────────────────────── */
+/* ─── Search CTA (live-search card — shown when API has no cached prices) ─ */
 function SearchCTA({
   isAr,
   icon,
@@ -1092,6 +1094,7 @@ function SearchCTA({
   url,
   btnLabel,
   accent = "primary",
+  destination,
 }: {
   isAr: boolean;
   icon: React.ReactNode;
@@ -1100,40 +1103,59 @@ function SearchCTA({
   url: string;
   btnLabel: string;
   accent?: "primary" | "mint";
+  destination?: string;
 }) {
-  const grad =
-    accent === "mint"
-      ? "from-brand-mint to-brand-deep"
-      : "from-brand-primary to-brand-deep";
-  const border =
-    accent === "mint" ? "border-brand-mint/20" : "border-brand-primary/20";
-  const bg =
-    accent === "mint"
-      ? "from-brand-mint/5 to-brand-deep/5"
-      : "from-brand-primary/5 to-brand-deep/5";
+  const isPrimary = accent === "primary";
+
+  const borderColor = isPrimary ? "border-brand-primary/25" : "border-brand-mint/25";
+  const bgColor     = isPrimary ? "from-brand-primary/8 to-brand-deep/5" : "from-brand-mint/8 to-brand-deep/5";
+  const accentColor = isPrimary ? "text-brand-primary" : "text-brand-mint";
+  const btnGrad     = isPrimary ? "from-brand-primary to-brand-deep" : "from-brand-mint to-brand-deep";
+  const dotColor    = isPrimary ? "bg-brand-primary" : "bg-brand-mint";
+
   return (
-    <div
-      className={`flex flex-col items-center gap-5 rounded-2xl border bg-gradient-to-br p-8 text-center ${border} ${bg}`}
-    >
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.06]">
-        {icon}
+    <div className={`overflow-hidden rounded-2xl border bg-gradient-to-br ${borderColor} ${bgColor}`}>
+
+      {/* Top row */}
+      <div className="flex items-center gap-3 border-b border-white/[0.06] px-5 py-3">
+        <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/[0.06] ${accentColor}`}>
+          {icon}
+        </span>
+        <span className="text-xs font-semibold text-white/80">{title}</span>
+        {/* Live indicator dot */}
+        <span className="ms-auto flex items-center gap-1.5 text-[10px] text-white/40">
+          <span className={`inline-block h-1.5 w-1.5 animate-pulse rounded-full ${dotColor}`} />
+          {isAr ? "بحث مباشر" : "Live search"}
+        </span>
       </div>
-      <div className="max-w-xs">
-        <p className="text-base font-semibold text-white/90">{title}</p>
-        <p className="mt-1.5 text-xs leading-relaxed text-white/50">{desc}</p>
+
+      {/* Body */}
+      <div className="flex flex-col items-center gap-5 px-6 pb-7 pt-6 text-center sm:flex-row sm:text-start">
+        <div className="flex-1">
+          <p className="text-sm leading-relaxed text-white/65">{desc}</p>
+          {destination && (
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-white/40 sm:justify-start">
+              <MapPin className="h-3 w-3 shrink-0" />
+              {isAr ? `الوجهة: ${destination}` : `Destination: ${destination}`}
+            </p>
+          )}
+        </div>
+
+        <div className="flex flex-col items-center gap-2 sm:shrink-0">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-2 rounded-xl bg-gradient-to-r px-6 py-2.5 text-sm font-semibold text-white shadow-glow transition hover:scale-[1.02] ${btnGrad}`}
+          >
+            {btnLabel}
+            <ExternalLink className="h-3.5 w-3.5 rtl:rotate-180" />
+          </a>
+          <p className="text-[10px] text-white/30">
+            {isAr ? "بدون رسوم · يفتح تبويب جديد" : "No fees · Opens in new tab"}
+          </p>
+        </div>
       </div>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`inline-flex items-center gap-2 rounded-full bg-gradient-to-r px-6 py-2.5 text-sm font-semibold text-white shadow-glow transition hover:scale-[1.02] ${grad}`}
-      >
-        {btnLabel}
-        <ExternalLink className="h-3.5 w-3.5 rtl:rotate-180" />
-      </a>
-      <p className="text-[11px] text-white/30">
-        {isAr ? "مدعوم بـ GoTripza · بدون تكلفة إضافية" : "Powered by GoTripza · no extra cost"}
-      </p>
     </div>
   );
 }
