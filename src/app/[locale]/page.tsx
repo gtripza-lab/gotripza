@@ -1,5 +1,26 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/i18n/config";
+
+const BASE = "https://gotripza.com";
+
+export function generateMetadata({
+  params,
+}: {
+  params: { locale: string };
+}): Metadata {
+  const locale = params.locale;
+  return {
+    alternates: {
+      canonical: `${BASE}/${locale}`,
+      languages: {
+        ar: `${BASE}/ar`,
+        en: `${BASE}/en`,
+        "x-default": `${BASE}/ar`,
+      },
+    },
+  };
+}
 import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";

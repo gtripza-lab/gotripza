@@ -4,16 +4,28 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const BASE = "https://gotripza.com";
+
 export function generateMetadata({ params }: { params: { locale: string } }) {
+  const locale = params.locale;
+  const canonical = `${BASE}/${locale}/about`;
   return {
     title:
-      params.locale === "ar"
+      locale === "ar"
         ? "من نحن — GoTripza"
         : "About Us — GoTripza",
     description:
-      params.locale === "ar"
+      locale === "ar"
         ? "تعرّف على GoTripza، منصة البحث الذكي عن السفر التي تساعدك في إيجاد أفضل رحلاتك وفنادقك بسهولة."
         : "Learn about GoTripza, the AI-powered travel search platform helping you find the best flights and hotels effortlessly.",
+    alternates: {
+      canonical,
+      languages: {
+        ar: `${BASE}/ar/about`,
+        en: `${BASE}/en/about`,
+        "x-default": `${BASE}/ar/about`,
+      },
+    },
   };
 }
 

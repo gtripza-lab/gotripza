@@ -69,6 +69,7 @@ export default async function SearchPage({
           initialQuery={initialQuery}
           dict={dict}
           locale={locale as Locale}
+          currency={currency}
         />
       </main>
 

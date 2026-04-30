@@ -7,23 +7,27 @@ import type { Locale } from "@/i18n/config";
 type Entry = { name: string; city: string; destination: string; price: string };
 
 const AR_ENTRIES: Entry[] = [
-  { name: "نورة", city: "الرياض", destination: "المالديف", price: "٣,٨٠٠ ريال" },
-  { name: "خالد", city: "جدة", destination: "أنطاليا", price: "١,١٥٠ ريال" },
-  { name: "سارة", city: "الدمام", destination: "دبي", price: "٧٨٠ ريال" },
-  { name: "أحمد", city: "الرياض", destination: "إسطنبول", price: "١,٤٥٠ ريال" },
-  { name: "ريم", city: "أبوظبي", destination: "باريس", price: "٢,٩٥٠ ريال" },
-  { name: "فهد", city: "الكويت", destination: "لندن", price: "٢,٢٠٠ ريال" },
-  { name: "ليلى", city: "الدوحة", destination: "بالي", price: "٣,٣٠٠ ريال" },
+  { name: "نورة",  city: "الرياض",  destination: "المالديف",   price: "٣,٨٠٠ ريال" },
+  { name: "خالد",  city: "دبي",     destination: "أنطاليا",    price: "١,١٥٠ ريال" },
+  { name: "سارة",  city: "القاهرة", destination: "دبي",        price: "٧٨٠ ريال"   },
+  { name: "أحمد",  city: "عمّان",   destination: "إسطنبول",   price: "١,٤٥٠ ريال" },
+  { name: "ريم",   city: "أبوظبي",  destination: "باريس",      price: "٢,٩٥٠ ريال" },
+  { name: "فهد",   city: "الكويت",  destination: "لندن",       price: "٢,٢٠٠ ريال" },
+  { name: "ليلى",  city: "الدوحة",  destination: "بالي",       price: "٣,٣٠٠ ريال" },
+  { name: "ياسمين",city: "بيروت",   destination: "مدريد",      price: "١,٨٠٠ ريال" },
+  { name: "طارق",  city: "الدار البيضاء", destination: "روما",  price: "٢,١٠٠ ريال" },
 ];
 
 const EN_ENTRIES: Entry[] = [
-  { name: "Sarah", city: "London", destination: "Maldives", price: "$890" },
-  { name: "Daniel", city: "New York", destination: "Tokyo", price: "$760" },
-  { name: "Emma", city: "Paris", destination: "Bali", price: "$640" },
-  { name: "James", city: "Sydney", destination: "Santorini", price: "$720" },
-  { name: "Sofia", city: "Madrid", destination: "Dubai", price: "$310" },
-  { name: "Liam", city: "Toronto", destination: "Antalya", price: "$420" },
-  { name: "Mia", city: "Berlin", destination: "Istanbul", price: "$280" },
+  { name: "Sarah", city: "London",   destination: "Maldives",  price: "$890" },
+  { name: "Daniel", city: "New York", destination: "Tokyo",    price: "$760" },
+  { name: "Emma", city: "Paris",     destination: "Bali",      price: "$640" },
+  { name: "James", city: "Sydney",   destination: "Santorini", price: "$720" },
+  { name: "Sofia", city: "Madrid",   destination: "Dubai",     price: "$310" },
+  { name: "Lucas", city: "Amsterdam",destination: "Istanbul",  price: "$195" },
+  { name: "Yuki",  city: "Singapore",destination: "Barcelona", price: "$530" },
+  { name: "Maria", city: "Berlin",   destination: "Antalya",   price: "$290" },
+  { name: "Omar",  city: "Cairo",    destination: "Paris",     price: "$480" },
 ];
 
 export function SocialProof({ locale }: { locale: Locale }) {

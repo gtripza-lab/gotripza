@@ -4,16 +4,28 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const BASE = "https://gotripza.com";
+
 export function generateMetadata({ params }: { params: { locale: string } }) {
+  const locale = params.locale;
+  const canonical = `${BASE}/${locale}/terms`;
   return {
     title:
-      params.locale === "ar"
+      locale === "ar"
         ? "الشروط والأحكام — GoTripza"
         : "Terms & Conditions — GoTripza",
     description:
-      params.locale === "ar"
+      locale === "ar"
         ? "اقرأ الشروط والأحكام الخاصة باستخدام منصة GoTripza للبحث عن السفر."
         : "Read the Terms & Conditions for using the GoTripza travel search platform.",
+    alternates: {
+      canonical,
+      languages: {
+        ar: `${BASE}/ar/terms`,
+        en: `${BASE}/en/terms`,
+        "x-default": `${BASE}/ar/terms`,
+      },
+    },
   };
 }
 

@@ -8,12 +8,31 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import { Download } from "lucide-react";
 
 type DailyStat    = { date: string; clicks: number };
 type ProviderStat = { provider: string; clicks: number; revenue_est: number };
 
-const BRAND = "#7c3aed";
+const BRAND = "#5A6CFF"; // brand-primary — not harsh purple
 const MUTED = "rgba(255,255,255,0.06)";
+
+/** Export provider data as a CSV file */
+function exportCSV(byProvider: ProviderStat[], isAr: boolean) {
+  const header = isAr
+    ? "المزود,النقرات,العمولة المقدرة (USD)"
+    : "Provider,Clicks,Est Commission (USD)";
+  const rows = byProvider.map(
+    (p) => `${p.provider},${p.clicks},${p.revenue_est.toFixed(2)}`,
+  );
+  const csv = [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement("a");
+  a.href     = url;
+  a.download = `gotripza-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 function TooltipStyle({ active, payload, label }: {
   active?: boolean;
@@ -76,9 +95,21 @@ export function AdminCharts({
 
       {/* Revenue estimate table */}
       <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-6 lg:col-span-2">
-        <p className="mb-4 text-sm font-semibold text-white/70">
-          {isAr ? "تقدير العمولات لكل مزود" : "Estimated commission per provider"}
-        </p>
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm font-semibold text-white/70">
+            {isAr ? "تقدير العمولات لكل مزود" : "Estimated commission per provider"}
+          </p>
+          {byProvider.length > 0 && (
+            <button
+              type="button"
+              onClick={() => exportCSV(byProvider, isAr)}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-xs text-white/60 transition hover:bg-white/[0.08] hover:text-white/80"
+            >
+              <Download className="h-3.5 w-3.5" />
+              {isAr ? "تصدير CSV" : "Export CSV"}
+            </button>
+          )}
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>

@@ -45,7 +45,7 @@ export function BottomNav({ locale }: { locale: Locale }) {
               active ? "text-brand-primary" : "text-white/35 hover:text-white/60",
             )}
           >
-            <Icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_6px_rgba(124,58,237,0.7)]")} />
+            <Icon className={cn("h-5 w-5", active && "drop-shadow-[0_0_8px_rgba(90,108,255,0.55)]")} />
             {label}
           </Link>
         );

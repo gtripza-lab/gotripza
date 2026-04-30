@@ -4,16 +4,28 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const BASE = "https://gotripza.com";
+
 export function generateMetadata({ params }: { params: { locale: string } }) {
+  const locale = params.locale;
+  const canonical = `${BASE}/${locale}/disclosure`;
   return {
     title:
-      params.locale === "ar"
+      locale === "ar"
         ? "الإفصاح عن الشراكات التجارية — GoTripza"
         : "Affiliate Disclosure — GoTripza",
     description:
-      params.locale === "ar"
+      locale === "ar"
         ? "إفصاح GoTripza عن علاقاتها التجارية مع شركاء الإحالة وتأثيرها على التوصيات."
         : "GoTripza's disclosure of its commercial relationships with affiliate partners and their effect on recommendations.",
+    alternates: {
+      canonical,
+      languages: {
+        ar: `${BASE}/ar/disclosure`,
+        en: `${BASE}/en/disclosure`,
+        "x-default": `${BASE}/ar/disclosure`,
+      },
+    },
   };
 }
 

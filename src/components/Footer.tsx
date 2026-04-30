@@ -5,9 +5,21 @@ import { PaymentMethods } from "./PaymentMethods";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Locale } from "@/i18n/config";
 
+const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
+
 export function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
-  const icons = [Plane, BedDouble, Car, Ticket, Wallet, Headphones];
   const legalBase = `/${locale}`;
+
+  // Each service icon links to its natural destination
+  const serviceLinks = [
+    { Icon: Plane,       href: `/${locale}/search#flights`,  label: dict.nav.flights  },
+    { Icon: BedDouble,   href: `/${locale}/search#hotels`,   label: dict.nav.hotels   },
+    { Icon: Car,         href: `https://www.discovercars.com/?a_aid=${MARKER}`, label: "Car Rentals", external: true },
+    { Icon: Ticket,      href: `/${locale}/destinations`,    label: locale === "ar" ? "الوجهات" : "Destinations" },
+    { Icon: Wallet,      href: `/${locale}/disclosure`,      label: locale === "ar" ? "الإفصاح" : "Disclosure" },
+    { Icon: Headphones,  href: `/${locale}/contact`,         label: locale === "ar" ? "الدعم" : "Support" },
+  ];
+
   return (
     <footer className="relative mt-12">
       <div className="relative overflow-hidden rounded-t-3xl border-t border-white/5 bg-ink-950">
@@ -21,14 +33,31 @@ export function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
             </span>
           </div>
           <div className="flex items-center gap-2 text-white/70">
-            {icons.map((Icon, i) => (
-              <span
-                key={i}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-primary/40 hover:bg-white/10 hover:text-white"
-              >
-                <Icon className="h-4 w-4" strokeWidth={1.5} />
-              </span>
-            ))}
+            {serviceLinks.map(({ Icon, href, label, external }) =>
+              external ? (
+                <a
+                  key={href}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={label}
+                  aria-label={label}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-primary/40 hover:bg-white/10 hover:text-white"
+                >
+                  <Icon className="h-4 w-4" strokeWidth={1.5} />
+                </a>
+              ) : (
+                <Link
+                  key={href}
+                  href={href}
+                  title={label}
+                  aria-label={label}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-primary/40 hover:bg-white/10 hover:text-white"
+                >
+                  <Icon className="h-4 w-4" strokeWidth={1.5} />
+                </Link>
+              )
+            )}
           </div>
         </div>
 

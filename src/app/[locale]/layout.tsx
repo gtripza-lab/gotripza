@@ -7,6 +7,7 @@ import { isLocale, localeMeta, locales, type Locale } from "@/i18n/config";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { BottomNav } from "@/components/BottomNav";
 import { TravelpayoutsProvider } from "@/components/TravelpayoutsProvider";
+import { CookieConsent } from "@/components/CookieConsent";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
 
@@ -95,14 +96,12 @@ export const metadata: Metadata = {
       "max-snippet": -1,
     },
   },
-  alternates: {
-    canonical: BASE,
-    languages: {
-      "ar-SA": `${BASE}/ar`,
-      "en-US": `${BASE}/en`,
-      "x-default": `${BASE}/ar`,
-    },
-  },
+  // NOTE: Do NOT set alternates.canonical here.
+  // Setting a static canonical in the layout applies the HOMEPAGE canonical
+  // to every child page, which tells Google all pages are duplicates of the
+  // homepage → 38+ pages de-indexed. Each page sets its own canonical via
+  // its own generateMetadata(). The homepage sets it through app/[locale]/page
+  // metadata or the locale root redirect.
   category: "travel",
   creator: "GoTripza",
   publisher: "GoTripza",
@@ -152,6 +151,7 @@ export default function LocaleLayout({
         <TravelpayoutsProvider />
         {children}
         <BottomNav locale={locale as Locale} />
+        <CookieConsent locale={locale as Locale} />
 
         {GA_ID && (
           <>

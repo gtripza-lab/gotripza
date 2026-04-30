@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Plane, BedDouble } from "lucide-react";
+import { Plane, BedDouble, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Locale } from "@/i18n/config";
 
@@ -24,15 +24,18 @@ export function TravelpayoutsSearch({
   locale: Locale;
   currency?: string;
 }) {
-  const [tab, setTab] = useState<Tab>("flights");
+  const [tab, setTab]       = useState<Tab>("flights");
+  const [loading, setLoading] = useState(true);
   const isAr = locale === "ar";
   const lang = isAr ? "ar" : "en";
   // Use geo-detected currency from parent; fall back to USD (universally safe)
   const currency = propCurrency ?? "USD";
 
-  // Travelpayouts official white-label URLs with marker
-  const flightsUrl = `https://www.aviasales.com/?marker=${MARKER}&locale=${lang}&currency=${currency}`;
-  const hotelsUrl  = `https://hotellook.com/?marker=${MARKER}&locale=${lang}&currency=${currency}`;
+  // Travelpayouts white-label search embed URLs.
+  // These are the official partner iframes — they include the affiliate marker
+  // so every booking that originates from these iframes is attributed to us.
+  const flightsUrl = `https://www.aviasales.com/?marker=${MARKER}&locale=${lang}&currency=${currency}&host=gotripza.com`;
+  const hotelsUrl  = `https://hotellook.com/?marker=${MARKER}&locale=${lang}&currency=${currency}&host=gotripza.com`;
 
   const activeUrl = tab === "flights" ? flightsUrl : hotelsUrl;
 
@@ -41,7 +44,7 @@ export function TravelpayoutsSearch({
       {/* Tab switcher */}
       <div className="flex border-b border-white/10">
         <button
-          onClick={() => setTab("flights")}
+          onClick={() => { setTab("flights"); setLoading(true); }}
           className={cn(
             "flex flex-1 items-center justify-center gap-2 py-4 text-sm font-medium transition",
             tab === "flights"
@@ -53,7 +56,7 @@ export function TravelpayoutsSearch({
           {isAr ? "رحلات الطيران" : "Flights"}
         </button>
         <button
-          onClick={() => setTab("hotels")}
+          onClick={() => { setTab("hotels"); setLoading(true); }}
           className={cn(
             "flex flex-1 items-center justify-center gap-2 py-4 text-sm font-medium transition",
             tab === "hotels"
@@ -67,14 +70,26 @@ export function TravelpayoutsSearch({
       </div>
 
       {/* iframe white-label */}
-      <div className="relative aspect-[16/10] w-full">
+      <div className="relative min-h-[520px] w-full">
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-ink-950/60">
+            <div className="flex flex-col items-center gap-3 text-white/40">
+              <Loader2 className="h-7 w-7 animate-spin" />
+              <span className="text-xs">
+                {isAr ? "جارٍ تحميل نتائج البحث..." : "Loading search results..."}
+              </span>
+            </div>
+          </div>
+        )}
         <iframe
           key={activeUrl}
           src={activeUrl}
           title={tab === "flights" ? "Flight Search" : "Hotel Search"}
-          className="absolute inset-0 h-full w-full border-0"
+          className="h-[520px] w-full border-0"
           allow="payment"
           loading="lazy"
+          onLoad={() => setLoading(false)}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation"
         />
       </div>
 

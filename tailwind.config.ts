@@ -20,7 +20,8 @@ const config: Config = {
           primary: "#5A6CFF",
           deep: "#085CFF",
           mint: "#00D4B3",
-          violet: "#8B5CF6",
+          // Softened from #8B5CF6 (harsh) → #7C6EE0 (premium muted indigo-violet)
+          violet: "#7C6EE0",
         },
         surface: {
           DEFAULT: "#0B1020",
@@ -36,7 +37,7 @@ const config: Config = {
       },
       backgroundImage: {
         "gradient-brand":
-          "linear-gradient(135deg, #5A6CFF 0%, #8B5CF6 50%, #00D4B3 100%)",
+          "linear-gradient(135deg, #5A6CFF 0%, #7C6EE0 50%, #00D4B3 100%)",
         "gradient-hero":
           "radial-gradient(ellipse at top, rgba(90,108,255,0.25) 0%, rgba(11,16,32,0) 60%)",
         "gradient-card":

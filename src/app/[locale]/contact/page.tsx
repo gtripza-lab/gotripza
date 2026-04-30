@@ -4,16 +4,28 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const BASE = "https://gotripza.com";
+
 export function generateMetadata({ params }: { params: { locale: string } }) {
+  const locale = params.locale;
+  const canonical = `${BASE}/${locale}/contact`;
   return {
     title:
-      params.locale === "ar"
+      locale === "ar"
         ? "تواصل معنا — GoTripza"
         : "Contact Us — GoTripza",
     description:
-      params.locale === "ar"
+      locale === "ar"
         ? "تواصل مع فريق GoTripza للاستفسارات والشراكات والدعم."
         : "Get in touch with the GoTripza team for enquiries, partnerships, and support.",
+    alternates: {
+      canonical,
+      languages: {
+        ar: `${BASE}/ar/contact`,
+        en: `${BASE}/en/contact`,
+        "x-default": `${BASE}/ar/contact`,
+      },
+    },
   };
 }
 

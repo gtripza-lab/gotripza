@@ -4,16 +4,28 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const BASE = "https://gotripza.com";
+
 export function generateMetadata({ params }: { params: { locale: string } }) {
+  const locale = params.locale;
+  const canonical = `${BASE}/${locale}/privacy`;
   return {
     title:
-      params.locale === "ar"
+      locale === "ar"
         ? "سياسة الخصوصية — GoTripza"
         : "Privacy Policy — GoTripza",
     description:
-      params.locale === "ar"
+      locale === "ar"
         ? "اقرأ سياسة الخصوصية الخاصة بـ GoTripza وتعرّف على كيفية حماية بياناتك الشخصية."
         : "Read GoTripza's Privacy Policy and learn how we protect your personal data.",
+    alternates: {
+      canonical,
+      languages: {
+        ar: `${BASE}/ar/privacy`,
+        en: `${BASE}/en/privacy`,
+        "x-default": `${BASE}/ar/privacy`,
+      },
+    },
   };
 }
 

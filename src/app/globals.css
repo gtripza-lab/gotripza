@@ -91,7 +91,8 @@
   }
 
   .text-gradient {
-    background: linear-gradient(135deg, #5a6cff 0%, #8b5cf6 50%, #00d4b3 100%);
+    /* Softened violet mid-stop: #8b5cf6 → #7c6ee0 (less saturated, more premium) */
+    background: linear-gradient(135deg, #5a6cff 0%, #7c6ee0 52%, #00d4b3 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;

@@ -1,7 +1,7 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Sparkles, ArrowRight, Loader2, Clock, X } from "lucide-react";
+import { Mic, MicOff, Sparkles, ArrowRight, Loader2, Clock, X } from "lucide-react";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { useSearch } from "./search/SearchContext";
 import { cn } from "@/lib/utils";
@@ -30,6 +30,36 @@ function clearRecent() {
 
 type Theme = "dark" | "light";
 
+// ── Voice search helpers ─────────────────────────────────────────────────
+// SpeechRecognition is a browser API not included in TypeScript's default
+// lib. Declare the minimal interface we actually use.
+interface ISpeechRecognition extends EventTarget {
+  lang: string;
+  continuous: boolean;
+  interimResults: boolean;
+  start(): void;
+  abort(): void;
+  onstart: ((this: ISpeechRecognition, ev: Event) => void) | null;
+  onresult: ((this: ISpeechRecognition, ev: ISpeechRecognitionEvent) => void) | null;
+  onerror:  ((this: ISpeechRecognition, ev: Event) => void) | null;
+  onend:    ((this: ISpeechRecognition, ev: Event) => void) | null;
+}
+
+interface ISpeechRecognitionEvent extends Event {
+  results: { 0: { 0: { transcript: string } } };
+}
+
+interface ISpeechRecognitionConstructor {
+  new (): ISpeechRecognition;
+}
+
+declare global {
+  interface Window {
+    SpeechRecognition?: ISpeechRecognitionConstructor;
+    webkitSpeechRecognition?: ISpeechRecognitionConstructor;
+  }
+}
+
 export function AISearchBar({
   dict,
   theme = "dark",
@@ -41,16 +71,65 @@ export function AISearchBar({
   const loading = status === "loading";
   const isLight = theme === "light";
   const [recent, setRecent] = useState<string[]>([]);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const isAr = typeof document !== "undefined" && document.documentElement.dir === "rtl";
 
   useEffect(() => {
     setRecent(loadRecent());
   }, []);
 
+  // ── Cleanup voice on unmount ───────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      recognitionRef.current?.abort();
+    };
+  }, []);
+
   const handleSearch = (q: string) => {
     saveRecent(q);
     setRecent(loadRecent());
     search(q);
+  };
+
+  const handleVoice = () => {
+    const SR: ISpeechRecognitionConstructor | undefined =
+      typeof window !== "undefined"
+        ? window.SpeechRecognition ?? window.webkitSpeechRecognition
+        : undefined;
+
+    if (!SR) {
+      // Graceful degradation — browser doesn't support voice
+      alert(isAr ? "المتصفح لا يدعم البحث الصوتي" : "Your browser doesn't support voice search");
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.abort();
+      setIsListening(false);
+      return;
+    }
+
+    const rec = new SR();
+    recognitionRef.current = rec;
+    rec.lang = isAr ? "ar-SA" : "en-US";
+    rec.continuous = false;
+    rec.interimResults = false;
+
+    rec.onstart = () => setIsListening(true);
+
+    rec.onresult = (e: ISpeechRecognitionEvent) => {
+      const transcript = e.results[0][0].transcript;
+      setQuery(transcript);
+      setIsListening(false);
+      // Auto-search after voice input
+      handleSearch(transcript);
+    };
+
+    rec.onerror = () => setIsListening(false);
+    rec.onend   = () => setIsListening(false);
+
+    rec.start();
   };
 
   return (
@@ -91,15 +170,21 @@ export function AISearchBar({
         />
         <button
           type="button"
+          onClick={handleVoice}
           aria-label={dict.hero.voice}
+          title={isListening ? (isAr ? "إيقاف الاستماع" : "Stop listening") : dict.hero.voice}
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl",
-            isLight
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition",
+            isListening
+              ? "animate-pulse bg-rose-500/20 text-rose-400"
+              : isLight
               ? "text-ink-950/60 hover:bg-ink-950/5 hover:text-ink-950"
               : "text-white/60 hover:bg-white/10 hover:text-white",
           )}
         >
-          <Mic className="h-4 w-4" />
+          {isListening
+            ? <MicOff className="h-4 w-4" />
+            : <Mic className="h-4 w-4" />}
         </button>
         <button
           type="submit"
