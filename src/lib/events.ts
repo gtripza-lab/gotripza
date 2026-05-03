@@ -7,7 +7,10 @@ export type EventName =
   | "book_clicked"
   | "followup_revealed"
   | "followup_dismissed"
-  | "affiliate_upsell_clicked";
+  | "affiliate_upsell_clicked"
+  | "chat_message_sent"
+  | "chat_results_ready"
+  | "chat_followup_revealed";
 
 export type EventPayload = Record<string, unknown>;
 

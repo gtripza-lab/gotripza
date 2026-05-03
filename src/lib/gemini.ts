@@ -10,8 +10,8 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey ?? "");
 
-// Primary model: gemini-2.5-flash — best price/performance for complex reasoning
-const MODEL_INTELLIGENCE = "gemini-2.5-flash";
+// Primary model: gemini-2.5-flash-preview-05-20 — latest, best reasoning
+const MODEL_INTELLIGENCE = "gemini-2.5-flash-preview-05-20";
 // Lite model: for simple tasks (tips, descriptions)
 const MODEL_LITE = "gemini-2.0-flash-lite";
 
@@ -319,6 +319,46 @@ export async function getLiveTips(
   } catch (err) {
     console.warn("[gemini] live tips unavailable:", (err as Error).message);
     return null;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CHAT FOLLOW-UP RESPONSE
+   Used when user sends a follow-up in the chat conversation.
+   Provides a short, conversational AI response acknowledging context.
+══════════════════════════════════════════════════════════════════════════ */
+
+export type ChatTurn = { role: "user" | "model"; text: string };
+
+export async function getChatFollowup(
+  history: ChatTurn[],
+  newMessage: string,
+  locale: "ar" | "en",
+): Promise<string> {
+  try {
+    const model = genAI.getGenerativeModel({
+      model: MODEL_LITE,
+      generationConfig: { temperature: 0.5 },
+    });
+
+    const context = history
+      .slice(-6) // Last 6 turns for context
+      .map((t) => `${t.role === "user" ? "User" : "Assistant"}: ${t.text}`)
+      .join("\n");
+
+    const directive =
+      locale === "ar"
+        ? `أنت مستشار سفر من GoTripza. سياق المحادثة:\n${context}\n\nرسالة المستخدم: "${newMessage}"\n\nرُد بجملة واحدة أو جملتين فقط (بالعربية الفصحى، بأسلوب رسمي). لا تسأل أكثر من سؤال واحد إن احتجت. لا تستخدم رموز تعبيرية.`
+        : `You are a GoTripza travel advisor. Conversation context:\n${context}\n\nUser message: "${newMessage}"\n\nRespond in 1–2 sentences (formal English). Ask at most one follow-up if needed. No emoji.`;
+
+    const r = await model.generateContent(directive);
+    return r.response.text().trim().slice(0, 400) || (
+      locale === "ar" ? "كيف يمكنني مساعدتك في رحلتك؟" : "How can I help you plan your trip?"
+    );
+  } catch {
+    return locale === "ar"
+      ? "دعني أساعدك في تخطيط رحلتك. ما وجهتك المفضلة؟"
+      : "Let me help you plan your trip. What destination interests you?";
   }
 }
 
