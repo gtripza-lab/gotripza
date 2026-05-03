@@ -1,70 +1,50 @@
 /**
  * GoTripza Central Partner Registry
- * ─────────────────────────────────
- * Single source of truth for ALL affiliate partners, URLs, and tracking.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * ALL affiliate traffic is routed through Travelpayouts using the TP marker.
  *
- * TO ACTIVATE A PARTNER:
- *  1. Sign up at their affiliate program (signup URLs listed per partner).
- *  2. Add your affiliate ID to .env.local (and Vercel → Settings → Env Vars).
- *  3. That partner will automatically appear in recommendations UI.
+ * Link format:
+ *   https://tp.media/click?shmarker={MARKER}&promo_id={PROMO}&source_type=customtab&type=click&custom_url={ENCODED_URL}
  *
- * Partners with an empty/missing ID are silently hidden — never broken links.
+ * PROMO IDs come from your Travelpayouts dashboard:
+ *   https://www.travelpayouts.com/programs → Partner → Tools → "Get link"
+ *
+ * PARTNERS WITH KNOWN PROMO IDs (defaults provided):
+ *   Booking.com  → 4338
+ *   Trip.com     → 4064
+ *
+ * PARTNERS REQUIRING PROMO IDs FROM YOUR TP DASHBOARD:
+ *   Set the corresponding NEXT_PUBLIC_TP_PROMO_* env var (see .env.example).
+ *   Partners with missing/empty promo_id are silently hidden — never broken.
  */
 
-// ── Core Travelpayouts marker ─────────────────────────────────────────────
+// ── Core Travelpayouts marker ─────────────────────────────────────────────────
 export const TP_MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
-// ── Per-partner affiliate IDs ─────────────────────────────────────────────
-const IDS = {
-  // ── Hotels ─────────────────────────────────────────────────────────────
-  // Booking.com: https://partnerhelp.booking.com (get your AID there)
-  // Fallback: TP media link keeps commission via Travelpayouts marker
-  booking:          process.env.NEXT_PUBLIC_BOOKING_AID             ?? "",
-  // Trip.com:  https://www.trip.com/affiliate (get your AID)
-  tripcom:          process.env.NEXT_PUBLIC_TRIPCOM_AID             ?? "",
-
-  // ── Car Rental ─────────────────────────────────────────────────────────
-  // DiscoverCars: https://www.discovercars.com/affiliate (uses same TP marker by default)
-  discovercars:     process.env.NEXT_PUBLIC_DISCOVERCARS_AID        ?? TP_MARKER,
-
-  // ── Activities ─────────────────────────────────────────────────────────
-  // GetYourGuide: https://partner.getyourguide.com
-  getyourguide:     process.env.NEXT_PUBLIC_GYG_PARTNER_ID          ?? TP_MARKER,
-  // Klook:       https://affiliate.klook.com
-  klook:            process.env.NEXT_PUBLIC_KLOOK_AID               ?? "",
-  // KKday:       https://affiliate.kkday.com
-  kkday:            process.env.NEXT_PUBLIC_KKDAY_CID               ?? "",
-  // Go City:     https://gocity.com/affiliates
-  gocity:           process.env.NEXT_PUBLIC_GOCITY_AID              ?? "",
-
-  // ── Cheap Flights ───────────────────────────────────────────────────────
-  // Kiwi.com:   https://www.kiwi.com/us/pages/affiliates
-  kiwi:             process.env.NEXT_PUBLIC_KIWI_AFFILID            ?? "",
-  // CheapOair:  https://www.cheapoair.com/affiliate
-  cheapoair:        process.env.NEXT_PUBLIC_CHEAPOAIR_AFFID         ?? "",
-
-  // ── eSIM ────────────────────────────────────────────────────────────────
-  // Airalo:      https://www.airalo.com/affiliate
-  airalo:           process.env.NEXT_PUBLIC_AIRALO_PARTNER          ?? "",
-  // Yesim:       https://yesim.app/affiliate
-  yesim:            process.env.NEXT_PUBLIC_YESIM_REF               ?? "",
-
-  // ── Travel Insurance ────────────────────────────────────────────────────
-  // VisitorsCoverage: https://www.visitorscoverage.com/affiliates
-  visitorscoverage: process.env.NEXT_PUBLIC_VC_AGENT                ?? "",
-  // EKTA:        https://ekta.insurance/partners
-  ekta:             process.env.NEXT_PUBLIC_EKTA_REF                ?? "",
-
-  // ── Flight Compensation ─────────────────────────────────────────────────
-  // AirHelp:    https://www.airhelp.com/en/affiliate-program
-  airhelp:          process.env.NEXT_PUBLIC_AIRHELP_PARTNER         ?? "",
-
-  // ── Trains ──────────────────────────────────────────────────────────────
-  // Rail Europe: https://www.raileurope.com/en/affiliate
-  raileurope:       process.env.NEXT_PUBLIC_RAILEUROPE_AID          ?? "",
+// ── Travelpayouts promo_ids — one per partner program ────────────────────────
+// Default values for well-known, universal TP promo_ids.
+// All others MUST be filled from: TP Dashboard → Programs → [Partner] → Tools → Link
+const TP_PROMO = {
+  // Hotels (known universal promo_ids)
+  booking:          process.env.NEXT_PUBLIC_TP_PROMO_BOOKING      ?? "4338",
+  tripcom:          process.env.NEXT_PUBLIC_TP_PROMO_TRIPCOM      ?? "4064",
+  // Everything else: set from your TP dashboard
+  discovercars:     process.env.NEXT_PUBLIC_TP_PROMO_DISCOVERCARS ?? "",
+  getyourguide:     process.env.NEXT_PUBLIC_TP_PROMO_GYG          ?? "",
+  klook:            process.env.NEXT_PUBLIC_TP_PROMO_KLOOK        ?? "",
+  kkday:            process.env.NEXT_PUBLIC_TP_PROMO_KKDAY        ?? "",
+  gocity:           process.env.NEXT_PUBLIC_TP_PROMO_GOCITY       ?? "",
+  kiwi:             process.env.NEXT_PUBLIC_TP_PROMO_KIWI         ?? "",
+  cheapoair:        process.env.NEXT_PUBLIC_TP_PROMO_CHEAPOAIR    ?? "",
+  airalo:           process.env.NEXT_PUBLIC_TP_PROMO_AIRALO       ?? "",
+  yesim:            process.env.NEXT_PUBLIC_TP_PROMO_YESIM        ?? "",
+  visitorscoverage: process.env.NEXT_PUBLIC_TP_PROMO_VC           ?? "",
+  ekta:             process.env.NEXT_PUBLIC_TP_PROMO_EKTA         ?? "",
+  airhelp:          process.env.NEXT_PUBLIC_TP_PROMO_AIRHELP      ?? "",
+  raileurope:       process.env.NEXT_PUBLIC_TP_PROMO_RAILEUROPE   ?? "",
 } as const;
 
-export type PartnerId = keyof typeof IDS;
+export type PartnerId = keyof typeof TP_PROMO;
 
 export type PartnerCategory =
   | "flights"
@@ -100,34 +80,41 @@ export type Partner = {
   revenueModel: "cpa" | "cpc" | "rev_share";
 };
 
-// ── Helper ─────────────────────────────────────────────────────────────────
-function ok(id: string): string | null {
-  return id && id.trim().length > 0 ? id : null;
-}
-
-// Booking.com via Travelpayouts media (always works with TP marker)
-function bookingViaTP(destination: string, checkIn?: string | null, checkOut?: string | null, adults = 2): string {
-  const dest = encodeURIComponent(destination);
-  const checkin = checkIn ? `&checkin=${checkIn}` : "";
-  const checkout = checkOut ? `&checkout=${checkOut}` : "";
-  const custom = encodeURIComponent(
-    `https://www.booking.com/searchresults.html?ss=${dest}&group_adults=${adults}&no_rooms=1${checkin}${checkout}`
+// ── Core Travelpayouts deeplink builder ───────────────────────────────────────
+/**
+ * Wraps any partner URL in a Travelpayouts tracking redirect.
+ * Returns null if promoId is not set (partner not connected in TP dashboard).
+ */
+export function tpLink(promoId: string, partnerUrl: string, subid?: string): string | null {
+  if (!promoId || !promoId.trim()) return null;
+  const customUrl = encodeURIComponent(partnerUrl);
+  const subidParam = subid ? `&subid=${encodeURIComponent(subid)}` : "";
+  return (
+    `https://tp.media/click` +
+    `?shmarker=${TP_MARKER}` +
+    `&promo_id=${promoId}` +
+    `&source_type=customtab` +
+    `&type=click` +
+    subidParam +
+    `&custom_url=${customUrl}`
   );
-  return `https://tp.media/click?shmarker=${TP_MARKER}&promo_id=4338&source_type=customtab&type=click&custom_url=${custom}`;
 }
 
-// Trip.com via Travelpayouts media
-function tripcomViaTP(destination: string): string {
-  const custom = encodeURIComponent(
-    `https://www.trip.com/hotels/list?city=${encodeURIComponent(destination)}`
-  );
-  return `https://tp.media/click?shmarker=${TP_MARKER}&promo_id=4064&source_type=customtab&type=click&custom_url=${custom}`;
+/** Build a Booking.com search results URL */
+function bookingSearchUrl(destination: string, checkIn?: string | null, checkOut?: string | null, adults = 2): string {
+  const u = new URL("https://www.booking.com/searchresults.html");
+  u.searchParams.set("ss", destination);
+  u.searchParams.set("group_adults", String(adults));
+  u.searchParams.set("no_rooms", "1");
+  if (checkIn)  u.searchParams.set("checkin",  checkIn);
+  if (checkOut) u.searchParams.set("checkout", checkOut);
+  return u.toString();
 }
 
-// ── Partner Definitions ────────────────────────────────────────────────────
+// ── Partner Definitions ────────────────────────────────────────────────────────
 export const PARTNERS: Record<PartnerId, Partner> = {
 
-  // ────────────────────────────────────────────────────────── HOTELS ─────
+  // ─────────────────────────────────────────────────────────────── HOTELS ──
 
   booking: {
     id: "booking",
@@ -142,22 +129,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     revenueModel: "cpa",
     buildUrl: ({ destination, departure_date, return_date, adults, subid }) => {
       if (!destination) return null;
-      // If direct affiliate ID is set → use it (higher commission)
-      const directId = ok(IDS.booking);
-      if (directId) {
-        const u = new URL("https://www.booking.com/searchresults.html");
-        u.searchParams.set("ss", destination);
-        u.searchParams.set("aid", directId);
-        u.searchParams.set("label", `gotripza-${TP_MARKER}`);
-        if (departure_date) u.searchParams.set("checkin", departure_date);
-        if (return_date) u.searchParams.set("checkout", return_date);
-        u.searchParams.set("group_adults", String(adults ?? 2));
-        u.searchParams.set("no_rooms", "1");
-        if (subid) u.searchParams.set("aid2", subid);
-        return u.toString();
-      }
-      // Fallback: Travelpayouts media link (always tracks via TP marker)
-      return bookingViaTP(destination, departure_date, return_date, adults);
+      const partnerUrl = bookingSearchUrl(destination, departure_date, return_date, adults ?? 2);
+      return tpLink(TP_PROMO.booking, partnerUrl, subid);
     },
   },
 
@@ -174,23 +147,16 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     revenueModel: "cpa",
     buildUrl: ({ destination, departure_date, return_date, adults, subid }) => {
       if (!destination) return null;
-      const directId = ok(IDS.tripcom);
-      if (directId) {
-        const u = new URL("https://www.trip.com/hotels/list");
-        u.searchParams.set("city", destination);
-        u.searchParams.set("aid", directId);
-        if (departure_date) u.searchParams.set("checkin", departure_date);
-        if (return_date) u.searchParams.set("checkout", return_date);
-        if (adults) u.searchParams.set("adult", String(adults));
-        if (subid) u.searchParams.set("utm_campaign", subid);
-        return u.toString();
-      }
-      // Fallback: via TP media
-      return tripcomViaTP(destination);
+      const u = new URL("https://www.trip.com/hotels/list");
+      u.searchParams.set("city", destination);
+      if (departure_date) u.searchParams.set("checkin", departure_date);
+      if (return_date)    u.searchParams.set("checkout", return_date);
+      if (adults)         u.searchParams.set("adult", String(adults));
+      return tpLink(TP_PROMO.tripcom, u.toString(), subid);
     },
   },
 
-  // ───────────────────────────────────────────────────────── CAR RENTAL ──
+  // ──────────────────────────────────────────────────────────── CAR RENTAL ──
 
   discovercars: {
     id: "discovercars",
@@ -203,22 +169,16 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     accentColor: "sky",
     commissionRate: 0.07,
     revenueModel: "cpa",
-    buildUrl: ({ destination, departure_date, return_date, adults, subid }) => {
-      const id = ok(IDS.discovercars);
-      if (!id) return null;
+    buildUrl: ({ destination, departure_date, return_date, subid }) => {
       const u = new URL("https://www.discovercars.com/");
-      u.searchParams.set("a_aid", id);
-      u.searchParams.set("a_bid", "cars");          // campaign — consistent everywhere
-      if (destination) u.searchParams.set("destination", destination);
+      if (destination)    u.searchParams.set("destination", destination);
       if (departure_date) u.searchParams.set("from_date", departure_date);
-      if (return_date) u.searchParams.set("to_date", return_date);
-      if (adults) u.searchParams.set("drivers_age", "30");
-      if (subid) u.searchParams.set("a_cid", subid);
-      return u.toString();
+      if (return_date)    u.searchParams.set("to_date", return_date);
+      return tpLink(TP_PROMO.discovercars, u.toString(), subid);
     },
   },
 
-  // ──────────────────────────────────────────────────────── ACTIVITIES ───
+  // ─────────────────────────────────────────────────────────── ACTIVITIES ──
 
   getyourguide: {
     id: "getyourguide",
@@ -232,13 +192,9 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.08,
     revenueModel: "cpa",
     buildUrl: ({ destination, subid }) => {
-      const id = ok(IDS.getyourguide);
-      if (!id) return null;
       const u = new URL("https://www.getyourguide.com/s/");
       if (destination) u.searchParams.set("q", destination);
-      u.searchParams.set("partner_id", id);
-      if (subid) u.searchParams.set("cmp", subid);
-      return u.toString();
+      return tpLink(TP_PROMO.getyourguide, u.toString(), subid);
     },
   },
 
@@ -254,13 +210,9 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.06,
     revenueModel: "cpa",
     buildUrl: ({ destination, subid }) => {
-      const id = ok(IDS.klook);
-      if (!id) return null;
       const u = new URL("https://www.klook.com/search/");
       if (destination) u.searchParams.set("query", destination);
-      u.searchParams.set("aid", id);
-      if (subid) u.searchParams.set("spm", subid);
-      return u.toString();
+      return tpLink(TP_PROMO.klook, u.toString(), subid);
     },
   },
 
@@ -276,13 +228,9 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.06,
     revenueModel: "cpa",
     buildUrl: ({ destination, subid }) => {
-      const id = ok(IDS.kkday);
-      if (!id) return null;
       const u = new URL("https://www.kkday.com/en-us/search");
       if (destination) u.searchParams.set("keyword", destination);
-      u.searchParams.set("cid", id);
-      if (subid) u.searchParams.set("source", subid);
-      return u.toString();
+      return tpLink(TP_PROMO.kkday, u.toString(), subid);
     },
   },
 
@@ -298,18 +246,13 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.08,
     revenueModel: "cpa",
     buildUrl: ({ destination, subid }) => {
-      const id = ok(IDS.gocity);
-      if (!id) return null;
       const slug = destination?.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z-]/g, "") ?? "";
       const base = slug ? `https://gocity.com/${slug}` : "https://gocity.com/";
-      const u = new URL(base);
-      u.searchParams.set("aid", id);
-      if (subid) u.searchParams.set("cmp", subid);
-      return u.toString();
+      return tpLink(TP_PROMO.gocity, base, subid);
     },
   },
 
-  // ──────────────────────────────────────────────────── CHEAP FLIGHTS ────
+  // ──────────────────────────────────────────────────────── CHEAP FLIGHTS ──
 
   kiwi: {
     id: "kiwi",
@@ -323,17 +266,13 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.04,
     revenueModel: "cpa",
     buildUrl: ({ origin, destination, departure_date, return_date, adults, subid }) => {
-      const id = ok(IDS.kiwi);
-      if (!id) return null;
       const u = new URL("https://www.kiwi.com/deep");
-      u.searchParams.set("affilid", id);
-      if (origin) u.searchParams.set("from", origin);
-      if (destination) u.searchParams.set("to", destination);
+      if (origin)         u.searchParams.set("from", origin);
+      if (destination)    u.searchParams.set("to", destination);
       if (departure_date) u.searchParams.set("departure", departure_date);
-      if (return_date) u.searchParams.set("return", return_date);
-      if (adults) u.searchParams.set("adults", String(adults));
-      if (subid) u.searchParams.set("source", subid);
-      return u.toString();
+      if (return_date)    u.searchParams.set("return", return_date);
+      if (adults)         u.searchParams.set("adults", String(adults));
+      return tpLink(TP_PROMO.kiwi, u.toString(), subid);
     },
   },
 
@@ -348,22 +287,18 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     accentColor: "blue",
     commissionRate: 0.03,
     revenueModel: "cpc",
-    buildUrl: ({ destination, origin, departure_date, return_date, adults, subid }) => {
-      const id = ok(IDS.cheapoair);
-      if (!id) return null;
+    buildUrl: ({ origin, destination, departure_date, return_date, adults, subid }) => {
       const u = new URL("https://www.cheapoair.com/flights/cheap-flights");
-      u.searchParams.set("AFFID", id);
-      if (origin) u.searchParams.set("from", origin);
-      if (destination) u.searchParams.set("to", destination);
+      if (origin)         u.searchParams.set("from", origin);
+      if (destination)    u.searchParams.set("to", destination);
       if (departure_date) u.searchParams.set("departure", departure_date);
-      if (return_date) u.searchParams.set("return", return_date);
-      if (adults) u.searchParams.set("adults", String(adults));
-      if (subid) u.searchParams.set("SubID", subid);
-      return u.toString();
+      if (return_date)    u.searchParams.set("return", return_date);
+      if (adults)         u.searchParams.set("adults", String(adults));
+      return tpLink(TP_PROMO.cheapoair, u.toString(), subid);
     },
   },
 
-  // ──────────────────────────────────────────────────────────── eSIM ─────
+  // ──────────────────────────────────────────────────────────────── eSIM ──
 
   airalo: {
     id: "airalo",
@@ -377,13 +312,9 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.10,
     revenueModel: "cpa",
     buildUrl: ({ destination, subid }) => {
-      const id = ok(IDS.airalo);
-      if (!id) return null;
       const u = new URL("https://www.airalo.com/");
-      u.searchParams.set("partner", id);
       if (destination) u.searchParams.set("destination", destination);
-      if (subid) u.searchParams.set("utm_campaign", subid);
-      return u.toString();
+      return tpLink(TP_PROMO.airalo, u.toString(), subid);
     },
   },
 
@@ -398,17 +329,11 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     accentColor: "cyan",
     commissionRate: 0.15,
     revenueModel: "cpa",
-    buildUrl: ({ subid }) => {
-      const id = ok(IDS.yesim);
-      if (!id) return null;
-      const u = new URL("https://yesim.app/");
-      u.searchParams.set("ref", id);
-      if (subid) u.searchParams.set("campaign", subid);
-      return u.toString();
-    },
+    buildUrl: ({ subid }) =>
+      tpLink(TP_PROMO.yesim, "https://yesim.app/", subid),
   },
 
-  // ───────────────────────────────────────────────── TRAVEL INSURANCE ────
+  // ──────────────────────────────────────────────────── TRAVEL INSURANCE ──
 
   visitorscoverage: {
     id: "visitorscoverage",
@@ -421,14 +346,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     accentColor: "blue",
     commissionRate: 0.12,
     revenueModel: "cpa",
-    buildUrl: ({ subid }) => {
-      const id = ok(IDS.visitorscoverage);
-      if (!id) return null;
-      const u = new URL("https://www.visitorscoverage.com/");
-      u.searchParams.set("agent_code", id);
-      if (subid) u.searchParams.set("utm_campaign", subid);
-      return u.toString();
-    },
+    buildUrl: ({ subid }) =>
+      tpLink(TP_PROMO.visitorscoverage, "https://www.visitorscoverage.com/", subid),
   },
 
   ekta: {
@@ -442,17 +361,11 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     accentColor: "purple",
     commissionRate: 0.12,
     revenueModel: "cpa",
-    buildUrl: ({ subid }) => {
-      const id = ok(IDS.ekta);
-      if (!id) return null;
-      const u = new URL("https://ekta.insurance/");
-      u.searchParams.set("ref", id);
-      if (subid) u.searchParams.set("campaign", subid);
-      return u.toString();
-    },
+    buildUrl: ({ subid }) =>
+      tpLink(TP_PROMO.ekta, "https://ekta.insurance/", subid),
   },
 
-  // ─────────────────────────────────────────────── FLIGHT COMPENSATION ───
+  // ───────────────────────────────────────────────── FLIGHT COMPENSATION ──
 
   airhelp: {
     id: "airhelp",
@@ -465,17 +378,11 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     accentColor: "amber",
     commissionRate: 0.25,
     revenueModel: "cpa",
-    buildUrl: ({ subid }) => {
-      const id = ok(IDS.airhelp);
-      if (!id) return null;
-      const u = new URL("https://www.airhelp.com/en/check-your-flight/");
-      u.searchParams.set("partner", id);
-      if (subid) u.searchParams.set("utm_campaign", subid);
-      return u.toString();
-    },
+    buildUrl: ({ subid }) =>
+      tpLink(TP_PROMO.airhelp, "https://www.airhelp.com/en/check-your-flight/", subid),
   },
 
-  // ────────────────────────────────────────────────────────── TRAINS ─────
+  // ────────────────────────────────────────────────────────────── TRAINS ──
 
   raileurope: {
     id: "raileurope",
@@ -489,53 +396,75 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.05,
     revenueModel: "cpa",
     buildUrl: ({ origin, destination, departure_date, subid }) => {
-      const id = ok(IDS.raileurope);
-      if (!id) return null;
       const u = new URL("https://www.raileurope.com/en/search-results/");
-      if (origin) u.searchParams.set("origin", origin);
-      if (destination) u.searchParams.set("destination", destination);
+      if (origin)         u.searchParams.set("origin", origin);
+      if (destination)    u.searchParams.set("destination", destination);
       if (departure_date) u.searchParams.set("departureDate", departure_date);
-      u.searchParams.set("a_aid", id);
-      if (subid) u.searchParams.set("a_bid", subid);
-      return u.toString();
+      return tpLink(TP_PROMO.raileurope, u.toString(), subid);
     },
   },
 };
 
-// ── Convenience exports ────────────────────────────────────────────────────
+// ── Convenience exports ────────────────────────────────────────────────────────
 
 export const ALL_PARTNER_IDS = Object.keys(PARTNERS) as PartnerId[];
 
-/** Build a URL — returns null if partner not configured */
+/** Build a Travelpayouts-tracked URL for a partner — null if promo_id not set */
 export function buildPartnerUrl(id: PartnerId, params: PartnerUrlParams): string | null {
   return PARTNERS[id]?.buildUrl(params) ?? null;
 }
 
-/** Returns true if the partner has a configured affiliate ID */
+/** Returns true if the partner has a configured TP promo_id */
 export function isPartnerConfigured(id: PartnerId): boolean {
   return buildPartnerUrl(id, {}) !== null;
 }
 
-/** Returns all configured partners */
+/** Returns all partners with a configured TP promo_id */
 export function getConfiguredPartners(): Partner[] {
   return ALL_PARTNER_IDS
     .map((id) => PARTNERS[id])
     .filter((p) => isPartnerConfigured(p.id));
 }
 
-/** Build the best hotel booking URL for a destination.
- *  Priority: Booking.com direct → Trip.com → Hotellook fallback */
+/**
+ * Build the best hotel booking URL for a destination.
+ * Always goes through Travelpayouts (promo_id=4338 for Booking.com).
+ * Falls back to Trip.com (promo_id=4064), then Hotellook (plain TP marker).
+ */
 export function buildHotelUrl(params: PartnerUrlParams & { fallbackHotellookUrl?: string }): string {
   const bookingUrl = buildPartnerUrl("booking", params);
   if (bookingUrl) return bookingUrl;
   const tripUrl = buildPartnerUrl("tripcom", params);
   if (tripUrl) return tripUrl;
-  // Final fallback: Hotellook (always works via TP marker)
+  // Hard fallback: Hotellook via TP marker (always tracked)
   return params.fallbackHotellookUrl
-    ?? `https://www.hotellook.com/search?destination=${encodeURIComponent(params.destination ?? "")}&lang=en&marker=${TP_MARKER}`;
+    ?? `https://tp.media/click?shmarker=${TP_MARKER}&promo_id=4299&source_type=customtab&type=click&custom_url=${encodeURIComponent(`https://www.hotellook.com/search?destination=${encodeURIComponent(params.destination ?? "")}&lang=en`)}`;
 }
 
-// ── Category config (re-export for convenience) ───────────────────────────
+/**
+ * Aviasales deep-link — always tracked via TP marker.
+ * (Aviasales IS Travelpayouts; ?marker= is the standard attribution method.)
+ */
+export function buildAviasalesUrl(params: {
+  origin?: string | null;
+  destination?: string | null;
+  departure_date?: string | null;
+  return_date?: string | null;
+  locale?: string;
+  subid?: string;
+}): string {
+  const u = new URL("https://www.aviasales.com/");
+  u.searchParams.set("marker", TP_MARKER);
+  if (params.locale) u.searchParams.set("locale", params.locale === "ar" ? "ar" : "en");
+  if (params.origin)        u.searchParams.set("origin",      params.origin);
+  if (params.destination)   u.searchParams.set("destination", params.destination);
+  if (params.departure_date) u.searchParams.set("departure_date", params.departure_date);
+  if (params.return_date)   u.searchParams.set("return_date",   params.return_date);
+  if (params.subid)         u.searchParams.set("subid",         params.subid);
+  return u.toString();
+}
+
+// ── Category config ────────────────────────────────────────────────────────────
 
 export const CATEGORY_META: Record<PartnerCategory, { label_en: string; label_ar: string; icon: string }> = {
   flights:      { label_en: "Cheap Flights",       label_ar: "طيران رخيص",        icon: "✈️" },

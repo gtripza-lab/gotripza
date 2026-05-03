@@ -64,9 +64,11 @@ export async function POST(req: NextRequest) {
   }
 
   let query = "";
+  let history: import("@/lib/gemini").ChatTurn[] = [];
   try {
-    const body = (await req.json()) as { query?: string };
+    const body = (await req.json()) as { query?: string; history?: import("@/lib/gemini").ChatTurn[] };
     query = body.query?.trim() ?? "";
+    history = Array.isArray(body.history) ? body.history.slice(-12) : [];
     if (!query || query.length < 2) {
       return NextResponse.json({ error: "Empty query" }, { status: 400 });
     }
@@ -79,15 +81,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const intel = await getTravelIntelligence(query);
+    const intel = await getTravelIntelligence(query, history);
 
-    // Live tips: run in parallel — best effort, never blocks
+    // Live tips: only worth fetching in search mode (destination is confirmed)
     const { getLiveTips } = await import("@/lib/gemini");
-    const tips = await getLiveTips(intel.intent.destination, intel.locale).catch(() => null);
+    const tips = intel.mode === "search"
+      ? await getLiveTips(intel.intent.destination, intel.locale).catch(() => null)
+      : null;
 
     return NextResponse.json({
       intent: intel.intent,
       locale: intel.locale,
+      mode: intel.mode,
       message: intel.message,
       wants: intel.wants,
       followup: intel.followup,

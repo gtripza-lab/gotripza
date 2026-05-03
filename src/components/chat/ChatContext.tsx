@@ -3,18 +3,21 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
 } from "react";
-import type { TripIntent, BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
+import type { TripIntent, BudgetVerdict, ConfidenceScore, DestinationIntel, ChatTurn, ChatMode } from "@/lib/gemini";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { Locale } from "@/i18n/config";
 import { currencyForLocale, type Currency } from "@/lib/utils";
 import { logEvent } from "@/lib/events";
+import { TP_MARKER } from "@/lib/partners";
 
-// ── Types ──────────────────────────────────────────────────────────────────
+// ── Re-export for consumers ────────────────────────────────────────────────
+export type { ChatMode };
 
 export type ChatSearchData = {
   intent: TripIntent;
@@ -37,7 +40,8 @@ export type ChatMessage = {
   role: "user" | "assistant";
   text: string;
   timestamp: number;
-  searchData?: ChatSearchData;
+  mode?: ChatMode;          // mode of the AI response
+  searchData?: ChatSearchData; // only present when mode === "search"
   isLoading?: boolean;
   error?: string;
 };
@@ -75,7 +79,6 @@ function friendlyError(raw: string, locale: string): string {
     : "Something went wrong. Please try again.";
 }
 
-const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
 // ── Provider ───────────────────────────────────────────────────────────────
 
@@ -90,19 +93,25 @@ export function ChatProvider({
 }) {
   const currency = initialCurrency ?? currencyForLocale(locale);
 
-  // Welcome message
+  // Welcome message — invites conversation, doesn't push search
   const welcomeMsg: ChatMessage = useMemo(() => ({
     id: "welcome",
     role: "assistant",
+    mode: "advice",
     text: locale === "ar"
-      ? "مرحباً بك في GoTripza! أنا مساعدك الذكي للسفر. صِف لي رحلتك المثالية — الوجهة، التواريخ، الميزانية — وسأرتّب لك أفضل الخيارات فوراً."
-      : "Welcome to GoTripza! I'm your AI travel companion. Tell me about your ideal trip — destination, dates, budget — and I'll curate the best options instantly.",
+      ? "مرحباً! 👋 أنا ريا، مستشارتك الذكية في GoTripza.\n\nأخبرني عن رحلتك — إلى أين تفكر تسافر؟ أو اسألني أي سؤال عن السفر وأنا هنا أساعدك 🌍"
+      : "Hi there! 👋 I'm Raya, your AI travel advisor at GoTripza.\n\nTell me about your trip — where are you thinking of going? Or ask me anything about travel and I'll guide you 🌍",
     timestamp: Date.now(),
   }), [locale]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMsg]);
   const [isThinking, setIsThinking] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Keep a ref in sync so sendMessage can read latest messages without
+  // being re-created on every state update (avoids stale-closure & perf issues).
+  const messagesRef = useRef(messages);
+  useEffect(() => { messagesRef.current = messages; }, [messages]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isThinking) return;
@@ -135,17 +144,27 @@ export function ChatProvider({
     logEvent("chat_message_sent", { query: text, locale });
 
     try {
-      // 3 — Parse intent
+      // Build conversation history to send (last 12 messages, excluding current loading msg)
+      const historySnap = messagesRef.current
+        .filter((m) => !m.isLoading && m.text.trim())
+        .slice(-12)
+        .map((m): ChatTurn => ({
+          role: m.role === "user" ? "user" : "model",
+          text: m.text,
+        }));
+
+      // 3 — Parse intent + determine mode
       const parseRes = await fetch("/api/parse", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: text }),
+        body: JSON.stringify({ query: text, history: historySnap }),
         signal: abort.signal,
       });
 
       type ParseResponse = {
         intent?: TripIntent;
         locale?: "ar" | "en";
+        mode?: ChatMode;
         message?: string;
         wants?: ("flights" | "hotels")[];
         followup?: string | null;
@@ -166,11 +185,35 @@ export function ChatProvider({
       const intent = parsedJson.intent!;
       const aiLocale = parsedJson.locale ?? locale;
       const aiMessage = parsedJson.message ?? "";
+      const mode: ChatMode = parsedJson.mode ?? "search";
+
       const wants: ("flights" | "hotels")[] = Array.isArray(parsedJson.wants) && parsedJson.wants.length
         ? parsedJson.wants.filter((w) => w === "flights" || w === "hotels") as ("flights" | "hotels")[]
         : ["flights", "hotels"];
 
-      // 4 — Search flights + hotels in parallel
+      // 4 — ONLY call search API when mode === "search"
+      if (mode !== "search") {
+        // Clarify or advice: just show the message, no search
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === thinkingId
+              ? { ...m, text: aiMessage, isLoading: false, mode }
+              : m,
+          ),
+        );
+
+        logEvent("chat_message_sent", { mode, destination: intent.destination, locale: aiLocale });
+
+        fetch("/api/history", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ query: text, destination: intent.destination, locale }),
+        }).catch(() => null);
+
+        return;
+      }
+
+      // mode === "search" — fetch flights + hotels
       const searchRes = await fetch("/api/search", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -197,8 +240,8 @@ export function ChatProvider({
         hotels: searchJson.hotels ?? [],
         wants,
         currency: searchJson.currency ?? currency,
-        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=${MARKER}`,
-        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://www.hotellook.com/search?marker=${MARKER}`,
+        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=${TP_MARKER}`,
+        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://tp.media/click?shmarker=${TP_MARKER}&promo_id=4338`,
         budget_verdict: parsedJson.budget_verdict ?? null,
         confidence: parsedJson.confidence ?? null,
         destination_intel: parsedJson.destination_intel ?? null,
@@ -207,16 +250,11 @@ export function ChatProvider({
         tips: parsedJson.tips ?? null,
       };
 
-      // 5 — Replace thinking with real AI response
+      // 5 — Replace thinking with AI response + results
       setMessages((prev) =>
         prev.map((m) =>
           m.id === thinkingId
-            ? {
-                ...m,
-                text: aiMessage,
-                isLoading: false,
-                searchData,
-              }
+            ? { ...m, text: aiMessage, isLoading: false, mode, searchData }
             : m,
         ),
       );
@@ -228,7 +266,6 @@ export function ChatProvider({
         locale: aiLocale,
       });
 
-      // Save history best-effort
       fetch("/api/history", {
         method: "POST",
         headers: { "content-type": "application/json" },

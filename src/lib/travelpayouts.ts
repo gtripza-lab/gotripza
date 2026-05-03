@@ -1,4 +1,5 @@
 import "server-only";
+import { buildHotelUrl } from "./partners";
 
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 const TOKEN  = process.env.TRAVELPAYOUTS_TOKEN ?? "";
@@ -183,7 +184,7 @@ async function fetchHotelPage(
       country: String((h.location as { country?: string })?.country ?? ""),
     },
     // Route booking clicks to Booking.com (via TP media or direct affiliate)
-    link: hotelDeepLink(Number(h.hotelId ?? 0), location, subid, checkIn, checkOut, adults),
+    link: hotelDeepLink(location, subid, checkIn, checkOut, adults),
   }));
 }
 
@@ -223,48 +224,21 @@ export async function searchHotels(params: {
 
 /**
  * Build the hotel booking deep-link.
- *
- * Priority:
- *  1. Booking.com direct (if NEXT_PUBLIC_BOOKING_AID is set)
- *  2. Booking.com via Travelpayouts media (uses TP marker — always tracks)
- *  3. Trip.com via Travelpayouts media (fallback)
- *
- * We pass the hotel's cached price data but route the booking
- * click to Booking.com search (destination-level), which has
- * far higher conversion than Hotellook individual hotel pages.
+ * Routes through Travelpayouts (promo_id=4338 for Booking.com).
+ * Delegates to partners.ts → buildHotelUrl so all links stay in one place.
  */
 function hotelDeepLink(
-  _hotelId: number,
   location: string,
   subid?: string,
   checkIn?: string | null,
   checkOut?: string | null,
   adults?: number,
 ): string {
-  const bookingAid = process.env.NEXT_PUBLIC_BOOKING_AID ?? "";
-
-  // Option 1: Direct Booking.com affiliate link (higher commission)
-  if (bookingAid) {
-    const u = new URL("https://www.booking.com/searchresults.html");
-    u.searchParams.set("ss", location);
-    u.searchParams.set("aid", bookingAid);
-    u.searchParams.set("label", `gotripza-${MARKER}`);
-    if (checkIn) u.searchParams.set("checkin", checkIn);
-    if (checkOut) u.searchParams.set("checkout", checkOut);
-    u.searchParams.set("group_adults", String(adults ?? 2));
-    u.searchParams.set("no_rooms", "1");
-    if (subid) u.searchParams.set("source", subid);
-    return u.toString();
-  }
-
-  // Option 2: Booking.com via Travelpayouts media link (promo_id=4338)
-  const dest = encodeURIComponent(location);
-  const checkinParam  = checkIn  ? `&checkin=${checkIn}`   : "";
-  const checkoutParam = checkOut ? `&checkout=${checkOut}` : "";
-  const adultsParam   = `&group_adults=${adults ?? 2}&no_rooms=1`;
-  const customUrl = encodeURIComponent(
-    `https://www.booking.com/searchresults.html?ss=${dest}${checkinParam}${checkoutParam}${adultsParam}`
-  );
-  const subidParam = subid ? `&subid=${encodeURIComponent(subid)}` : "";
-  return `https://tp.media/click?shmarker=${MARKER}&promo_id=4338&source_type=customtab&type=click${subidParam}&custom_url=${customUrl}`;
+  return buildHotelUrl({
+    destination: location,
+    departure_date: checkIn,
+    return_date: checkOut,
+    adults: adults ?? 2,
+    subid,
+  });
 }

@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -61,19 +61,19 @@ declare global {
   }
 }
 
-// ── Quick Suggestions ─────────────────────────────────────────────────────
+// ── Quick suggestions shown on empty state ────────────────────────────────
 const SUGGESTIONS_AR = [
-  "رحلة عائلية إلى أنطاليا في يوليو",
-  "شهر عسل في المالديف بميزانية 5000 دولار",
-  "رحلة بالاس إلى إسطنبول 3 أيام",
-  "أرخص رحلة من الرياض إلى بانكوك",
+  "أبغى أسافر تركيا",
+  "شهر عسل في المالديف",
+  "هل تركيا آمنة للسياحة؟",
+  "أفضل وقت لزيارة بالي",
 ];
 
 const SUGGESTIONS_EN = [
-  "Family trip to Bali in July",
-  "Honeymoon in Maldives under $5000",
-  "Weekend in Dubai from London",
-  "Cheapest flights to Bangkok",
+  "I want to visit Turkey",
+  "Honeymoon in Maldives",
+  "Is Turkey safe for tourists?",
+  "Best time to visit Bali",
 ];
 
 // ── Main Chat Interface ───────────────────────────────────────────────────
@@ -87,6 +87,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isAr = locale === "ar";
   const suggestions = isAr ? SUGGESTIONS_AR : SUGGESTIONS_EN;
+  const showSuggestions = messages.length <= 1 && !isThinking;
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -138,25 +139,26 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     rec.start();
   };
 
-  const showSuggestions = messages.length <= 1;
-
   return (
-    <div className="flex h-full flex-col" dir={isAr ? "rtl" : "ltr"}>
-
-      {/* ── Chat header ──────────────────────────────────────────── */}
-      <div className="flex items-center justify-between border-b border-white/[0.07] px-4 py-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-brand-primary/30 to-brand-deep/30">
-            <Sparkles className="h-4 w-4 text-brand-primary" />
+    <div
+      className="flex h-full flex-col bg-white/[0.97] dark:bg-[#0f0f17]"
+      dir={isAr ? "rtl" : "ltr"}
+      style={{ borderRadius: "inherit" }}
+    >
+      {/* ── Chat header ─────────────────────────────────────────── */}
+      <div className="flex items-center justify-between border-b border-gray-200/70 px-5 py-3.5 bg-white/80 backdrop-blur-sm" style={{ borderRadius: "inherit inherit 0 0" }}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-brand-primary shadow-sm">
+            <Sparkles className="h-4 w-4 text-white" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white/90">
-              {isAr ? "مستشار GoTripza الذكي" : "GoTripza AI Advisor"}
+            <p className="text-sm font-semibold text-gray-800">
+              {isAr ? "ريا — مستشارة السفر الذكية" : "Raya — AI Travel Advisor"}
             </p>
-            <div className="flex items-center gap-1.5">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
-              <span className="text-[10px] text-white/45">
-                {isAr ? "متاح الآن" : "Online now"}
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+              <span className="text-[11px] text-gray-500">
+                {isAr ? "متاحة الآن · GoTripza" : "Online now · GoTripza"}
               </span>
             </div>
           </div>
@@ -167,7 +169,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             type="button"
             onClick={clearChat}
             title={isAr ? "محادثة جديدة" : "New conversation"}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/30 transition hover:bg-white/[0.06] hover:text-white/60"
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
           >
             <Trash2 className="h-3.5 w-3.5" />
           </button>
@@ -175,14 +177,13 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
       </div>
 
       {/* ── Messages ─────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 bg-gray-50/50">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} dict={dict} currency={currency} locale={locale} />
           ))}
         </AnimatePresence>
 
-        {/* Thinking indicator — shown separately when isThinking but last msg already replaces it */}
         {isThinking && messages[messages.length - 1]?.isLoading && (
           <TypingIndicator isAr={isAr} />
         )}
@@ -190,17 +191,17 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
         <div ref={bottomRef} />
       </div>
 
-      {/* ── Quick Suggestions (first load) ───────────────────────── */}
+      {/* ── Quick Suggestions (empty state) ─────────────────────── */}
       <AnimatePresence>
         {showSuggestions && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
-            className="px-4 pb-3"
+            className="px-4 pb-3 bg-gray-50/50 border-t border-gray-100"
           >
-            <p className="mb-2 text-[11px] text-white/35">
-              {isAr ? "جرّب إحدى هذه الأمثلة:" : "Try one of these:"}
+            <p className="mb-2.5 mt-2.5 text-[11px] font-medium text-gray-400">
+              {isAr ? "ابدأ المحادثة:" : "Start a conversation:"}
             </p>
             <div className="flex flex-wrap gap-2">
               {suggestions.map((s) => (
@@ -208,7 +209,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
                   key={s}
                   type="button"
                   onClick={() => { setInput(s); void sendMessage(s); }}
-                  className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-white/60 transition hover:border-brand-primary/40 hover:bg-brand-primary/10 hover:text-white/90"
+                  className="rounded-full border border-gray-200 bg-white px-3.5 py-1.5 text-xs text-gray-600 shadow-sm transition hover:border-violet-300 hover:bg-violet-50 hover:text-violet-700"
                 >
                   {s}
                 </button>
@@ -219,7 +220,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
       </AnimatePresence>
 
       {/* ── Input Row ────────────────────────────────────────────── */}
-      <div className="border-t border-white/[0.07] px-4 py-3">
+      <div className="border-t border-gray-200/70 px-4 py-3 bg-white">
         <div className="flex items-end gap-2">
           {/* Textarea */}
           <textarea
@@ -229,12 +230,12 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onKeyDown={handleKeyDown}
             placeholder={
               isAr
-                ? "صِف رحلتك... مثال: رحلة عائلية إلى بالي في أغسطس بميزانية 3000 دولار"
-                : "Describe your trip... e.g. Family trip to Bali in August, budget $3000"
+                ? "اسألني عن رحلتك أو أي شيء عن السفر..."
+                : "Ask me about your trip or anything travel..."
             }
             disabled={isThinking}
             rows={1}
-            className="min-h-[44px] flex-1 resize-none rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder:text-white/30 focus:border-brand-primary/40 focus:outline-none focus:ring-1 focus:ring-brand-primary/20 disabled:opacity-50"
+            className="min-h-[44px] flex-1 resize-none rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 placeholder:text-gray-400 focus:border-violet-300 focus:bg-white focus:outline-none focus:ring-2 focus:ring-violet-100 disabled:opacity-50"
             style={{ maxHeight: "120px" }}
             onInput={(e) => {
               const t = e.currentTarget;
@@ -251,8 +252,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
             className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 ${
               isListening
-                ? "animate-pulse bg-rose-500/20 text-rose-400"
-                : "border border-white/10 bg-white/[0.05] text-white/50 hover:bg-white/[0.1] hover:text-white/80"
+                ? "animate-pulse bg-rose-100 text-rose-500"
+                : "border border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
             }`}
           >
             {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
@@ -264,16 +265,16 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleSend}
             disabled={isThinking || !input.trim()}
             aria-label={isAr ? "إرسال" : "Send"}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-primary to-brand-deep text-white shadow-glow transition hover:scale-105 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-brand-primary text-white shadow-sm transition hover:scale-105 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
           >
             <Send className="h-4 w-4 rtl:rotate-180" />
           </button>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-white/20">
+        <p className="mt-2 text-center text-[10px] text-gray-400">
           {isAr
-            ? "GoTripza — مقارنة أكثر من ١٨٠ شركة طيران وآلاف الفنادق"
-            : "GoTripza — comparing 180+ airlines & thousands of hotels"}
+            ? "GoTripza · ١٨٠+ شركة طيران · آلاف الفنادق"
+            : "GoTripza · 180+ airlines · thousands of hotels"}
         </p>
       </div>
     </div>
@@ -287,19 +288,19 @@ function TypingIndicator({ isAr }: { isAr: boolean }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-end gap-2"
+      className="flex items-end gap-2.5"
     >
-      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary/30 to-brand-deep/30">
-        <Sparkles className="h-3.5 w-3.5 text-brand-primary" />
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-brand-primary shadow-sm">
+        <Sparkles className="h-3.5 w-3.5 text-white" />
       </div>
-      <div className="rounded-2xl rounded-bl-sm border border-white/[0.08] bg-white/[0.04] px-4 py-3">
+      <div className="rounded-2xl rounded-bl-sm bg-white shadow-sm border border-gray-100 px-4 py-3">
         <div className="flex items-center gap-1.5">
-          <span className="h-2 w-2 animate-bounce rounded-full bg-brand-primary/60" style={{ animationDelay: "0ms" }} />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-brand-primary/60" style={{ animationDelay: "150ms" }} />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-brand-primary/60" style={{ animationDelay: "300ms" }} />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400" style={{ animationDelay: "0ms" }} />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400" style={{ animationDelay: "150ms" }} />
+          <span className="h-2 w-2 animate-bounce rounded-full bg-violet-400" style={{ animationDelay: "300ms" }} />
         </div>
-        <p className="mt-1 text-[10px] text-white/35">
-          {isAr ? "يحلل رحلتك..." : "Analyzing your trip..."}
+        <p className="mt-1 text-[10px] text-gray-400">
+          {isAr ? "ريا تفكر..." : "Raya is thinking..."}
         </p>
       </div>
     </motion.div>
@@ -328,13 +329,13 @@ function MessageBubble({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className={`flex items-end gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+      transition={{ duration: 0.25 }}
+      className={`flex items-end gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}
     >
-      {/* Avatar */}
+      {/* AI Avatar */}
       {!isUser && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary/30 to-brand-deep/30">
-          <Sparkles className="h-3.5 w-3.5 text-brand-primary" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-brand-primary shadow-sm">
+          <Sparkles className="h-3.5 w-3.5 text-white" />
         </div>
       )}
 
@@ -342,26 +343,26 @@ function MessageBubble({
         {/* Text bubble */}
         {message.text && (
           <div
-            className={`rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+            className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${
               isUser
-                ? "rounded-br-sm bg-gradient-to-br from-brand-primary/25 to-brand-deep/20 text-white/90"
-                : "rounded-bl-sm border border-white/[0.08] bg-white/[0.04] text-white/85"
-            } ${message.error ? "border-rose-500/20 bg-rose-500/5" : ""}`}
+                ? "rounded-br-sm bg-gradient-to-br from-violet-500 to-brand-primary text-white shadow-sm"
+                : "rounded-bl-sm bg-white border border-gray-100 text-gray-800 shadow-sm"
+            } ${message.error ? "border-rose-200 bg-rose-50 text-rose-700" : ""}`}
           >
             {message.text}
           </div>
         )}
 
         {/* Timestamp */}
-        <span className="px-1 text-[10px] text-white/20">
+        <span className={`px-1 text-[10px] ${isUser ? "text-gray-400" : "text-gray-400"}`}>
           {new Date(message.timestamp).toLocaleTimeString(locale === "ar" ? "ar-SA" : "en-US", {
             hour: "2-digit",
             minute: "2-digit",
           })}
         </span>
 
-        {/* Search Results — only for assistant messages with data */}
-        {!isUser && message.searchData && (
+        {/* Search Results — only for search-mode assistant messages */}
+        {!isUser && message.searchData && message.mode === "search" && (
           <ChatSearchResults
             data={message.searchData}
             messageId={message.id}
@@ -406,13 +407,13 @@ function ChatSearchResults({
 
       {/* Clarification */}
       {data.clarification_needed && data.clarification_question && (
-        <div className="flex items-start gap-2 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] p-4">
-          <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <MessageCircleQuestion className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
           <div>
-            <p className="text-xs font-semibold text-amber-300/80">
+            <p className="text-xs font-semibold text-amber-700">
               {isAr ? "توضيح مطلوب" : "Clarification needed"}
             </p>
-            <p className="mt-1 text-xs text-white/75">{data.clarification_question}</p>
+            <p className="mt-1 text-xs text-amber-800">{data.clarification_question}</p>
           </div>
         </div>
       )}
@@ -437,11 +438,11 @@ function ChatSearchResults({
       {/* Flights */}
       {showFlights && (
         <div>
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-white/50">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
             <Plane className="h-3 w-3 text-brand-primary" />
             {isAr ? "الرحلات" : "Flights"}
             {data.flights.length > 0 && (
-              <span className="rounded-full bg-brand-primary/15 px-2 py-0.5 text-[10px] text-brand-primary">
+              <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] text-brand-primary">
                 {data.flights.length}
               </span>
             )}
@@ -464,22 +465,22 @@ function ChatSearchResults({
       {/* Followup between sections */}
       {missingSide === "hotels" && !showHotels && (
         <FollowupChip
-          label={isAr ? "🏨 هل تريد رؤية الفنادق؟" : "🏨 Want to see hotels too?"}
+          label={isAr ? "🏨 هل تريد رؤية الفنادق أيضاً؟" : "🏨 Want to see hotels too?"}
           yesLabel={isAr ? "نعم" : "Yes"}
           noLabel={isAr ? "لا" : "No"}
           onYes={() => revealSide(messageId, "hotels")}
-          onNo={() => {}} // dismiss silently
+          onNo={() => {}}
         />
       )}
 
       {/* Hotels */}
       {showHotels && (
         <div>
-          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-white/50">
-            <HotelIcon className="h-3 w-3 text-brand-mint" />
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500">
+            <HotelIcon className="h-3 w-3 text-emerald-500" />
             {isAr ? "الفنادق" : "Hotels"}
             {data.hotels.length > 0 && (
-              <span className="rounded-full bg-brand-mint/15 px-2 py-0.5 text-[10px] text-brand-mint">
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700">
                 {data.hotels.length}
               </span>
             )}
@@ -521,25 +522,25 @@ function CompactConfidence({ confidence, isAr }: { confidence: ConfidenceScore; 
   const score = confidence.score;
   const color = score >= 8 ? "emerald" : score >= 6 ? "sky" : score >= 4 ? "amber" : "rose";
   const colorMap = {
-    emerald: { ring: "border-emerald-500/25", text: "text-emerald-400", bar: "bg-emerald-500" },
-    sky: { ring: "border-sky-500/25", text: "text-sky-400", bar: "bg-sky-500" },
-    amber: { ring: "border-amber-500/25", text: "text-amber-400", bar: "bg-amber-500" },
-    rose: { ring: "border-rose-500/25", text: "text-rose-400", bar: "bg-rose-500" },
+    emerald: { ring: "border-emerald-200", text: "text-emerald-600", bar: "bg-emerald-500", bg: "bg-emerald-50" },
+    sky:     { ring: "border-sky-200",     text: "text-sky-600",     bar: "bg-sky-500",     bg: "bg-sky-50" },
+    amber:   { ring: "border-amber-200",   text: "text-amber-600",   bar: "bg-amber-500",   bg: "bg-amber-50" },
+    rose:    { ring: "border-rose-200",    text: "text-rose-600",    bar: "bg-rose-500",    bg: "bg-rose-50" },
   };
   const c = colorMap[color];
 
   return (
-    <div className={`rounded-xl border bg-white/[0.03] p-3 ${c.ring}`}>
+    <div className={`rounded-xl border ${c.ring} ${c.bg} p-3`}>
       <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
           <ShieldCheck className="h-3 w-3" />
           {isAr ? "مؤشر الثقة" : "Confidence"}
         </div>
         <span className={`font-display text-lg font-bold ${c.text}`}>
-          {score.toFixed(1)}<span className="text-xs text-white/25">/10</span>
+          {score.toFixed(1)}<span className="text-xs text-gray-400">/10</span>
         </span>
       </div>
-      <div className="h-1 overflow-hidden rounded-full bg-white/[0.06]">
+      <div className="h-1.5 overflow-hidden rounded-full bg-gray-200">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${(score / 10) * 100}%` }}
@@ -547,7 +548,7 @@ function CompactConfidence({ confidence, isAr }: { confidence: ConfidenceScore; 
           className={`h-full rounded-full ${c.bar}`}
         />
       </div>
-      <p className="mt-1.5 text-[11px] text-white/55">
+      <p className="mt-1.5 text-[11px] text-gray-600">
         {isAr ? confidence.label_ar : confidence.label_en}
       </p>
     </div>
@@ -557,17 +558,17 @@ function CompactConfidence({ confidence, isAr }: { confidence: ConfidenceScore; 
 function CompactBudgetVerdict({ verdict, isAr }: { verdict: BudgetVerdict; isAr: boolean }) {
   const v = verdict.verdict;
   const colorMap = {
-    generous: { ring: "border-emerald-500/25", badge: "bg-emerald-500/15 text-emerald-300", icon: "text-emerald-400" },
-    realistic: { ring: "border-sky-500/25", badge: "bg-sky-500/15 text-sky-300", icon: "text-sky-400" },
-    tight: { ring: "border-amber-500/25", badge: "bg-amber-500/15 text-amber-300", icon: "text-amber-400" },
-    insufficient: { ring: "border-rose-500/25", badge: "bg-rose-500/15 text-rose-300", icon: "text-rose-400" },
+    generous:    { ring: "border-emerald-200", badge: "bg-emerald-100 text-emerald-700", bg: "bg-emerald-50", icon: "text-emerald-600" },
+    realistic:   { ring: "border-sky-200",     badge: "bg-sky-100 text-sky-700",         bg: "bg-sky-50",     icon: "text-sky-600" },
+    tight:       { ring: "border-amber-200",   badge: "bg-amber-100 text-amber-700",     bg: "bg-amber-50",   icon: "text-amber-600" },
+    insufficient:{ ring: "border-rose-200",    badge: "bg-rose-100 text-rose-700",       bg: "bg-rose-50",    icon: "text-rose-600" },
   };
   const c = colorMap[v];
 
   return (
-    <div className={`rounded-xl border bg-white/[0.03] p-3 ${c.ring}`}>
+    <div className={`rounded-xl border ${c.ring} ${c.bg} p-3`}>
       <div className="mb-2 flex items-center justify-between">
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">
+        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
           <DollarSign className={`h-3 w-3 ${c.icon}`} />
           {isAr ? "الميزانية" : "Budget"}
         </div>
@@ -575,11 +576,11 @@ function CompactBudgetVerdict({ verdict, isAr }: { verdict: BudgetVerdict; isAr:
           {isAr ? verdict.label_ar : verdict.label_en}
         </span>
       </div>
-      <p className="text-[11px] leading-relaxed text-white/60">
+      <p className="text-[11px] leading-relaxed text-gray-600">
         {isAr ? verdict.explanation_ar : verdict.explanation_en}
       </p>
       {verdict.suggested_budget_usd && (v === "tight" || v === "insufficient") && (
-        <p className="mt-1 flex items-center gap-1 text-[10px] text-white/40">
+        <p className="mt-1 flex items-center gap-1 text-[10px] text-gray-500">
           <TrendingUp className="h-3 w-3" />
           {isAr ? `الموصى به: $${verdict.suggested_budget_usd.toLocaleString()}` : `Recommended: $${verdict.suggested_budget_usd.toLocaleString()}`}
         </p>
@@ -591,34 +592,34 @@ function CompactBudgetVerdict({ verdict, isAr }: { verdict: BudgetVerdict; isAr:
 function CompactDestinationIntel({ intel, isAr, destination }: { intel: DestinationIntel; isAr: boolean; destination: string }) {
   const [expanded, setExpanded] = useState(false);
   const safetyColors = {
-    excellent: "text-emerald-400 bg-emerald-500/15",
-    good: "text-sky-400 bg-sky-500/15",
-    moderate: "text-amber-400 bg-amber-500/15",
-    caution: "text-rose-400 bg-rose-500/15",
+    excellent: "text-emerald-700 bg-emerald-100",
+    good:      "text-sky-700 bg-sky-100",
+    moderate:  "text-amber-700 bg-amber-100",
+    caution:   "text-rose-700 bg-rose-100",
   };
   const safetyLabels = {
     excellent: isAr ? "ممتاز" : "Excellent",
-    good: isAr ? "جيد" : "Good",
-    moderate: isAr ? "متوسط" : "Moderate",
-    caution: isAr ? "تنبيه" : "Caution",
+    good:      isAr ? "جيد" : "Good",
+    moderate:  isAr ? "متوسط" : "Moderate",
+    caution:   isAr ? "تنبيه" : "Caution",
   };
 
   return (
-    <div className="overflow-hidden rounded-xl border border-white/[0.07] bg-white/[0.03]">
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
       <button
         type="button"
         onClick={() => setExpanded((p) => !p)}
-        className="flex w-full items-center justify-between px-4 py-2.5 transition hover:bg-white/[0.02]"
+        className="flex w-full items-center justify-between px-4 py-2.5 transition hover:bg-gray-50"
       >
-        <div className="flex items-center gap-1.5 text-xs font-medium text-white/70">
-          <MapPin className="h-3.5 w-3.5 text-brand-mint" />
+        <div className="flex items-center gap-1.5 text-xs font-medium text-gray-700">
+          <MapPin className="h-3.5 w-3.5 text-violet-500" />
           {isAr ? `دليل ${destination}` : `${destination} Guide`}
         </div>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${safetyColors[intel.safety_level]}`}>
             {safetyLabels[intel.safety_level]}
           </span>
-          {expanded ? <ChevronUp className="h-3.5 w-3.5 text-white/30" /> : <ChevronDown className="h-3.5 w-3.5 text-white/30" />}
+          {expanded ? <ChevronUp className="h-3.5 w-3.5 text-gray-400" /> : <ChevronDown className="h-3.5 w-3.5 text-gray-400" />}
         </div>
       </button>
 
@@ -633,13 +634,13 @@ function CompactDestinationIntel({ intel, isAr, destination }: { intel: Destinat
           >
             <div className="grid gap-3 px-4 pb-4 sm:grid-cols-2">
               {/* Weather */}
-              <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">
-                  <Thermometer className="h-3 w-3 text-sky-400" />
+              <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                  <Thermometer className="h-3 w-3 text-sky-500" />
                   {isAr ? "الطقس" : "Weather"}
                 </p>
-                <p className="text-[11px] text-white/65">{isAr ? intel.weather_now_ar : intel.weather_now_en}</p>
-                <p className="mt-1 text-[10px] text-white/35">
+                <p className="text-[11px] text-gray-700">{isAr ? intel.weather_now_ar : intel.weather_now_en}</p>
+                <p className="mt-1 text-[10px] text-gray-500">
                   <Calendar className="mr-1 inline h-3 w-3" />
                   {isAr ? intel.best_months_ar : intel.best_months_en}
                 </p>
@@ -647,42 +648,42 @@ function CompactDestinationIntel({ intel, isAr, destination }: { intel: Destinat
 
               {/* Visa */}
               {(intel.visa_note_ar || intel.visa_note_en) && (
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">
-                    <Stamp className="h-3 w-3 text-purple-400" />
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    <Stamp className="h-3 w-3 text-purple-500" />
                     {isAr ? "التأشيرة" : "Visa"}
                   </p>
                   {intel.visa_required_for_saudis !== null && (
-                    <span className={`mb-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${intel.visa_required_for_saudis ? "bg-amber-500/15 text-amber-300" : "bg-emerald-500/15 text-emerald-300"}`}>
+                    <span className={`mb-1 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${intel.visa_required_for_saudis ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>
                       {intel.visa_required_for_saudis ? (isAr ? "تأشيرة مطلوبة" : "Visa required") : (isAr ? "بدون تأشيرة" : "Visa-free")}
                     </span>
                   )}
-                  <p className="text-[11px] text-white/60">{isAr ? intel.visa_note_ar : intel.visa_note_en}</p>
+                  <p className="text-[11px] text-gray-700">{isAr ? intel.visa_note_ar : intel.visa_note_en}</p>
                 </div>
               )}
 
               {/* Clothing */}
               {(intel.clothing_tip_ar || intel.clothing_tip_en) && (
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">
-                    <Shirt className="h-3 w-3 text-rose-300" />
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    <Shirt className="h-3 w-3 text-rose-400" />
                     {isAr ? "اللباس" : "Clothing"}
                   </p>
-                  <p className="text-[11px] text-white/65">{isAr ? intel.clothing_tip_ar : intel.clothing_tip_en}</p>
+                  <p className="text-[11px] text-gray-700">{isAr ? intel.clothing_tip_ar : intel.clothing_tip_en}</p>
                 </div>
               )}
 
               {/* Activities */}
               {(isAr ? intel.top_activities_ar : intel.top_activities_en).length > 0 && (
-                <div className="rounded-lg border border-white/[0.06] bg-white/[0.02] p-3">
-                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-white/40">
-                    <Zap className="h-3 w-3 text-amber-400" />
+                <div className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+                  <p className="mb-1 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wide text-gray-400">
+                    <Zap className="h-3 w-3 text-amber-500" />
                     {isAr ? "الأنشطة" : "Activities"}
                   </p>
                   <ul className="space-y-0.5">
                     {(isAr ? intel.top_activities_ar : intel.top_activities_en).slice(0, 3).map((a) => (
-                      <li key={a} className="flex items-center gap-1.5 text-[11px] text-white/60">
-                        <span className="h-1 w-1 rounded-full bg-amber-400/60" />
+                      <li key={a} className="flex items-center gap-1.5 text-[11px] text-gray-700">
+                        <span className="h-1 w-1 rounded-full bg-amber-400" />
                         {a}
                       </li>
                     ))}
@@ -700,13 +701,7 @@ function CompactDestinationIntel({ intel, isAr, destination }: { intel: Destinat
 // ── Flight Cards ──────────────────────────────────────────────────────────
 
 function FlightCards({
-  flights,
-  fmt,
-  locale,
-  destination,
-  currency,
-  searchUrl,
-  dict,
+  flights, fmt, locale, destination, currency, searchUrl, dict,
 }: {
   flights: FlightOffer[];
   fmt: (n: number) => string;
@@ -717,24 +712,12 @@ function FlightCards({
   dict: Dictionary;
 }) {
   const isAr = locale === "ar";
-  const options = pickThreeFlights(flights);
+  const options = useMemo(() => pickThreeFlights(flights), [flights]);
 
   const labelMap = {
-    value: {
-      badge: isAr ? "أفضل قيمة" : "Best Value",
-      icon: <Award className="h-3 w-3" />,
-      cls: "border-amber-500/25 bg-amber-500/[0.08] text-amber-300",
-    },
-    cheapest: {
-      badge: isAr ? "الأرخص" : "Cheapest",
-      icon: <TrendingDown className="h-3 w-3" />,
-      cls: "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-300",
-    },
-    comfortable: {
-      badge: isAr ? "الأريح" : "Fastest",
-      icon: <Zap className="h-3 w-3" />,
-      cls: "border-sky-500/25 bg-sky-500/[0.08] text-sky-300",
-    },
+    value:     { badge: isAr ? "أفضل قيمة" : "Best Value",    icon: <Award className="h-3 w-3" />,      cls: "bg-amber-100 text-amber-700 border-amber-200" },
+    cheapest:  { badge: isAr ? "الأرخص" : "Cheapest",         icon: <TrendingDown className="h-3 w-3" />, cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    comfortable:{ badge: isAr ? "الأريح" : "Fastest",          icon: <Zap className="h-3 w-3" />,         cls: "bg-sky-100 text-sky-700 border-sky-200" },
   };
 
   return (
@@ -742,31 +725,30 @@ function FlightCards({
       {options.map(({ type, flight }) => {
         const l = labelMap[type];
         return (
-          <div
-            key={`${type}-${flight.flight_number}`}
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 transition hover:bg-white/[0.05]"
+          <div key={`${type}-${flight.flight_number}`}
+            className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm transition hover:border-gray-200 hover:shadow"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${l.cls}`}>
                 {l.icon} {l.badge}
               </span>
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-white/85">
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-800">
                   <span className="font-mono">{flight.origin}</span>
-                  <ArrowRight className="h-3 w-3 text-white/30 rtl:rotate-180" />
+                  <ArrowRight className="h-3 w-3 text-gray-400 rtl:rotate-180" />
                   <span className="font-mono">{flight.destination}</span>
                   {flight.duration && (
-                    <span className="text-white/35">· {durationLabel(flight.duration)}</span>
+                    <span className="text-gray-400">· {durationLabel(flight.duration)}</span>
                   )}
                 </div>
-                <p className="text-[10px] text-white/40">
+                <p className="text-[10px] text-gray-500">
                   {flight.airline} {flight.flight_number}
                   {flight.departure_at && ` · ${flight.departure_at.slice(0, 10)}`}
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <span className="font-display text-sm font-bold text-white">{fmt(flight.price)}</span>
+              <span className="font-display text-sm font-bold text-gray-900">{fmt(flight.price)}</span>
               <a
                 href={flight.link}
                 target="_blank"
@@ -775,7 +757,7 @@ function FlightCards({
                   logEvent("book_clicked", { kind: "flight", option_type: type, destination, airline: flight.airline, price: flight.price });
                   void trackClick({ resultType: "flight", provider: flight.airline ?? "travelpayouts", origin: flight.origin, destination, price: flight.price, currency, affiliateUrl: flight.link, locale });
                 }}
-                className="flex h-8 items-center gap-1 rounded-lg bg-gradient-to-r from-brand-primary to-brand-deep px-3 text-xs font-semibold text-white transition hover:scale-105"
+                className="flex h-8 items-center gap-1 rounded-lg bg-gradient-to-r from-violet-500 to-brand-primary px-3 text-xs font-semibold text-white shadow-sm transition hover:scale-105"
               >
                 {dict.results.bookNow}
                 <ArrowRight className="h-3 w-3 rtl:rotate-180" />
@@ -784,11 +766,8 @@ function FlightCards({
           </div>
         );
       })}
-      <a
-        href={searchUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-1 py-1.5 text-[11px] text-white/30 transition hover:text-white/60"
+      <a href={searchUrl} target="_blank" rel="noopener noreferrer"
+        className="flex items-center justify-center gap-1 py-1.5 text-[11px] text-gray-400 transition hover:text-gray-600"
       >
         {isAr ? "عرض المزيد من الرحلات" : "View more flights"}
         <ExternalLink className="h-3 w-3" />
@@ -800,14 +779,7 @@ function FlightCards({
 // ── Hotel Cards ───────────────────────────────────────────────────────────
 
 function HotelCards({
-  hotels,
-  nights,
-  fmt,
-  locale,
-  destination,
-  currency,
-  searchUrl,
-  dict,
+  hotels, nights, fmt, locale, destination, currency, searchUrl, dict,
 }: {
   hotels: HotelOffer[];
   nights: number;
@@ -819,24 +791,12 @@ function HotelCards({
   dict: Dictionary;
 }) {
   const isAr = locale === "ar";
-  const options = pickThreeHotels(hotels);
+  const options = useMemo(() => pickThreeHotels(hotels), [hotels]);
 
   const labelMap = {
-    value: {
-      badge: isAr ? "أفضل قيمة" : "Best Value",
-      icon: <Award className="h-3 w-3" />,
-      cls: "border-amber-500/25 bg-amber-500/[0.08] text-amber-300",
-    },
-    cheapest: {
-      badge: isAr ? "الأرخص" : "Cheapest",
-      icon: <TrendingDown className="h-3 w-3" />,
-      cls: "border-emerald-500/25 bg-emerald-500/[0.08] text-emerald-300",
-    },
-    comfortable: {
-      badge: isAr ? "الأفخم" : "Most Luxurious",
-      icon: <Star className="h-3 w-3" />,
-      cls: "border-purple-500/25 bg-purple-500/[0.08] text-purple-300",
-    },
+    value:      { badge: isAr ? "أفضل قيمة" : "Best Value",      icon: <Award className="h-3 w-3" />, cls: "bg-amber-100 text-amber-700 border-amber-200" },
+    cheapest:   { badge: isAr ? "الأرخص" : "Cheapest",            icon: <TrendingDown className="h-3 w-3" />, cls: "bg-emerald-100 text-emerald-700 border-emerald-200" },
+    comfortable:{ badge: isAr ? "الأفخم" : "Most Luxurious",      icon: <Star className="h-3 w-3" />, cls: "bg-purple-100 text-purple-700 border-purple-200" },
   };
 
   return (
@@ -844,9 +804,8 @@ function HotelCards({
       {options.map(({ type, hotel }) => {
         const l = labelMap[type];
         return (
-          <div
-            key={`${type}-${hotel.hotelId}`}
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.03] p-3 transition hover:bg-white/[0.05]"
+          <div key={`${type}-${hotel.hotelId}`}
+            className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 bg-white p-3 shadow-sm transition hover:border-gray-200 hover:shadow"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${l.cls}`}>
@@ -854,29 +813,29 @@ function HotelCards({
               </span>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <p className="truncate text-xs font-semibold text-white/85">{hotel.hotelName}</p>
+                  <p className="truncate text-xs font-semibold text-gray-800">{hotel.hotelName}</p>
                   {hotel.stars && (
-                    <span className="flex shrink-0 items-center gap-0.5 text-[10px] text-amber-300">
+                    <span className="flex shrink-0 items-center gap-0.5 text-[10px] text-amber-500">
                       <Star className="h-2.5 w-2.5 fill-current" />{hotel.stars}
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-white/40">
+                <p className="text-[10px] text-gray-500">
                   {hotel.location.name} · {nights} {isAr ? "ليالٍ" : "nights"}
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <span className="font-display text-sm font-bold text-white">{fmt(hotel.priceFrom)}</span>
+              <span className="font-display text-sm font-bold text-gray-900">{fmt(hotel.priceFrom)}</span>
               <a
                 href={hotel.link}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => {
                   logEvent("book_clicked", { kind: "hotel", option_type: type, hotel: hotel.hotelName, destination, price: hotel.priceFrom });
-                  void trackClick({ resultType: "hotel", provider: "hotellook", destination, price: hotel.priceFrom, currency, affiliateUrl: hotel.link, locale });
+                  void trackClick({ resultType: "hotel", provider: "booking", destination, price: hotel.priceFrom, currency, affiliateUrl: hotel.link, locale });
                 }}
-                className="flex h-8 items-center gap-1 rounded-lg bg-gradient-to-r from-brand-mint to-brand-deep px-3 text-xs font-semibold text-white transition hover:scale-105"
+                className="flex h-8 items-center gap-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 px-3 text-xs font-semibold text-white shadow-sm transition hover:scale-105"
               >
                 {dict.results.bookNow}
                 <ArrowRight className="h-3 w-3 rtl:rotate-180" />
@@ -885,11 +844,8 @@ function HotelCards({
           </div>
         );
       })}
-      <a
-        href={searchUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-1 py-1.5 text-[11px] text-white/30 transition hover:text-white/60"
+      <a href={searchUrl} target="_blank" rel="noopener noreferrer"
+        className="flex items-center justify-center gap-1 py-1.5 text-[11px] text-gray-400 transition hover:text-gray-600"
       >
         {isAr ? "عرض المزيد من الفنادق" : "View more hotels"}
         <ExternalLink className="h-3 w-3" />
@@ -912,21 +868,21 @@ function FollowupChip({
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="flex items-center justify-between gap-3 rounded-xl border border-brand-primary/20 bg-brand-primary/[0.07] px-4 py-2.5"
+      className="flex items-center justify-between gap-3 rounded-xl border border-violet-200 bg-violet-50 px-4 py-2.5"
     >
-      <span className="text-xs text-white/75">{label}</span>
+      <span className="text-xs text-violet-800">{label}</span>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => { onYes(); setDismissed(true); }}
-          className="rounded-full bg-gradient-to-r from-brand-primary to-brand-deep px-3 py-1 text-xs font-semibold text-white"
+          className="rounded-full bg-gradient-to-r from-violet-500 to-brand-primary px-3 py-1 text-xs font-semibold text-white shadow-sm"
         >
           {yesLabel}
         </button>
         <button
           type="button"
           onClick={() => { onNo(); setDismissed(true); }}
-          className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/50"
+          className="rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-600"
         >
           {noLabel}
         </button>
@@ -935,7 +891,7 @@ function FollowupChip({
   );
 }
 
-// ── Smart Chat Partners (replaces static UpsellRow) ──────────────────────
+// ── Smart Chat Partners ───────────────────────────────────────────────────
 
 function SmartChatPartners({
   intent,
@@ -957,8 +913,8 @@ function SmartChatPartners({
 
   return (
     <div>
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/25">
-        {isAr ? "خدمات مُوصى بها" : "Recommended services"}
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-gray-400">
+        {isAr ? "خدمات مُوصى بها لرحلتك" : "Recommended for your trip"}
       </p>
       <PartnerRecommendations
         recs={recs}
@@ -980,12 +936,12 @@ function SearchCTACard({
 }) {
   const isPrimary = accent === "primary";
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${isPrimary ? "border-brand-primary/20 bg-brand-primary/[0.06]" : "border-brand-mint/20 bg-brand-mint/[0.06]"}`}>
-      <div className="flex items-center gap-2 text-xs text-white/65">
-        <span className={isPrimary ? "text-brand-primary" : "text-brand-mint"}>{icon}</span>
+    <div className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${isPrimary ? "border-violet-100 bg-violet-50" : "border-emerald-100 bg-emerald-50"}`}>
+      <div className="flex items-center gap-2 text-xs text-gray-700">
+        <span className={isPrimary ? "text-violet-500" : "text-emerald-600"}>{icon}</span>
         {title}
-        <span className="flex items-center gap-1 text-[10px] text-white/30">
-          <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${isPrimary ? "bg-brand-primary" : "bg-brand-mint"}`} />
+        <span className="flex items-center gap-1 text-[10px] text-gray-400">
+          <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${isPrimary ? "bg-violet-400" : "bg-emerald-400"}`} />
           {isAr ? "مباشر" : "Live"}
         </span>
       </div>
@@ -993,7 +949,7 @@ function SearchCTACard({
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white transition hover:scale-105 ${isPrimary ? "bg-gradient-to-r from-brand-primary to-brand-deep" : "bg-gradient-to-r from-brand-mint to-brand-deep"}`}
+        className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:scale-105 ${isPrimary ? "bg-gradient-to-r from-violet-500 to-brand-primary" : "bg-gradient-to-r from-emerald-500 to-teal-500"}`}
       >
         {btnLabel}
         <ExternalLink className="h-3 w-3" />
