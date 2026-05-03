@@ -1,8 +1,19 @@
 "use server";
 import { createSupabaseService } from "./supabase/service";
 
+export type ResultType =
+  | "flight"
+  | "hotel"
+  | "car_rental"
+  | "activities"
+  | "insurance"
+  | "esim"
+  | "trains"
+  | "compensation"
+  | "partner";
+
 export type TrackClickInput = {
-  resultType: "flight" | "hotel";
+  resultType: ResultType;
   provider: string;
   origin?: string | null;
   destination: string;
@@ -28,14 +39,14 @@ export async function trackClick(input: TrackClickInput): Promise<TrackClickResu
     const { data, error } = await (sb as any)
       .from("booking_clicks")
       .insert({
-        session_id:   input.sessionId ?? null,
-        locale:       input.locale ?? null,
-        result_type:  input.resultType,
-        provider:     input.provider,
-        origin:       input.origin ?? null,
-        destination:  input.destination,
-        price:        input.price ?? null,
-        currency:     input.currency ?? "USD",
+        session_id:    input.sessionId ?? null,
+        locale:        input.locale ?? null,
+        result_type:   input.resultType,
+        provider:      input.provider,
+        origin:        input.origin ?? null,
+        destination:   input.destination,
+        price:         input.price ?? null,
+        currency:      input.currency ?? "USD",
         affiliate_url: input.affiliateUrl,
       })
       .select("id")

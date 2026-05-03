@@ -3,6 +3,7 @@ import { searchFlights, searchHotels } from "@/lib/travelpayouts";
 import { TripIntentSchema } from "@/lib/gemini";
 import type { Currency } from "@/lib/utils";
 import { resolveIata, iataToCity } from "@/lib/iata";
+import { buildHotelUrl } from "@/lib/partners";
 import { z } from "zod";
 
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
@@ -119,7 +120,15 @@ export async function POST(req: NextRequest) {
       ? `https://www.aviasales.com/search/${origin}${daysOut}${destination}${intent.adults ?? 1}?marker=${MARKER}&subid=${subid}`
       : `https://www.aviasales.com/?marker=${MARKER}&subid=${subid}&destination=${destination}`;
 
-    const hotelSearchUrl = `https://www.hotellook.com/search?destination=${encodeURIComponent(hotelCity)}&lang=en&marker=${MARKER}&subid=${subid}`;
+    // Hotel search URL: Booking.com (direct or via TP media) → Trip.com → Hotellook fallback
+    const hotelSearchUrl = buildHotelUrl({
+      destination: hotelCity,
+      departure_date: intent.departure_date,
+      return_date: intent.return_date,
+      adults: intent.adults,
+      subid,
+      fallbackHotellookUrl: `https://www.hotellook.com/search?destination=${encodeURIComponent(hotelCity)}&lang=en&marker=${MARKER}&subid=${subid}`,
+    });
 
     return NextResponse.json({
       flights,

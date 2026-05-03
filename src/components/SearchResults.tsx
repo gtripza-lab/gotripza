@@ -24,15 +24,15 @@ import {
   DollarSign,
   TrendingUp,
   MessageCircleQuestion,
-  Car,
-  Compass,
 } from "lucide-react";
 import { useSearch } from "./search/SearchContext";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
 import { OffersJsonLd } from "./JsonLd";
 import { SearchSkeleton } from "./SearchSkeleton";
+import { PartnerRecommendations } from "./PartnerRecommendations";
 import { formatPrice } from "@/lib/utils";
+import { getPartnerRecommendations } from "@/lib/orchestration";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
@@ -293,91 +293,39 @@ function ReadyState({
           />
         )}
 
-        {/* ── AFFILIATE UPSELL ROW: Car Rentals + Activities ──── */}
-        <AffiliateUpsellRow
-          destination={data.intent.destination}
-          isAr={isAr}
-        />
+        {/* ── SMART PARTNER RECOMMENDATIONS ───────────────────── */}
+        <SmartPartnerSection intent={data.intent} locale={data.locale} />
       </div>
     </motion.div>
   );
 }
 
-/* ─── Affiliate Upsell Row (Car Rentals + Activities) ───────────────── */
-// Always falls back to hardcoded 522867 so the marker is NEVER lost
-const TP_MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
-
-function AffiliateUpsellRow({
-  destination,
-  isAr,
+/* ─── Smart Partner Section (replaces static upsell row) ────────────── */
+function SmartPartnerSection({
+  intent,
+  locale,
 }: {
-  destination: string;
-  isAr: boolean;
+  intent: import("@/lib/gemini").TripIntent;
+  locale: "ar" | "en";
 }) {
-  const MARKER = TP_MARKER;
-  const carUrl = `https://www.discovercars.com/?a_aid=${MARKER}&a_bid=cars&destination=${encodeURIComponent(destination)}`;
-  const activitiesUrl = `https://www.getyourguide.com/s/?q=${encodeURIComponent(destination)}&partner_id=${MARKER}`;
+  const recs = getPartnerRecommendations(intent, {
+    destination: intent.destination,
+    origin: intent.origin ?? undefined,
+    departure_date: intent.departure_date,
+    return_date: intent.return_date,
+    adults: intent.adults,
+    subid: "search_results",
+  });
+
+  if (!recs.length) return null;
 
   return (
-    <div className="mt-12 grid gap-4 sm:grid-cols-2">
-      {/* Car Rentals */}
-      <motion.a
-        href={carUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        onClick={() =>
-          logEvent("affiliate_upsell_clicked", { type: "car_rental", destination })
-        }
-        className="group flex items-center gap-4 rounded-2xl border border-sky-500/20 bg-gradient-to-br from-sky-500/10 to-sky-600/5 p-5 transition hover:border-sky-400/40 hover:from-sky-500/15"
-      >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-sky-500/15">
-          <Car className="h-5 w-5 text-sky-400" />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-white/90">
-            {isAr ? "تأجير سيارات في " + destination : "Car Rentals in " + destination}
-          </p>
-          <p className="mt-0.5 text-xs text-white/50">
-            {isAr
-              ? "قارن أسعار أكثر من ٩٠٠ شركة تأجير حول العالم"
-              : "Compare 900+ car rental companies worldwide"}
-          </p>
-        </div>
-        <ArrowRight className="h-4 w-4 shrink-0 text-sky-400 transition group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
-      </motion.a>
-
-      {/* Activities */}
-      <motion.a
-        href={activitiesUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.08 }}
-        onClick={() =>
-          logEvent("affiliate_upsell_clicked", { type: "activities", destination })
-        }
-        className="group flex items-center gap-4 rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 p-5 transition hover:border-emerald-400/40 hover:from-emerald-500/15"
-      >
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
-          <Compass className="h-5 w-5 text-emerald-400" />
-        </div>
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-white/90">
-            {isAr ? "أنشطة وجولات في " + destination : "Activities & Tours in " + destination}
-          </p>
-          <p className="mt-0.5 text-xs text-white/50">
-            {isAr
-              ? "آلاف الأنشطة والجولات الموثوقة من GetYourGuide"
-              : "Thousands of verified experiences via GetYourGuide"}
-          </p>
-        </div>
-        <ArrowRight className="h-4 w-4 shrink-0 text-emerald-400 transition group-hover:translate-x-1 rtl:rotate-180 rtl:group-hover:-translate-x-1" />
-      </motion.a>
-    </div>
+    <PartnerRecommendations
+      recs={recs}
+      locale={locale}
+      destination={intent.destination}
+      variant="full"
+    />
   );
 }
 

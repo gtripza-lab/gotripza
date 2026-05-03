@@ -26,13 +26,13 @@ import {
   ChevronDown,
   ChevronUp,
   MessageCircleQuestion,
-  Car,
-  Compass,
 } from "lucide-react";
 import { useChat } from "./ChatContext";
 import type { ChatMessage, ChatSearchData } from "./ChatContext";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
+import { PartnerRecommendations } from "@/components/PartnerRecommendations";
+import { getPartnerRecommendations } from "@/lib/orchestration";
 import { formatPrice } from "@/lib/utils";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
@@ -60,8 +60,6 @@ declare global {
     webkitSpeechRecognition?: ISpeechRecognitionConstructor;
   }
 }
-
-const TP_MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
 // ── Quick Suggestions ─────────────────────────────────────────────────────
 const SUGGESTIONS_AR = [
@@ -511,8 +509,8 @@ function ChatSearchResults({
         />
       )}
 
-      {/* Upsell row */}
-      <UpsellRow destination={data.intent.destination} isAr={isAr} />
+      {/* Smart partner recommendations */}
+      <SmartChatPartners intent={data.intent} isAr={isAr} />
     </div>
   );
 }
@@ -937,40 +935,37 @@ function FollowupChip({
   );
 }
 
-// ── Upsell Row ────────────────────────────────────────────────────────────
+// ── Smart Chat Partners (replaces static UpsellRow) ──────────────────────
 
-function UpsellRow({ destination, isAr }: { destination: string; isAr: boolean }) {
-  const carUrl = `https://www.discovercars.com/?a_aid=${TP_MARKER}&destination=${encodeURIComponent(destination)}`;
-  const activitiesUrl = `https://www.getyourguide.com/s/?q=${encodeURIComponent(destination)}&partner_id=${TP_MARKER}`;
+function SmartChatPartners({
+  intent,
+  isAr,
+}: {
+  intent: import("@/lib/gemini").TripIntent;
+  isAr: boolean;
+}) {
+  const recs = getPartnerRecommendations(intent, {
+    destination: intent.destination,
+    origin: intent.origin ?? undefined,
+    departure_date: intent.departure_date,
+    return_date: intent.return_date,
+    adults: intent.adults,
+    subid: "ai_chat",
+  }, 6);
+
+  if (!recs.length) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-2">
-      <a
-        href={carUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => logEvent("affiliate_upsell_clicked", { type: "car_rental", destination })}
-        className="flex items-center gap-2 rounded-xl border border-sky-500/20 bg-sky-500/[0.06] p-3 transition hover:border-sky-400/40"
-      >
-        <Car className="h-4 w-4 shrink-0 text-sky-400" />
-        <span className="text-[11px] text-white/65">
-          {isAr ? "تأجير سيارات" : "Car Rental"}
-        </span>
-        <ExternalLink className="ms-auto h-3 w-3 text-white/25" />
-      </a>
-      <a
-        href={activitiesUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => logEvent("affiliate_upsell_clicked", { type: "activities", destination })}
-        className="flex items-center gap-2 rounded-xl border border-emerald-500/20 bg-emerald-500/[0.06] p-3 transition hover:border-emerald-400/40"
-      >
-        <Compass className="h-4 w-4 shrink-0 text-emerald-400" />
-        <span className="text-[11px] text-white/65">
-          {isAr ? "الأنشطة" : "Activities"}
-        </span>
-        <ExternalLink className="ms-auto h-3 w-3 text-white/25" />
-      </a>
+    <div>
+      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/25">
+        {isAr ? "خدمات مُوصى بها" : "Recommended services"}
+      </p>
+      <PartnerRecommendations
+        recs={recs}
+        locale={isAr ? "ar" : "en"}
+        destination={intent.destination}
+        variant="compact"
+      />
     </div>
   );
 }
