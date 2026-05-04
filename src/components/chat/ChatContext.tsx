@@ -86,10 +86,12 @@ export function ChatProvider({
   children,
   locale = "ar",
   initialCurrency,
+  initialMessage,
 }: {
   children: ReactNode;
   locale?: Locale;
   initialCurrency?: Currency;
+  initialMessage?: string;
 }) {
   const currency = initialCurrency ?? currencyForLocale(locale);
 
@@ -112,6 +114,18 @@ export function ChatProvider({
   // being re-created on every state update (avoids stale-closure & perf issues).
   const messagesRef = useRef(messages);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+
+  // Auto-send initial message from URL ?q= param (homepage suggestion chips)
+  const sentInitial = useRef(false);
+  useEffect(() => {
+    if (initialMessage && !sentInitial.current) {
+      sentInitial.current = true;
+      // Small delay so welcome message renders first
+      const timer = setTimeout(() => sendMessage(initialMessage), 400);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialMessage]);
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim() || isThinking) return;

@@ -78,24 +78,81 @@ function enforceConversationalMode(
   return intel;
 }
 
+// Destination name lookup for heuristic fallback responses
+const IATA_TO_NAME_AR: Record<string, string> = {
+  MLE: "المالديف", DXB: "دبي", IST: "إسطنبول", AYT: "أنطاليا",
+  DPS: "بالي", LHR: "لندن", CDG: "باريس", NRT: "طوكيو",
+  BKK: "بانكوك", SIN: "سنغافورة", RUH: "الرياض", JED: "جدة",
+  DOH: "الدوحة", AUH: "أبوظبي", CAI: "القاهرة", AMM: "عمّان",
+  FCO: "روما", BCN: "برشلونة", ATH: "أثينا", VIE: "فيينا",
+  RAK: "مراكش", TBS: "تبليسي", GYD: "باكو", JFK: "نيويورك",
+  CMB: "سريلانكا", DEL: "دلهي", ICN: "سيول", MCT: "مسقط",
+};
+const IATA_TO_NAME_EN: Record<string, string> = {
+  MLE: "the Maldives", DXB: "Dubai", IST: "Istanbul", AYT: "Antalya",
+  DPS: "Bali", LHR: "London", CDG: "Paris", NRT: "Tokyo",
+  BKK: "Bangkok", SIN: "Singapore", RUH: "Riyadh", JED: "Jeddah",
+  DOH: "Doha", AUH: "Abu Dhabi", CAI: "Cairo", AMM: "Amman",
+  FCO: "Rome", BCN: "Barcelona", ATH: "Athens", VIE: "Vienna",
+  RAK: "Marrakech", TBS: "Tbilisi", GYD: "Baku", JFK: "New York",
+  CMB: "Sri Lanka", DEL: "Delhi", ICN: "Seoul", MCT: "Muscat",
+};
+
 /**
- * Heuristic fallback when Gemini is unavailable.
- * Always returns "clarify" mode so the user gets a warm conversation
- * instead of an empty search result dump.
+ * Context-aware heuristic fallback when Gemini is unavailable.
+ * Uses the extracted intent to craft a relevant response instead of generic text.
  */
 function heuristicFallback(query: string, notice: string) {
   const locale = detectLocale(query);
   const intent = heuristicParse(query);
   const wants = detectWants(query);
+  const isAr = locale === "ar";
 
-  const message = locale === "ar"
-    ? "يسعدني أساعدك في تخطيط رحلتك! 😊 ممكن تخبرني أكثر — إلى أين تفكر تسافر؟"
-    : "I'd love to help you plan your trip! 😊 Tell me more — where are you thinking of going?";
+  const destIata = intent.destination;
+  const destNameAr = (destIata && IATA_TO_NAME_AR[destIata]) || null;
+  const destNameEn = (destIata && IATA_TO_NAME_EN[destIata]) || null;
+  const isHoneymoon = intent.trip_type === "honeymoon";
+  const isFamily = intent.trip_type === "family";
+  const hasDate = !!intent.departure_date;
+  const hasOrigin = !!intent.origin;
+
+  let message: string;
+
+  if (isAr) {
+    if (destNameAr && !hasDate) {
+      const opener = isHoneymoon
+        ? `شهر عسل في ${destNameAr} — حلم حقيقي! 🌴`
+        : isFamily
+          ? `رحلة عائلية إلى ${destNameAr} — خيار ممتاز! 🌍`
+          : `${destNameAr} — وجهة رائعة! 🌍`;
+      message = `${opener} متى تفكرون في السفر؟ حتى لو شهر تقريبي يكفي لأبحث لك.`;
+    } else if (destNameAr && hasDate && !hasOrigin) {
+      message = `ممتاز! من أي مدينة أو مطار ستنطلق رحلتك إلى ${destNameAr}؟`;
+    } else if (!destNameAr) {
+      message = "يسعدني أساعدك في تخطيط رحلتك! 😊 إلى أين تفكر في السفر؟";
+    } else {
+      message = `ممتاز! سأساعدك في تخطيط رحلتك إلى ${destNameAr}. كم عدد المسافرين؟`;
+    }
+  } else {
+    if (destNameEn && !hasDate) {
+      const opener = isHoneymoon
+        ? `${destNameEn} honeymoon — what a dream! 🌴`
+        : isFamily
+          ? `A family trip to ${destNameEn} — great choice! 🌍`
+          : `${destNameEn} — amazing choice! 🌍`;
+      message = `${opener} When are you thinking of going? Even a rough month helps me find the best deals.`;
+    } else if (destNameEn && hasDate && !hasOrigin) {
+      message = `Great! Which city or airport will you be flying from to ${destNameEn}?`;
+    } else if (!destNameEn) {
+      message = "I'd love to help plan your trip! 😊 Where are you thinking of going?";
+    } else {
+      message = `Great choice! I'll help you plan your ${destNameEn} trip. How many travelers?`;
+    }
+  }
 
   return NextResponse.json({
     intent,
     locale,
-    // Always clarify in fallback — never jump to search blindly
     mode: "clarify",
     message,
     wants,

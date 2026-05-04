@@ -36,27 +36,26 @@ export async function generateMetadata({
 
 export default async function SearchPage({
   params,
+  searchParams,
 }: {
   params: { locale: string };
+  searchParams?: { q?: string };
 }) {
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
   const { currency } = detectGeo();
+  // Read ?q= from URL (e.g. from homepage suggestion chips or blog CTAs)
+  const initialMessage = searchParams?.q?.trim() || undefined;
 
   return (
     <>
       <Navbar dict={dict} locale={locale as Locale} />
-      {/*
-        Full-viewport chat — clean, focused, no distractions.
-        Raya handles everything inside the conversation:
-        flights, hotels, insurance, eSIM, activities, visa info.
-      */}
       <main
         className="overflow-hidden bg-[#06111e]"
         style={{ height: "calc(100dvh - 64px)" }}
       >
-        <ChatProvider locale={locale as Locale} initialCurrency={currency}>
+        <ChatProvider locale={locale as Locale} initialCurrency={currency} initialMessage={initialMessage}>
           <ChatInterface dict={dict} />
         </ChatProvider>
       </main>

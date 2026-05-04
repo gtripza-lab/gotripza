@@ -10,8 +10,13 @@ if (!apiKey) {
 
 const genAI = new GoogleGenerativeAI(apiKey ?? "");
 
-// Primary model: gemini-2.5-flash-preview-05-20 — latest, best reasoning
-const MODEL_INTELLIGENCE = "gemini-2.5-flash-preview-05-20";
+// Model fallback chain — tried in order until one succeeds
+const INTELLIGENCE_MODELS = [
+  "gemini-2.5-flash",          // stable 2.5
+  "gemini-2.5-flash-preview-05-20", // preview (may be deprecated)
+  "gemini-2.0-flash",          // stable 2.0 fallback
+  "gemini-1.5-flash",          // last resort
+];
 // Lite model: for simple tasks (tips, descriptions)
 const MODEL_LITE = "gemini-2.0-flash-lite";
 
@@ -21,7 +26,7 @@ const MODEL_LITE = "gemini-2.0-flash-lite";
 
 export const TripIntentSchema = z.object({
   origin: z.string().nullable(),
-  destination: z.string(),
+  destination: z.string().default(""),
   departure_date: z.string().nullable(),
   return_date: z.string().nullable(),
   adults: z.number().int().min(1).max(9).default(2),
@@ -287,17 +292,32 @@ export async function getTravelIntelligence(
   query: string,
   history: ChatTurn[] = [],
 ): Promise<TravelIntelligence> {
-  const model = genAI.getGenerativeModel({
-    model: MODEL_INTELLIGENCE,
-    generationConfig: {
-      responseMimeType: "application/json",
-      temperature: 0.65,
-    },
-  });
-  const res = await model.generateContent(buildIntelligencePrompt(query, history));
-  const text = res.response.text();
-  const parsed = JSON.parse(text);
-  return TravelIntelligenceSchema.parse(parsed);
+  const prompt = buildIntelligencePrompt(query, history);
+  let lastError: Error | null = null;
+
+  for (const modelName of INTELLIGENCE_MODELS) {
+    try {
+      console.log(`[gemini] trying model: ${modelName}`);
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: "application/json",
+          temperature: 0.65,
+        },
+      });
+      const res = await model.generateContent(prompt);
+      const text = res.response.text();
+      const parsed = JSON.parse(text);
+      const result = TravelIntelligenceSchema.parse(parsed);
+      console.log(`[gemini] success with model: ${modelName}, mode: ${result.mode}`);
+      return result;
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(String(err));
+      console.warn(`[gemini] model ${modelName} failed:`, lastError.message);
+    }
+  }
+
+  throw lastError ?? new Error("[gemini] all models exhausted");
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -330,7 +350,7 @@ export async function getLiveTips(
   if (!destination) return null;
   try {
     const model = genAI.getGenerativeModel({
-      model: MODEL_INTELLIGENCE,
+      model: INTELLIGENCE_MODELS[0],
       tools: [{ googleSearch: {} } as never],
       generationConfig: { temperature: 0.3 },
     });
