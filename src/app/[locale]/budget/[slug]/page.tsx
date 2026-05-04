@@ -8,7 +8,7 @@ import {
   budgetVerdict,
   COMPARISON_PAGES,
 } from "@/lib/seo-destinations";
-import { BreadcrumbJsonLd } from "@/components/JsonLd";
+import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
@@ -160,6 +160,36 @@ export default async function BudgetPage({ params }: Props) {
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbs} />
+      <FaqJsonLd
+        items={[
+          {
+            q: isAr
+              ? `هل ${bp.budgetUsd} دولار كافية لـ${name} (${bp.durationDays} أيام)؟`
+              : `Is $${bp.budgetUsd} enough for ${dest.nameEn} (${bp.durationDays} days)?`,
+            a: isAr
+              ? verdict.message.ar
+              : verdict.message.en,
+          },
+          {
+            q: isAr ? `ما أرخص وقت لزيارة ${name}؟` : `What is the cheapest time to visit ${dest.nameEn}?`,
+            a: isAr
+              ? `أفضل أشهر لزيارة ${name} من حيث السعر والطقس هي: ${dest.bestMonths.join("، ")}.`
+              : `The best and most affordable months to visit ${dest.nameEn} are: ${dest.bestMonths.join(", ")}.`,
+          },
+          {
+            q: isAr ? `ما متوسط سعر الفندق في ${name} في الليلة الواحدة؟` : `How much does a hotel cost per night in ${dest.nameEn}?`,
+            a: isAr
+              ? `تتراوح أسعار الفنادق في ${name} بين $${dest.budgetPerDay.budget} (اقتصادي) و$${dest.budgetPerDay.mid} (متوسط) و$${dest.budgetPerDay.luxury} (فاخر) في الليلة.`
+              : `Hotel prices in ${dest.nameEn} range from $${dest.budgetPerDay.budget}/night (budget) to $${dest.budgetPerDay.mid}/night (mid-range) and $${dest.budgetPerDay.luxury}/night (luxury).`,
+          },
+          {
+            q: isAr ? `كم يجب أن أخصص للطعام في ${name}؟` : `How much should I budget for food in ${dest.nameEn}?`,
+            a: isAr
+              ? `تتراوح تكلفة الطعام اليومية في ${name} بين $${Math.round(dest.budgetPerDay.budget * 0.25)} (محلي) و$${Math.round(dest.budgetPerDay.mid * 0.2)} (مطاعم متوسطة).`
+              : `Daily food costs in ${dest.nameEn} range from $${Math.round(dest.budgetPerDay.budget * 0.25)} (local dining) to $${Math.round(dest.budgetPerDay.mid * 0.2)} (mid-range restaurants).`,
+          },
+        ]}
+      />
 
       <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-3xl px-4 py-12">
@@ -279,6 +309,23 @@ export default async function BudgetPage({ params }: Props) {
               <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </section>
+
+          {/* Ask Raya CTA */}
+          <div className="mt-10 rounded-3xl bg-gradient-to-br from-violet-600/20 to-blue-600/20 border border-violet-500/30 p-8 text-center">
+            <div className="text-3xl mb-3">💰</div>
+            <h3 className="text-xl font-bold text-white mb-2">
+              {isAr ? `ريا تخطط رحلتك ضمن ميزانيتك` : `Raya will plan your trip within your budget`}
+            </h3>
+            <p className="text-white/60 mb-5 text-sm">
+              {isAr ? "أخبري ريا بميزانيتك وهي تجد أفضل خيارات الطيران والفنادق لك" : "Tell Raya your budget and she'll find the best flights and hotels for you"}
+            </p>
+            <a
+              href={`/${locale}/search?q=${encodeURIComponent(isAr ? `رحلة لـ${dest.nameAr} ميزانية ${bp.budgetUsd} دولار ${bp.durationDays} أيام` : `trip to ${dest.nameEn} budget $${bp.budgetUsd} ${bp.durationDays} days`)}`}
+              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-600 px-8 py-3 text-sm font-bold text-white shadow-lg hover:opacity-90 transition-opacity"
+            >
+              {isAr ? "خططي رحلتي مع ريا" : "Plan My Trip with Raya"}
+            </a>
+          </div>
 
           <InternalLinks
             title={isAr ? "روابط مفيدة" : "Helpful Links"}

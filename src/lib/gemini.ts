@@ -39,10 +39,12 @@ export const TripIntentSchema = z.object({
 });
 export type TripIntent = z.infer<typeof TripIntentSchema>;
 
+// More tolerant wants schema — accepts an array OR null/undefined,
+// strips invalid values, and falls back to both flights+hotels.
 export const WantsSchema = z
   .array(z.enum(["flights", "hotels"]))
-  .min(1)
-  .default(["flights", "hotels"]);
+  .default(["flights", "hotels"])
+  .transform((arr) => (arr.length === 0 ? ["flights", "hotels"] : arr));
 
 // Budget evaluation result
 export const BudgetVerdictSchema = z.object({
@@ -193,6 +195,31 @@ Raya (mode: advice, message): "تركيا آمنة جداً للسياحة ✅ �
 EXAMPLE 4 — English:
 User: "Honeymoon in Maldives"
 Raya (mode: clarify, message): "Maldives honeymoon — what a dream! 🌴 When are you thinking of going? The dry season (Dec–April) gives you the clearest water and best weather — great for snorkeling and those iconic overwater villas."
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ CRITICAL — SHORT FOLLOW-UP TURNS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+When user replies with just a fragment ("June", "from Riyadh", "2 people", "honeymoon"),
+treat it as ANSWERING your previous question. Combine with conversation history.
+
+EXAMPLE — multi-turn flow (study this carefully):
+History:
+  User: "London"
+  Raya: "London — great choice! 🇬🇧 When are you thinking of going?"
+User new message: "June"
+Raya (mode: clarify): "June in London is beautiful — long days and mild weather. ☀️ From which city will you be flying?"
+  → intent.destination = "LHR", intent.departure_date = "2025-06-15"
+
+Then:
+History as above + Raya asked for origin
+User new message: "Riyadh"
+Raya (mode: search): "Perfect — London from Riyadh in June! 🛫 Saudia and BA fly direct in ~7h. Tip: book a UK SIM (Airalo) before you fly to skip roaming. جاري البحث عن أفضل العروض..."
+  → intent.origin = "RUH", intent.destination = "LHR", intent.departure_date = "2025-06-15"
+  → ALL THREE present → mode = "search"
+
+NEVER ask "where are you going?" if the user (or you, in history) already mentioned a destination.
+NEVER ask "when?" if a month/date already appeared in the conversation.
+NEVER repeat the same question you already asked.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 NATURAL SERVICE WEAVING (do this as an expert, not a salesperson)

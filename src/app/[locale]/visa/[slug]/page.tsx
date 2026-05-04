@@ -8,7 +8,7 @@ import {
   COMPARISON_PAGES,
   BUDGET_PAGES,
 } from "@/lib/seo-destinations";
-import { BreadcrumbJsonLd } from "@/components/JsonLd";
+import { BreadcrumbJsonLd, FaqJsonLd, HowToJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
@@ -150,6 +150,57 @@ export default async function VisaPage({ params }: Props) {
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbs} />
+      <FaqJsonLd
+        items={[
+          {
+            q: isAr ? `هل أحتاج تأشيرة لزيارة ${name}؟` : `Do I need a visa to visit ${dest.nameEn}?`,
+            a: isAr ? dest.visaNotes.ar : dest.visaNotes.en,
+          },
+          {
+            q: isAr ? `كم يستغرق الحصول على تأشيرة ${name}؟` : `How long does it take to get a ${dest.nameEn} visa?`,
+            a: isAr
+              ? dest.eVisa
+                ? `التأشيرة الإلكترونية لـ${name} تُعالَج عادةً خلال 48-72 ساعة.`
+                : `تأشيرة ${name} عبر السفارة تستغرق عادةً 4-8 أسابيع.`
+              : dest.eVisa
+              ? `The ${dest.nameEn} e-Visa is typically processed within 48–72 hours.`
+              : `A ${dest.nameEn} embassy visa usually takes 4–8 weeks to process.`,
+          },
+          {
+            q: isAr ? `هل يمكنني الحصول على تأشيرة ${name} عند الوصول؟` : `Can I get a ${dest.nameEn} visa on arrival?`,
+            a: isAr
+              ? dest.visaOnArrival.includes("ALL") || dest.visaOnArrival.includes("SA") || dest.visaOnArrival.includes("AE")
+                ? `نعم، تأشيرة ${name} متاحة عند الوصول لكثير من الجنسيات.`
+                : `تأشيرة ${name} عند الوصول غير متاحة لجميع الجنسيات. تحقق من السفارة.`
+              : dest.visaOnArrival.includes("ALL") || dest.visaOnArrival.includes("US") || dest.visaOnArrival.includes("EU")
+              ? `Yes, ${dest.nameEn} offers visa on arrival for many nationalities.`
+              : `${dest.nameEn} visa on arrival is not available for all nationalities. Check with the embassy.`,
+          },
+          {
+            q: isAr ? `كم تكلفة تأشيرة ${name}؟` : `How much does a ${dest.nameEn} visa cost?`,
+            a: isAr
+              ? `تتفاوت رسوم تأشيرة ${name} حسب الجنسية ونوع التأشيرة. راجع الموقع الرسمي للتأكد من الرسوم الحالية.`
+              : `${dest.nameEn} visa fees vary by nationality and visa type. Check the official government website for current fees.`,
+          },
+        ]}
+      />
+      <HowToJsonLd
+        name={isAr ? `كيف تحصل على تأشيرة ${name}` : `How to Get a ${dest.nameEn} Visa`}
+        description={isAr ? `دليل خطوة بخطوة للحصول على تأشيرة ${name}` : `Step-by-step guide to applying for a ${dest.nameEn} visa`}
+        steps={isAr ? [
+          `تحقق من متطلبات تأشيرة ${name} لجنسيتك`,
+          "جهّز الوثائق: جواز سفر ساري، صور شخصية، حجز فندق وطيران",
+          "إذا كانت التأشيرة الإلكترونية متاحة، تقدم بها قبل السفر بـ 48-72 ساعة",
+          "للتأشيرة في السفارة، تقدم قبل 4-8 أسابيع من السفر",
+          "احتفظ بنسخة رقمية ومطبوعة من جميع الوثائق",
+        ] : [
+          `Check ${dest.nameEn} visa requirements for your nationality`,
+          "Prepare documents: valid passport, photos, hotel + flight bookings, bank statements",
+          "If e-Visa is available, apply 48–72 hours before travel",
+          "For embassy visas, apply 4–8 weeks in advance",
+          "Keep digital and printed copies of all documents",
+        ]}
+      />
 
       <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-3xl px-4 py-12">
@@ -288,6 +339,23 @@ export default async function VisaPage({ params }: Props) {
             >
               {isAr ? `ابحث عن أرخص طيران إلى ${name}` : `Find cheapest flights to ${dest.nameEn}`}
               <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+
+          {/* Ask Raya CTA */}
+          <div className="mt-10 rounded-3xl bg-gradient-to-br from-green-600/20 to-blue-600/20 border border-green-500/30 p-8 text-center">
+            <div className="text-3xl mb-3">🛂</div>
+            <h3 className="text-xl font-bold text-white mb-2">
+              {isAr ? `اسألي ريا عن تأشيرة ${name}` : `Ask Raya about your ${dest.nameEn} visa`}
+            </h3>
+            <p className="text-white/60 mb-5 text-sm">
+              {isAr ? "ريا تعرف متطلبات التأشيرة لجنسيتك وتساعدك في التخطيط" : "Raya knows visa requirements for your nationality and helps you plan accordingly"}
+            </p>
+            <a
+              href={`/${locale}/search?q=${encodeURIComponent(isAr ? `تأشيرة ${name} كيف أحصل عليها` : `${dest.nameEn} visa requirements how to apply`)}`}
+              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-green-600 to-blue-600 px-8 py-3 text-sm font-bold text-white shadow-lg hover:opacity-90 transition-opacity"
+            >
+              {isAr ? "اسألي ريا" : "Ask Raya"}
             </a>
           </div>
 

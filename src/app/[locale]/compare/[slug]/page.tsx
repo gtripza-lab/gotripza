@@ -7,7 +7,7 @@ import {
   getDestination,
   formatBestMonths,
 } from "@/lib/seo-destinations";
-import { BreadcrumbJsonLd } from "@/components/JsonLd";
+import { BreadcrumbJsonLd, FaqJsonLd, ComparisonJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
@@ -159,9 +159,44 @@ export default async function ComparisonPage({ params }: Props) {
     },
   ];
 
+  const pageUrl = `${BASE}/${locale}/compare/${params.slug}`;
+
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbs} />
+      <FaqJsonLd
+        items={[
+          {
+            q: isAr ? `هل ${nameA} أرخص من ${nameB}؟` : `Is ${destA.nameEn} or ${destB.nameEn} cheaper?`,
+            a: isAr
+              ? `${nameA} تبدأ ميزانيتها اليومية من $${destA.budgetPerDay.budget}، بينما ${nameB} من $${destB.budgetPerDay.budget}.`
+              : `${destA.nameEn} starts at $${destA.budgetPerDay.budget}/day, while ${destB.nameEn} starts at $${destB.budgetPerDay.budget}/day.`,
+          },
+          {
+            q: isAr ? `أيهما أفضل لشهر العسل، ${nameA} أم ${nameB}؟` : `Which is better for a honeymoon, ${destA.nameEn} or ${destB.nameEn}?`,
+            a: isAr
+              ? `كلتا الوجهتين رائعتان للأزواج. اختيارك يعتمد على ميزانيتك وما تبحث عنه في رحلة العمر.`
+              : `Both destinations are wonderful for couples. The right choice depends on your budget and what you're looking for in your dream honeymoon.`,
+          },
+          {
+            q: isAr ? `ما أفضل وقت لزيارة ${nameA} مقارنة بـ${nameB}؟` : `What is the best time to visit ${destA.nameEn} vs ${destB.nameEn}?`,
+            a: isAr
+              ? `أفضل أشهر ${nameA}: ${destA.bestMonths.join("، ")}. أفضل أشهر ${nameB}: ${destB.bestMonths.join("، ")}.`
+              : `Best months for ${destA.nameEn}: ${destA.bestMonths.join(", ")}. Best months for ${destB.nameEn}: ${destB.bestMonths.join(", ")}.`,
+          },
+          {
+            q: isAr ? `هل أحتاج تأشيرة لزيارة ${nameA} أو ${nameB}؟` : `Do I need a visa to visit ${destA.nameEn} or ${destB.nameEn}?`,
+            a: isAr
+              ? `${destA.eVisa ? nameA + " تتيح التأشيرة الإلكترونية." : nameA + " تتطلب تأشيرة مسبقة."} ${destB.eVisa ? nameB + " تتيح التأشيرة الإلكترونية." : nameB + " تتطلب تأشيرة مسبقة."}`
+              : `${destA.eVisa ? destA.nameEn + " offers an e-Visa." : destA.nameEn + " requires a visa in advance."} ${destB.eVisa ? destB.nameEn + " offers an e-Visa." : destB.nameEn + " requires a visa in advance."}`,
+          },
+        ]}
+      />
+      <ComparisonJsonLd
+        nameA={destA.nameEn}
+        nameB={destB.nameEn}
+        pageUrl={pageUrl}
+      />
 
       <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-4xl px-4 py-12">
@@ -321,6 +356,23 @@ export default async function ComparisonPage({ params }: Props) {
               </a>
             </div>
           </section>
+
+          {/* Ask Raya CTA */}
+          <div className="mt-12 rounded-3xl bg-gradient-to-br from-violet-600/20 to-blue-600/20 border border-violet-500/30 p-8 text-center">
+            <div className="text-3xl mb-3">✨</div>
+            <h3 className="text-xl font-bold text-white mb-2">
+              {isAr ? `ريا تساعدك تختار بين ${nameA} و${nameB}` : `Let Raya help you choose between ${destA.nameEn} and ${destB.nameEn}`}
+            </h3>
+            <p className="text-white/60 mb-5 text-sm">
+              {isAr ? "مستشارتك الذكية تفهم احتياجاتك وتقترح الوجهة الأنسب لك" : "Your AI advisor understands your needs and recommends the right destination for you"}
+            </p>
+            <a
+              href={`/${locale}/search?q=${encodeURIComponent(isAr ? `فرق بين ${nameA} و${nameB}` : `compare ${destA.nameEn} and ${destB.nameEn}`)}`}
+              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-blue-600 px-8 py-3 text-sm font-bold text-white shadow-lg hover:opacity-90 transition-opacity"
+            >
+              {isAr ? "اسألي ريا الآن" : "Ask Raya Now"}
+            </a>
+          </div>
 
           <InternalLinks
             title={isAr ? "ادرس كل وجهة على حدة" : "Explore Each Destination"}

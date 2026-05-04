@@ -12,7 +12,7 @@ import {
   BUDGET_PAGES,
   COMPARISON_PAGES,
 } from "@/lib/seo-destinations";
-import { BreadcrumbJsonLd } from "@/components/JsonLd";
+import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
@@ -160,6 +160,42 @@ export default async function SeasonsPage({ params }: Props) {
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbs} />
+      <FaqJsonLd
+        items={[
+          {
+            q: isAr ? `ما أفضل وقت لزيارة ${name}؟` : `What is the best time to visit ${dest.nameEn}?`,
+            a: isAr
+              ? `أفضل أشهر لزيارة ${name} هي: ${bestMonthsText}.`
+              : `The best time to visit ${dest.nameEn} is: ${bestMonthsText}.`,
+          },
+          {
+            q: isAr ? `هل ${name} مناسبة للزيارة في الصيف؟` : `Is ${dest.nameEn} good to visit in summer?`,
+            a: isAr
+              ? months.filter((m) => [6, 7, 8].includes(m.month)).some((m) => m.score === "peak" || m.score === "good")
+                ? `نعم، الصيف موسم جيد لزيارة ${name}. ${dest.climate.ar}`
+                : `الصيف ليس أفضل وقت لزيارة ${name}. ${dest.climate.ar}`
+              : months.filter((m) => [6, 7, 8].includes(m.month)).some((m) => m.score === "peak" || m.score === "good")
+              ? `Yes, summer is a good time to visit ${dest.nameEn}. ${dest.climate.en}`
+              : `Summer is not the best time to visit ${dest.nameEn}. ${dest.climate.en}`,
+          },
+          {
+            q: isAr ? `ما الطقس في ${name} في الشتاء؟` : `What is the weather like in ${dest.nameEn} in winter?`,
+            a: isAr
+              ? months.filter((m) => [12, 1, 2].includes(m.month)).some((m) => m.score === "peak" || m.score === "good")
+                ? `الشتاء موسم ممتاز لزيارة ${name}. ${dest.climate.ar}`
+                : `الشتاء في ${name}: ${dest.climate.ar}`
+              : months.filter((m) => [12, 1, 2].includes(m.month)).some((m) => m.score === "peak" || m.score === "good")
+              ? `Winter is an excellent time to visit ${dest.nameEn}. ${dest.climate.en}`
+              : `Winter in ${dest.nameEn}: ${dest.climate.en}`,
+          },
+          {
+            q: isAr ? `هل الأسعار ترتفع في موسم الذروة في ${name}؟` : `Do prices go up during peak season in ${dest.nameEn}?`,
+            a: isAr
+              ? `نعم، أسعار الفنادق والطيران ترتفع في الموسم المرتفع. يُنصح بالحجز المبكر لضمان أفضل الأسعار.`
+              : `Yes, hotel and flight prices typically increase during peak season. We recommend booking early to secure the best rates.`,
+          },
+        ]}
+      />
 
       <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-3xl px-4 py-12">

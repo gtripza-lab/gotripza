@@ -99,14 +99,44 @@ const IATA_TO_NAME_EN: Record<string, string> = {
 };
 
 /**
- * Context-aware heuristic fallback when Gemini is unavailable.
- * Uses the extracted intent to craft a relevant response instead of generic text.
+ * Build a unified context string from full conversation history + current query.
+ * This lets the heuristic parser extract destination/dates/origin even when the
+ * current message alone is just "June" or "from Riyadh".
  */
-function heuristicFallback(query: string, notice: string) {
+function buildHistoryContext(query: string, history: ChatTurn[]): string {
+  // Concatenate ALL user messages (and assistant questions, since they may
+  // have repeated the destination back) to build full context.
+  const allTexts = [
+    ...history.map((t) => t.text),
+    query,
+  ];
+  return allTexts.join(" \n ");
+}
+
+/**
+ * Determine if this is the first user turn or a follow-up.
+ * Used to pick warmer "first impression" messages vs. progressive ones.
+ */
+function isFirstUserTurn(history: ChatTurn[]): boolean {
+  return !history.some((t) => t.role === "user");
+}
+
+/**
+ * Context-aware heuristic fallback when Gemini is unavailable.
+ * Now reads the full conversation history so context accumulates across turns:
+ *   Turn 1 user "London"  →  Raya: "When?"
+ *   Turn 2 user "June"    →  Raya extracts London+June from full context, asks origin
+ *   Turn 3 user "Riyadh"  →  Raya has all three → search-ready
+ */
+function heuristicFallback(query: string, notice: string, history: ChatTurn[]) {
+  // Detect locale from the most recent user input (most reliable)
   const locale = detectLocale(query);
-  const intent = heuristicParse(query);
-  const wants = detectWants(query);
   const isAr = locale === "ar";
+
+  // Parse intent from FULL conversation context, not just current message
+  const fullContext = buildHistoryContext(query, history);
+  const intent = heuristicParse(fullContext);
+  const wants = detectWants(fullContext);
 
   const destIata = intent.destination;
   const destNameAr = (destIata && IATA_TO_NAME_AR[destIata]) || null;
@@ -115,45 +145,59 @@ function heuristicFallback(query: string, notice: string) {
   const isFamily = intent.trip_type === "family";
   const hasDate = !!intent.departure_date;
   const hasOrigin = !!intent.origin;
+  const isFirst = isFirstUserTurn(history);
 
   let message: string;
+  let mode: "clarify" | "search" = "clarify";
 
+  // Decision tree based on what's still missing:
+  //   ① destination unknown      → ask where
+  //   ② destination known, no date → ask when
+  //   ③ destination + date, no origin (and wants flights) → ask from where
+  //   ④ all present → search
   if (isAr) {
-    if (destNameAr && !hasDate) {
+    if (!destNameAr) {
+      message = isFirst
+        ? "أهلاً! 👋 أنا ريا. إلى أين تفكر تسافر؟ سواء وجهة معينة أو حتى فكرة عامة (شاطئ، تسوق، طبيعة) أساعدك."
+        : "ممكن تخبرني الوجهة اللي تفكر فيها؟ حتى لو فكرة عامة (شاطئ، أوروبا، آسيا) تكفي.";
+    } else if (!hasDate) {
       const opener = isHoneymoon
         ? `شهر عسل في ${destNameAr} — حلم حقيقي! 🌴`
         : isFamily
           ? `رحلة عائلية إلى ${destNameAr} — خيار ممتاز! 🌍`
-          : `${destNameAr} — وجهة رائعة! 🌍`;
-      message = `${opener} متى تفكرون في السفر؟ حتى لو شهر تقريبي يكفي لأبحث لك.`;
-    } else if (destNameAr && hasDate && !hasOrigin) {
-      message = `ممتاز! من أي مدينة أو مطار ستنطلق رحلتك إلى ${destNameAr}؟`;
-    } else if (!destNameAr) {
-      message = "يسعدني أساعدك في تخطيط رحلتك! 😊 إلى أين تفكر في السفر؟";
+          : `${destNameAr} — اختيار رائع! ✨`;
+      message = `${opener} متى تفكر تسافر؟ حتى لو مجرد شهر تقريبي يكفي.`;
+    } else if (wants.includes("flights") && !hasOrigin) {
+      message = `ممتاز! 🛫 من أي مدينة ستنطلق رحلتك إلى ${destNameAr}؟`;
     } else {
-      message = `ممتاز! سأساعدك في تخطيط رحلتك إلى ${destNameAr}. كم عدد المسافرين؟`;
+      // All key context present — let the client search
+      mode = "search";
+      message = `ممتاز! ✨ ${destNameAr}${hasOrigin ? ` من ${IATA_TO_NAME_AR[intent.origin!] ?? intent.origin}` : ""} — جاري البحث عن أفضل العروض لك...`;
     }
   } else {
-    if (destNameEn && !hasDate) {
+    if (!destNameEn) {
+      message = isFirst
+        ? "Hi! 👋 I'm Raya. Where are you thinking of going? Could be a specific city or just an idea (beach, mountains, Europe) — I'll help."
+        : "Tell me the destination you have in mind — even a general idea (beach, Asia, Europe) works.";
+    } else if (!hasDate) {
       const opener = isHoneymoon
         ? `${destNameEn} honeymoon — what a dream! 🌴`
         : isFamily
           ? `A family trip to ${destNameEn} — great choice! 🌍`
-          : `${destNameEn} — amazing choice! 🌍`;
+          : `${destNameEn} — excellent pick! ✨`;
       message = `${opener} When are you thinking of going? Even a rough month helps me find the best deals.`;
-    } else if (destNameEn && hasDate && !hasOrigin) {
-      message = `Great! Which city or airport will you be flying from to ${destNameEn}?`;
-    } else if (!destNameEn) {
-      message = "I'd love to help plan your trip! 😊 Where are you thinking of going?";
+    } else if (wants.includes("flights") && !hasOrigin) {
+      message = `Great! 🛫 Which city are you flying from to ${destNameEn}?`;
     } else {
-      message = `Great choice! I'll help you plan your ${destNameEn} trip. How many travelers?`;
+      mode = "search";
+      message = `Perfect! ✨ ${destNameEn}${hasOrigin ? ` from ${IATA_TO_NAME_EN[intent.origin!] ?? intent.origin}` : ""} — searching the best deals for you now...`;
     }
   }
 
   return NextResponse.json({
     intent,
     locale,
-    mode: "clarify",
+    mode,
     message,
     wants,
     followup: null,
@@ -161,7 +205,7 @@ function heuristicFallback(query: string, notice: string) {
     budget_verdict: null,
     confidence: null,
     destination_intel: null,
-    clarification_needed: true,
+    clarification_needed: mode === "clarify",
     clarification_question: null,
     mock: true,
     notice,
@@ -227,6 +271,7 @@ export async function POST(req: NextRequest) {
     return heuristicFallback(
       query,
       isGeminiError(message) ? "gemini_error_using_heuristic" : "unknown_error_using_heuristic",
+      history,
     );
   }
 }
