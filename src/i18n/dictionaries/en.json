@@ -9,14 +9,14 @@
     "getStarted": "Start free"
   },
   "hero": {
-    "badge": "Powered by Advanced AI Travel Intelligence",
-    "title1": "Describe your trip.",
-    "title2": "We answer in seconds.",
-    "subtitle": "No complex forms — just type your destination, dates, and budget. We compare hundreds of airlines and hotels and show you the best price instantly.",
-    "placeholder": "e.g. Family trip to Istanbul in June, budget $1,500",
-    "cta": "Search free — takes seconds",
+    "badge": "The first free AI travel assistant",
+    "title1": "Plan your trip with",
+    "title2": "a real AI travel advisor",
+    "subtitle": "Raya listens, asks the right questions, and finds you the perfect flight, hotel, insurance and activities — all in one conversation.",
+    "placeholder": "Tell me about your trip...",
+    "cta": "Start with Raya — free",
     "voice": "Voice search",
-    "tagline": "Best price. Always.",
+    "tagline": "Your intelligent travel companion — always.",
     "suggestions": {
       "title": "Try:",
       "items": [

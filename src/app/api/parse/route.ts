@@ -1,16 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTravelIntelligence } from "@/lib/gemini";
+import { getTravelIntelligence, type TravelIntelligence, type ChatTurn } from "@/lib/gemini";
 import {
   heuristicParse,
   detectLocale,
-  welcomeMessage,
   detectWants,
-  followupMessage,
 } from "@/lib/mock-intent";
 
 export const runtime = "nodejs";
 
-// ── In-memory rate limiter: 10 AI requests/min per IP ──────────────────────
+// ── In-memory rate limiter: 15 AI requests/min per IP ─────────────────────
 const _parseCounters = new Map<string, { count: number; resetAt: number }>();
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
@@ -20,10 +18,10 @@ function isRateLimited(ip: string): boolean {
     return false;
   }
   rec.count++;
-  return rec.count > 10;
+  return rec.count > 15;
 }
 
-const MAX_QUERY_LENGTH = 500;
+const MAX_QUERY_LENGTH = 600;
 
 function isGeminiError(message: string) {
   return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid/i.test(
@@ -31,22 +29,82 @@ function isGeminiError(message: string) {
   );
 }
 
+/**
+ * SERVER-SIDE CONVERSATION ENFORCEMENT
+ * ─────────────────────────────────────
+ * Regardless of what Gemini returns, we never trigger a search unless
+ * the minimum required context is present. This is the safety net that
+ * prevents "dumb" behaviour when the model ignores prompt instructions.
+ *
+ * Rules:
+ *  1. No departure date  → clarify (ask when)
+ *  2. Wants flights but no origin city → clarify (ask from where)
+ *  3. First message AND destination is vague (country-level) → clarify
+ */
+function enforceConversationalMode(
+  intel: TravelIntelligence,
+  _history: ChatTurn[],
+): TravelIntelligence {
+  // Advice mode is always appropriate — never override it
+  if (intel.mode === "advice") return intel;
+  // Already clarifying — respect that
+  if (intel.mode === "clarify") return intel;
+
+  const isAr = intel.locale === "ar";
+  const dest = intel.intent.destination ?? (isAr ? "وجهتك" : "your destination");
+  const wantsFlights = intel.wants.includes("flights");
+  const hasDate = !!intel.intent.departure_date;
+  const hasOrigin = !!intel.intent.origin;
+
+  // Rule 1: No dates → ask when
+  if (!hasDate) {
+    intel.mode = "clarify";
+    intel.message = isAr
+      ? `${dest} — اختيار ممتاز! 🌍 متى تفكر تسافر؟ حتى لو مجرد شهر تقريبي يكفي.`
+      : `${dest} sounds amazing! 🌍 When are you thinking of going? Even a rough month helps me search better.`;
+    return intel;
+  }
+
+  // Rule 2: Wants flights but no origin → ask from where
+  if (wantsFlights && !hasOrigin) {
+    intel.mode = "clarify";
+    intel.message = isAr
+      ? `ممتاز! من أي مدينة أو مطار ستسافر؟`
+      : `Great! Which city or airport are you flying from?`;
+    return intel;
+  }
+
+  // All good — search is appropriate
+  return intel;
+}
+
+/**
+ * Heuristic fallback when Gemini is unavailable.
+ * Always returns "clarify" mode so the user gets a warm conversation
+ * instead of an empty search result dump.
+ */
 function heuristicFallback(query: string, notice: string) {
   const locale = detectLocale(query);
   const intent = heuristicParse(query);
   const wants = detectWants(query);
+
+  const message = locale === "ar"
+    ? "يسعدني أساعدك في تخطيط رحلتك! 😊 ممكن تخبرني أكثر — إلى أين تفكر تسافر؟"
+    : "I'd love to help you plan your trip! 😊 Tell me more — where are you thinking of going?";
+
   return NextResponse.json({
     intent,
     locale,
-    message: welcomeMessage(locale),
+    // Always clarify in fallback — never jump to search blindly
+    mode: "clarify",
+    message,
     wants,
-    followup: followupMessage(locale, wants),
+    followup: null,
     tips: null,
-    // Intelligence fields — null in fallback mode
     budget_verdict: null,
     confidence: null,
     destination_intel: null,
-    clarification_needed: false,
+    clarification_needed: true,
     clarification_question: null,
     mock: true,
     notice,
@@ -64,15 +122,14 @@ export async function POST(req: NextRequest) {
   }
 
   let query = "";
-  let history: import("@/lib/gemini").ChatTurn[] = [];
+  let history: ChatTurn[] = [];
   try {
-    const body = (await req.json()) as { query?: string; history?: import("@/lib/gemini").ChatTurn[] };
+    const body = (await req.json()) as { query?: string; history?: ChatTurn[] };
     query = body.query?.trim() ?? "";
     history = Array.isArray(body.history) ? body.history.slice(-12) : [];
     if (!query || query.length < 2) {
       return NextResponse.json({ error: "Empty query" }, { status: 400 });
     }
-    // Cap length to prevent token exhaustion attacks on the Gemini API
     if (query.length > MAX_QUERY_LENGTH) {
       query = query.slice(0, MAX_QUERY_LENGTH);
     }
@@ -81,9 +138,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const intel = await getTravelIntelligence(query, history);
+    let intel = await getTravelIntelligence(query, history);
 
-    // Live tips: only worth fetching in search mode (destination is confirmed)
+    // ── Safety net: enforce conversational mode ───────────────────────────
+    intel = enforceConversationalMode(intel, history);
+
+    // Live tips only worth fetching in confirmed search mode
     const { getLiveTips } = await import("@/lib/gemini");
     const tips = intel.mode === "search"
       ? await getLiveTips(intel.intent.destination, intel.locale).catch(() => null)
@@ -97,7 +157,6 @@ export async function POST(req: NextRequest) {
       wants: intel.wants,
       followup: intel.followup,
       tips,
-      // Full intelligence fields
       budget_verdict: intel.budget_verdict ?? null,
       confidence: intel.confidence ?? null,
       destination_intel: intel.destination_intel ?? null,
