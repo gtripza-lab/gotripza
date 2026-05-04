@@ -116,6 +116,16 @@ export const TravelIntelligenceSchema = z.object({
 export type TravelIntelligence = z.infer<typeof TravelIntelligenceSchema>;
 export type ChatMode = "clarify" | "search" | "advice";
 
+export type TravelContext = {
+  destination: string | null;
+  origin: string | null;
+  departure_date: string | null;
+  return_date: string | null;
+  adults: number;
+  budget_usd: number | null;
+  trip_type: TripIntent["trip_type"];
+};
+
 // Legacy compat
 export const TripParseSchema = z.object({
   locale: z.enum(["ar", "en"]),
@@ -289,15 +299,37 @@ visa_note, safety_level, top_activities (3-5 items), clothing_tip, local_currenc
 
 Output ONLY valid JSON. No markdown. No code fences. No text outside the JSON object.`;
 
-function buildIntelligencePrompt(query: string, history: ChatTurn[] = []): string {
+function buildIntelligencePrompt(query: string, history: ChatTurn[] = [], context?: TravelContext): string {
   const today = new Date().toISOString().slice(0, 10);
   const currentMonth = new Date().toLocaleString("en", { month: "long" });
   const base = INTELLIGENCE_SYSTEM
     .replace(/{{TODAY}}/g, today)
     .replace(/{{CURRENT_MONTH}}/g, currentMonth);
 
+  // Build context block if any meaningful values are present
+  let contextBlock = "";
+  if (context) {
+    const lines: string[] = [];
+    if (context.destination) lines.push(`• Destination: ${context.destination}`);
+    if (context.origin) lines.push(`• Origin: ${context.origin}`);
+    if (context.departure_date) lines.push(`• Departure date: ${context.departure_date}`);
+    if (context.return_date) lines.push(`• Return date: ${context.return_date}`);
+    if (context.adults && context.adults !== 2) lines.push(`• Travelers: ${context.adults} adults`);
+    else if (context.adults === 2) lines.push(`• Travelers: 2 adults`);
+    if (context.budget_usd) lines.push(`• Budget: $${context.budget_usd.toLocaleString()}`);
+    if (context.trip_type) lines.push(`• Trip type: ${context.trip_type}`);
+
+    if (lines.length > 0) {
+      contextBlock =
+        `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+        `ACCUMULATED TRAVEL CONTEXT (already confirmed — NEVER ask again):\n` +
+        lines.join("\n") +
+        `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+    }
+  }
+
   if (history.length === 0) {
-    return base + `\n\nUser message:\n${query}`;
+    return base + contextBlock + `\n\nUser message:\n${query}`;
   }
 
   const historyText = history
@@ -306,6 +338,7 @@ function buildIntelligencePrompt(query: string, history: ChatTurn[] = []): strin
 
   return (
     base +
+    contextBlock +
     `\n\nConversation history (most recent last):\n${historyText}` +
     `\n\nNew user message:\n${query}`
   );
@@ -318,8 +351,9 @@ function buildIntelligencePrompt(query: string, history: ChatTurn[] = []): strin
 export async function getTravelIntelligence(
   query: string,
   history: ChatTurn[] = [],
+  context?: TravelContext,
 ): Promise<TravelIntelligence> {
-  const prompt = buildIntelligencePrompt(query, history);
+  const prompt = buildIntelligencePrompt(query, history, context);
   let lastError: Error | null = null;
 
   for (const modelName of INTELLIGENCE_MODELS) {

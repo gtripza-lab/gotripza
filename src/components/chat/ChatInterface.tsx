@@ -183,7 +183,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
       </div>
 
       {/* ── Messages ─────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-5 space-y-5"
+        style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}
+      >
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <MessageBubble key={msg.id} message={msg} dict={dict} currency={currency} locale={locale} />
@@ -210,13 +213,13 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             <p className="mb-2.5 mt-2.5 text-[11px] font-medium text-white/35">
               {isAr ? "ابدأ المحادثة:" : "Start a conversation:"}
             </p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
               {suggestions.map((s) => (
                 <button
                   key={s}
                   type="button"
                   onClick={() => { setInput(s); void sendMessage(s); }}
-                  className="rounded-full border border-white/[0.12] bg-white/[0.05] px-3.5 py-1.5 text-xs text-white/55 transition hover:border-violet-400/40 hover:bg-violet-500/[0.15] hover:text-white/90"
+                  className="shrink-0 rounded-full border border-white/[0.12] bg-white/[0.05] px-3.5 py-1.5 text-xs text-white/55 transition hover:border-violet-400/40 hover:bg-violet-500/[0.15] hover:text-white/90"
                 >
                   {s}
                 </button>
@@ -228,8 +231,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="border-t border-white/[0.08] px-4 py-3 backdrop-blur-xl"
-        style={{ background: "rgba(0,0,0,0.40)" }}
+        className="border-t border-white/[0.08] px-4 pt-3 backdrop-blur-xl"
+        style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
       >
         <div className="flex items-end gap-2">
           {/* Textarea */}
@@ -281,11 +284,6 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           </button>
         </div>
 
-        <p className="mt-2 text-center text-[10px] text-white/20">
-          {isAr
-            ? "GoTripza · ١٨٠+ شركة طيران · آلاف الفنادق"
-            : "GoTripza · 180+ airlines · thousands of hotels"}
-        </p>
       </div>
     </div>
   );
@@ -349,7 +347,7 @@ function MessageBubble({
         </div>
       )}
 
-      <div className={`max-w-[85%] space-y-3 ${isUser ? "items-end" : "items-start"} flex flex-col`}>
+      <div className={`max-w-[88%] sm:max-w-[80%] space-y-3 ${isUser ? "items-end" : "items-start"} flex flex-col`}>
         {/* Text bubble */}
         {message.text && (
           <div
@@ -364,14 +362,6 @@ function MessageBubble({
             {message.text}
           </div>
         )}
-
-        {/* Timestamp */}
-        <span className="px-1 text-[10px] text-white/25">
-          {new Date(message.timestamp).toLocaleTimeString(locale === "ar" ? "ar-SA" : "en-US", {
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </span>
 
         {/* Search Results — only for search-mode assistant messages */}
         {!isUser && message.searchData && message.mode === "search" && (

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTravelIntelligence, type TravelIntelligence, type ChatTurn } from "@/lib/gemini";
+import { getTravelIntelligence, type TravelIntelligence, type TravelContext, type ChatTurn } from "@/lib/gemini";
 import {
   heuristicParse,
   detectLocale,
@@ -44,6 +44,7 @@ function isGeminiError(message: string) {
 function enforceConversationalMode(
   intel: TravelIntelligence,
   _history: ChatTurn[],
+  context?: TravelContext,
 ): TravelIntelligence {
   // Advice mode is always appropriate — never override it
   if (intel.mode === "advice") return intel;
@@ -51,10 +52,10 @@ function enforceConversationalMode(
   if (intel.mode === "clarify") return intel;
 
   const isAr = intel.locale === "ar";
-  const dest = intel.intent.destination ?? (isAr ? "وجهتك" : "your destination");
+  const dest = context?.destination || intel.intent.destination || (isAr ? "وجهتك" : "your destination");
   const wantsFlights = intel.wants.includes("flights");
-  const hasDate = !!intel.intent.departure_date;
-  const hasOrigin = !!intel.intent.origin;
+  const hasDate = !!(context?.departure_date || intel.intent.departure_date);
+  const hasOrigin = !!(context?.origin || intel.intent.origin);
 
   // Rule 1: No dates → ask when
   if (!hasDate) {
@@ -128,14 +129,20 @@ function isFirstUserTurn(history: ChatTurn[]): boolean {
  *   Turn 2 user "June"    →  Raya extracts London+June from full context, asks origin
  *   Turn 3 user "Riyadh"  →  Raya has all three → search-ready
  */
-function heuristicFallback(query: string, notice: string, history: ChatTurn[]) {
+function filterNulls(ctx: TravelContext): Partial<TravelContext> {
+  return Object.fromEntries(
+    Object.entries(ctx).filter(([, v]) => v !== null && v !== undefined)
+  ) as Partial<TravelContext>;
+}
+
+function heuristicFallback(query: string, notice: string, history: ChatTurn[], context?: TravelContext) {
   // Detect locale from the most recent user input (most reliable)
   const locale = detectLocale(query);
   const isAr = locale === "ar";
 
   // Parse intent from FULL conversation context, not just current message
   const fullContext = buildHistoryContext(query, history);
-  const intent = heuristicParse(fullContext);
+  const intent = { ...heuristicParse(fullContext), ...(context ? filterNulls(context) : {}) };
   const wants = detectWants(fullContext);
 
   const destIata = intent.destination;
@@ -224,10 +231,12 @@ export async function POST(req: NextRequest) {
 
   let query = "";
   let history: ChatTurn[] = [];
+  let context: TravelContext | undefined;
   try {
-    const body = (await req.json()) as { query?: string; history?: ChatTurn[] };
+    const body = (await req.json()) as { query?: string; history?: ChatTurn[]; context?: TravelContext };
     query = body.query?.trim() ?? "";
     history = Array.isArray(body.history) ? body.history.slice(-12) : [];
+    context = body.context;
     if (!query || query.length < 2) {
       return NextResponse.json({ error: "Empty query" }, { status: 400 });
     }
@@ -239,10 +248,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    let intel = await getTravelIntelligence(query, history);
+    let intel = await getTravelIntelligence(query, history, context);
 
     // ── Safety net: enforce conversational mode ───────────────────────────
-    intel = enforceConversationalMode(intel, history);
+    intel = enforceConversationalMode(intel, history, context);
 
     // Live tips only worth fetching in confirmed search mode
     const { getLiveTips } = await import("@/lib/gemini");
@@ -272,6 +281,7 @@ export async function POST(req: NextRequest) {
       query,
       isGeminiError(message) ? "gemini_error_using_heuristic" : "unknown_error_using_heuristic",
       history,
+      context,
     );
   }
 }

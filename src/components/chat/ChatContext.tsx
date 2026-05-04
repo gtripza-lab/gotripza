@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { TripIntent, BudgetVerdict, ConfidenceScore, DestinationIntel, ChatTurn, ChatMode } from "@/lib/gemini";
+import type { TripIntent, BudgetVerdict, ConfidenceScore, DestinationIntel, ChatTurn, ChatMode, TravelContext } from "@/lib/gemini";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { Locale } from "@/i18n/config";
 import { currencyForLocale, type Currency } from "@/lib/utils";
@@ -17,7 +17,31 @@ import { logEvent } from "@/lib/events";
 import { TP_MARKER } from "@/lib/partners";
 
 // ── Re-export for consumers ────────────────────────────────────────────────
-export type { ChatMode };
+export type { ChatMode, TravelContext };
+
+// Default empty context
+const EMPTY_CONTEXT: TravelContext = {
+  destination: null,
+  origin: null,
+  departure_date: null,
+  return_date: null,
+  adults: 2,
+  budget_usd: null,
+  trip_type: null,
+};
+
+// Merge: new non-null values override old values; nulls don't erase known values
+function mergeContext(current: TravelContext, intent: TripIntent): TravelContext {
+  return {
+    destination: intent.destination || current.destination,
+    origin: intent.origin ?? current.origin,
+    departure_date: intent.departure_date ?? current.departure_date,
+    return_date: intent.return_date ?? current.return_date,
+    adults: intent.adults ?? current.adults,
+    budget_usd: intent.budget_usd ?? current.budget_usd,
+    trip_type: intent.trip_type ?? current.trip_type,
+  };
+}
 
 export type ChatSearchData = {
   intent: TripIntent;
@@ -51,6 +75,7 @@ type ChatContextValue = {
   isThinking: boolean;
   locale: Locale;
   currency: Currency;
+  travelContext: TravelContext;
   sendMessage: (text: string) => Promise<void>;
   clearChat: () => void;
   revealSide: (messageId: string, side: "flights" | "hotels") => void;
@@ -108,6 +133,7 @@ export function ChatProvider({
 
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMsg]);
   const [isThinking, setIsThinking] = useState(false);
+  const [travelContext, setTravelContext] = useState<TravelContext>(EMPTY_CONTEXT);
   const abortRef = useRef<AbortController | null>(null);
 
   // Keep a ref in sync so sendMessage can read latest messages without
@@ -171,7 +197,7 @@ export function ChatProvider({
       const parseRes = await fetch("/api/parse", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: text, history: historySnap }),
+        body: JSON.stringify({ query: text, history: historySnap, context: travelContext }),
         signal: abort.signal,
       });
 
@@ -204,6 +230,9 @@ export function ChatProvider({
       const wants: ("flights" | "hotels")[] = Array.isArray(parsedJson.wants) && parsedJson.wants.length
         ? parsedJson.wants.filter((w) => w === "flights" || w === "hotels") as ("flights" | "hotels")[]
         : ["flights", "hotels"];
+
+      // Accumulate context from every successful parse
+      setTravelContext((prev) => mergeContext(prev, intent));
 
       // 4 — ONLY call search API when mode === "search"
       if (mode !== "search") {
@@ -301,11 +330,12 @@ export function ChatProvider({
     } finally {
       setIsThinking(false);
     }
-  }, [locale, currency, isThinking]);
+  }, [locale, currency, isThinking, travelContext]);
 
   const clearChat = useCallback(() => {
     setMessages([welcomeMsg]);
     setIsThinking(false);
+    setTravelContext(EMPTY_CONTEXT);
     abortRef.current?.abort();
   }, [welcomeMsg]);
 
@@ -327,8 +357,8 @@ export function ChatProvider({
   }, []);
 
   const value = useMemo<ChatContextValue>(
-    () => ({ messages, isThinking, locale, currency, sendMessage, clearChat, revealSide }),
-    [messages, isThinking, locale, currency, sendMessage, clearChat, revealSide],
+    () => ({ messages, isThinking, locale, currency, travelContext, sendMessage, clearChat, revealSide }),
+    [messages, isThinking, locale, currency, travelContext, sendMessage, clearChat, revealSide],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
