@@ -14,7 +14,7 @@ export function generateMetadata({
 }): Metadata {
   const isAr = params.locale === "ar";
   const title = isAr
-    ? "أول مساعد سفر ذكي مجاني | GoTripza"
+    ? "أول مساعد سفر ذكي مجاني في العالم | GoTripza"
     : "First Free AI Travel Assistant | GoTripza";
   const description = isAr
     ? "ريا هي مساعدة السفر الذكية المجانية التي تفهم رحلتك، تسألك الأسئلة الصحيحة، وتقدم لك نتائج مخصصة — لا مجرد بحث."
@@ -212,11 +212,12 @@ export default async function AITravelAssistantPage({
                   أول مساعد سفر{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-mint">
                     ذكي مجاني
-                  </span>
+                  </span>{" "}
+                  في العالم
                 </>
               ) : (
                 <>
-                  The first{" "}
+                  The world&apos;s first{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-mint">
                     free AI
                   </span>{" "}

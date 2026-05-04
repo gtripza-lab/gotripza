@@ -5,6 +5,7 @@ import {
   COMPARISON_PAGES,
   BUDGET_PAGES,
 } from "@/lib/seo-destinations";
+import { ROUTE_SLUGS } from "@/lib/route-pairs";
 
 const BASE_URL = "https://gotripza.com";
 const locales = ["en", "ar"] as const;
@@ -85,6 +86,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Hotel intent pages (one per destination)
   for (const slug of DESTINATION_SLUGS) {
     entries.push(...makeEntry(`/hotels/${slug}`, 0.85, "weekly"));
+  }
+
+  // Flight route pages (highest-volume search intent in travel)
+  for (const slug of ROUTE_SLUGS) {
+    entries.push(...makeEntry(`/routes/${slug}`, 0.9, "monthly"));
   }
 
   // Blog posts
