@@ -4,6 +4,7 @@ import {
   heuristicParse,
   detectLocale,
   detectWants,
+  findAnyCity,
 } from "@/lib/mock-intent";
 
 export const runtime = "nodejs";
@@ -105,10 +106,10 @@ const IATA_TO_NAME_EN: Record<string, string> = {
  * current message alone is just "June" or "from Riyadh".
  */
 function buildHistoryContext(query: string, history: ChatTurn[]): string {
-  // Concatenate ALL user messages (and assistant questions, since they may
-  // have repeated the destination back) to build full context.
+  // Only include USER messages — assistant messages often contain generic
+  // words like "مدينة" (city) that falsely match city names in the parser.
   const allTexts = [
-    ...history.map((t) => t.text),
+    ...history.filter((t) => t.role === "user").map((t) => t.text),
     query,
   ];
   return allTexts.join(" \n ");
@@ -135,10 +136,37 @@ function filterNulls(ctx: TravelContext): Partial<TravelContext> {
   ) as Partial<TravelContext>;
 }
 
+/** Detect whether the query is an advice/question (not a booking request). */
+function isAdviceQuery(query: string): boolean {
+  return /هل\s|كيف\s|ما\s+أفضل|متى\s+أفضل|أيها\s+أفضل|ايهما|أيهما|مقارنة|قارن|الفرق\s+بين|أفضل\s+وقت|تأشيرة|فيزا|آمن|امن\s|الطقس|الجو\s+في|ماذا\s+ألبس|ماذا\s+نلبس|هل\s+يحتاج|هل\s+تحتاج|نصائح|توصي|اقترح|ماذا\s+أفعل|ما\s+رأيك|تنصحني\s+بـ|is\s+it\s+safe|is\s+\w+\s+safe|how\s+|what\s+is\s+|when\s+is\s+best|best\s+time|compare\s+|which\s+is\s+better|visa\s+|do\s+i\s+need\s+|tips\s+for|should\s+i\s+|weather\s+in|what\s+should\s+i/i.test(query);
+}
+
 function heuristicFallback(query: string, notice: string, history: ChatTurn[], context?: TravelContext) {
   // Detect locale from the most recent user input (most reliable)
   const locale = detectLocale(query);
   const isAr = locale === "ar";
+
+  // Advice questions (visa, safety, weather, tips) → answer briefly and offer to plan
+  if (isAdviceQuery(query)) {
+    return NextResponse.json({
+      intent: { origin: null, destination: "", departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, notes: null },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "سؤال ممتاز! 🌍 للأسف خدمة الذكاء الاصطناعي مشغولة الآن، لكن يمكنني مساعدتك بتخطيط الرحلة مباشرة. أخبرني الوجهة والتاريخ وأبحث لك عن أفضل العروض."
+        : "Great question! 🌍 Our AI is a bit busy right now, but I can still help you plan your trip. Tell me your destination and dates and I'll search the best deals for you.",
+      wants: ["flights", "hotels"],
+      followup: null,
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
 
   // Parse intent from FULL conversation context, not just current message
   const fullContext = buildHistoryContext(query, history);
@@ -151,8 +179,20 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   const isHoneymoon = intent.trip_type === "honeymoon";
   const isFamily = intent.trip_type === "family";
   const hasDate = !!intent.departure_date;
-  const hasOrigin = !!intent.origin;
+  let hasOrigin = !!intent.origin;
   const isFirst = isFirstUserTurn(history);
+
+  // ── Standalone origin detection ──────────────────────────────────────────
+  // When destination + date are known but origin is missing, the current user
+  // message might simply BE the origin city (answering "from where?").
+  // Check the CURRENT query only — not the full history context.
+  if (!hasOrigin && hasDate && (destNameAr || destNameEn)) {
+    const cityFromQuery = findAnyCity(query, destIata || null);
+    if (cityFromQuery) {
+      intent.origin = cityFromQuery;
+      hasOrigin = true;
+    }
+  }
 
   let message: string;
   let mode: "clarify" | "search" = "clarify";
@@ -194,7 +234,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
           : `${destNameEn} — excellent pick! ✨`;
       message = `${opener} When are you thinking of going? Even a rough month helps me find the best deals.`;
     } else if (wants.includes("flights") && !hasOrigin) {
-      message = `Great! 🛫 Which city are you flying from to ${destNameEn}?`;
+      message = `Great! 🛫 Which city will you be flying from? (to ${destNameEn})`;
     } else {
       mode = "search";
       message = `Perfect! ✨ ${destNameEn}${hasOrigin ? ` from ${IATA_TO_NAME_EN[intent.origin!] ?? intent.origin}` : ""} — searching the best deals for you now...`;

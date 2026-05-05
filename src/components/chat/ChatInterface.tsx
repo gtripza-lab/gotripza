@@ -31,7 +31,6 @@ import { useChat } from "./ChatContext";
 import type { ChatMessage, ChatSearchData } from "./ChatContext";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
-import { PartnerRecommendations } from "@/components/PartnerRecommendations";
 import { getPartnerRecommendations } from "@/lib/orchestration";
 import { formatPrice } from "@/lib/utils";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
@@ -902,29 +901,119 @@ function SmartChatPartners({
   intent: import("@/lib/gemini").TripIntent;
   isAr: boolean;
 }) {
-  const recs = getPartnerRecommendations(intent, {
+  const urlParams = {
     destination: intent.destination,
     origin: intent.origin ?? undefined,
     departure_date: intent.departure_date,
     return_date: intent.return_date,
     adults: intent.adults,
     subid: "ai_chat",
-  }, 6);
+  };
 
+  const recs = getPartnerRecommendations(intent, urlParams, 8);
   if (!recs.length) return null;
 
+  // Split into priority groups: essentials (eSIM + insurance) vs extras
+  const essentials = recs.filter((r) =>
+    r.partner.category === "esim" || r.partner.category === "insurance"
+  );
+  const extras = recs.filter((r) =>
+    r.partner.category !== "esim" && r.partner.category !== "insurance" &&
+    r.partner.category !== "hotels" // hotels already shown above
+  );
+
   return (
-    <div>
-      <p className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-white/35">
-        {isAr ? "خدمات مُوصى بها لرحلتك" : "Recommended for your trip"}
-      </p>
-      <PartnerRecommendations
-        recs={recs}
-        locale={isAr ? "ar" : "en"}
-        destination={intent.destination}
-        variant="compact"
-      />
-    </div>
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: 0.2 }}
+      className="mt-4 space-y-3"
+    >
+      {/* Raya intro */}
+      <div className="flex items-center gap-1.5">
+        <div className="h-px flex-1 bg-white/[0.07]" />
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
+          {isAr ? "✨ أكمل رحلتك مع" : "✨ Complete your trip with"}
+        </span>
+        <div className="h-px flex-1 bg-white/[0.07]" />
+      </div>
+
+      {/* Essential add-ons: eSIM + Insurance */}
+      {essentials.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
+            {isAr ? "إضافات أساسية" : "Essential add-ons"}
+          </p>
+          <div className="grid grid-cols-2 gap-2">
+            {essentials.slice(0, 4).map((rec) => (
+              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination} />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Extras: activities, car rental, trains, cheap flights */}
+      {extras.length > 0 && (
+        <div className="space-y-1.5">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
+            {isAr ? "أنشطة وخدمات إضافية" : "Activities & more"}
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {extras.slice(0, 6).map((rec) => (
+              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination} />
+            ))}
+          </div>
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+// ── Single upsell card (compact) ─────────────────────────────────────────
+
+const UPSELL_ACCENT: Record<string, { border: string; bg: string; text: string }> = {
+  blue:    { border: "border-blue-500/20",    bg: "bg-blue-500/[0.07]",    text: "text-blue-400"    },
+  teal:    { border: "border-teal-500/20",    bg: "bg-teal-500/[0.07]",    text: "text-teal-400"    },
+  sky:     { border: "border-sky-500/20",     bg: "bg-sky-500/[0.07]",     text: "text-sky-400"     },
+  emerald: { border: "border-emerald-500/20", bg: "bg-emerald-500/[0.07]", text: "text-emerald-400" },
+  rose:    { border: "border-rose-500/20",    bg: "bg-rose-500/[0.07]",    text: "text-rose-400"    },
+  orange:  { border: "border-orange-500/20",  bg: "bg-orange-500/[0.07]",  text: "text-orange-400"  },
+  violet:  { border: "border-violet-500/20",  bg: "bg-violet-500/[0.07]",  text: "text-violet-400"  },
+  indigo:  { border: "border-indigo-500/20",  bg: "bg-indigo-500/[0.07]",  text: "text-indigo-400"  },
+  cyan:    { border: "border-cyan-500/20",    bg: "bg-cyan-500/[0.07]",    text: "text-cyan-400"    },
+  purple:  { border: "border-purple-500/20",  bg: "bg-purple-500/[0.07]",  text: "text-purple-400"  },
+  amber:   { border: "border-amber-500/20",   bg: "bg-amber-500/[0.07]",   text: "text-amber-400"   },
+  red:     { border: "border-red-500/20",     bg: "bg-red-500/[0.07]",     text: "text-red-400"     },
+};
+
+function UpsellCard({
+  rec,
+  isAr,
+  destination,
+}: {
+  rec: import("@/lib/orchestration").PartnerRec;
+  isAr: boolean;
+  destination?: string;
+}) {
+  const c = UPSELL_ACCENT[rec.partner.accentColor] ?? UPSELL_ACCENT.blue;
+
+  return (
+    <a
+      href={rec.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={() => logEvent("affiliate_upsell_clicked", { type: rec.partner.category, partner: rec.partner.id, destination: destination ?? "" })}
+      className={`group flex items-center gap-2 rounded-xl border p-2.5 transition hover:brightness-110 ${c.border} ${c.bg}`}
+    >
+      <span className="text-base shrink-0">{rec.partner.icon}</span>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] font-semibold text-white/85">{rec.partner.name}</p>
+        <p className={`truncate text-[10px] ${c.text}`}>
+          {isAr ? rec.reason_ar.split("—")[0].trim() : rec.reason_en.split("—")[0].trim()}
+        </p>
+      </div>
+      <ExternalLink className="h-3 w-3 shrink-0 text-white/20 transition group-hover:text-white/50" />
+    </a>
   );
 }
 

@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "Next.js Dev Server",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "name": "gotripza",
+      "runtimeExecutable": "/tmp/run-gotripza.sh",
+      "runtimeArgs": [],
       "port": 3000
     }
   ]

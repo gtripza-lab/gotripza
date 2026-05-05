@@ -83,10 +83,12 @@ export type Partner = {
 // ── Core Travelpayouts deeplink builder ───────────────────────────────────────
 /**
  * Wraps any partner URL in a Travelpayouts tracking redirect.
- * Returns null if promoId is not set (partner not connected in TP dashboard).
+ * Returns `fallback` (direct URL) if promoId is not set — so partners always
+ * appear even before TP is configured. Once a promo_id is added the link
+ * automatically becomes tracked.
  */
-export function tpLink(promoId: string, partnerUrl: string, subid?: string): string | null {
-  if (!promoId || !promoId.trim()) return null;
+export function tpLink(promoId: string, partnerUrl: string, subid?: string, fallback?: string): string | null {
+  if (!promoId || !promoId.trim()) return fallback ?? null;
   const customUrl = encodeURIComponent(partnerUrl);
   const subidParam = subid ? `&subid=${encodeURIComponent(subid)}` : "";
   return (
@@ -174,7 +176,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
       if (destination)    u.searchParams.set("destination", destination);
       if (departure_date) u.searchParams.set("from_date", departure_date);
       if (return_date)    u.searchParams.set("to_date", return_date);
-      return tpLink(TP_PROMO.discovercars, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.discovercars, direct, subid, direct);
     },
   },
 
@@ -194,7 +197,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     buildUrl: ({ destination, subid }) => {
       const u = new URL("https://www.getyourguide.com/s/");
       if (destination) u.searchParams.set("q", destination);
-      return tpLink(TP_PROMO.getyourguide, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.getyourguide, direct, subid, direct);
     },
   },
 
@@ -212,7 +216,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     buildUrl: ({ destination, subid }) => {
       const u = new URL("https://www.klook.com/search/");
       if (destination) u.searchParams.set("query", destination);
-      return tpLink(TP_PROMO.klook, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.klook, direct, subid, direct);
     },
   },
 
@@ -230,7 +235,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     buildUrl: ({ destination, subid }) => {
       const u = new URL("https://www.kkday.com/en-us/search");
       if (destination) u.searchParams.set("keyword", destination);
-      return tpLink(TP_PROMO.kkday, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.kkday, direct, subid, direct);
     },
   },
 
@@ -248,7 +254,7 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     buildUrl: ({ destination, subid }) => {
       const slug = destination?.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z-]/g, "") ?? "";
       const base = slug ? `https://gocity.com/${slug}` : "https://gocity.com/";
-      return tpLink(TP_PROMO.gocity, base, subid);
+      return tpLink(TP_PROMO.gocity, base, subid, base);
     },
   },
 
@@ -272,7 +278,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
       if (departure_date) u.searchParams.set("departure", departure_date);
       if (return_date)    u.searchParams.set("return", return_date);
       if (adults)         u.searchParams.set("adults", String(adults));
-      return tpLink(TP_PROMO.kiwi, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.kiwi, direct, subid, direct);
     },
   },
 
@@ -294,7 +301,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
       if (departure_date) u.searchParams.set("departure", departure_date);
       if (return_date)    u.searchParams.set("return", return_date);
       if (adults)         u.searchParams.set("adults", String(adults));
-      return tpLink(TP_PROMO.cheapoair, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.cheapoair, direct, subid, direct);
     },
   },
 
@@ -314,7 +322,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     buildUrl: ({ destination, subid }) => {
       const u = new URL("https://www.airalo.com/");
       if (destination) u.searchParams.set("destination", destination);
-      return tpLink(TP_PROMO.airalo, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.airalo, direct, subid, direct);
     },
   },
 
@@ -330,7 +339,7 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.15,
     revenueModel: "cpa",
     buildUrl: ({ subid }) =>
-      tpLink(TP_PROMO.yesim, "https://yesim.app/", subid),
+      tpLink(TP_PROMO.yesim, "https://yesim.app/", subid, "https://yesim.app/"),
   },
 
   // ──────────────────────────────────────────────────── TRAVEL INSURANCE ──
@@ -347,7 +356,7 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.12,
     revenueModel: "cpa",
     buildUrl: ({ subid }) =>
-      tpLink(TP_PROMO.visitorscoverage, "https://www.visitorscoverage.com/", subid),
+      tpLink(TP_PROMO.visitorscoverage, "https://www.visitorscoverage.com/", subid, "https://www.visitorscoverage.com/"),
   },
 
   ekta: {
@@ -362,7 +371,7 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.12,
     revenueModel: "cpa",
     buildUrl: ({ subid }) =>
-      tpLink(TP_PROMO.ekta, "https://ekta.insurance/", subid),
+      tpLink(TP_PROMO.ekta, "https://ekta.insurance/", subid, "https://ekta.insurance/"),
   },
 
   // ───────────────────────────────────────────────── FLIGHT COMPENSATION ──
@@ -379,7 +388,7 @@ export const PARTNERS: Record<PartnerId, Partner> = {
     commissionRate: 0.25,
     revenueModel: "cpa",
     buildUrl: ({ subid }) =>
-      tpLink(TP_PROMO.airhelp, "https://www.airhelp.com/en/check-your-flight/", subid),
+      tpLink(TP_PROMO.airhelp, "https://www.airhelp.com/en/check-your-flight/", subid, "https://www.airhelp.com/en/check-your-flight/"),
   },
 
   // ────────────────────────────────────────────────────────────── TRAINS ──
@@ -400,7 +409,8 @@ export const PARTNERS: Record<PartnerId, Partner> = {
       if (origin)         u.searchParams.set("origin", origin);
       if (destination)    u.searchParams.set("destination", destination);
       if (departure_date) u.searchParams.set("departureDate", departure_date);
-      return tpLink(TP_PROMO.raileurope, u.toString(), subid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.raileurope, direct, subid, direct);
     },
   },
 };

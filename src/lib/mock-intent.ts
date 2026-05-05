@@ -134,23 +134,87 @@ const EN_MONTHS: Record<string, number> = {
   december: 12,
 };
 
+/**
+ * Find a city IATA code after a directional keyword (e.g. "from", "to").
+ * Tries ALL occurrences of the cue (not just the first), so "want to fly
+ * from Riyadh to London" correctly finds "London" after the second "to".
+ */
 function findCity(query: string, after: string[]): string | null {
   const lower = query.toLowerCase();
   for (const cue of after) {
-    const idx = lower.indexOf(cue);
-    if (idx === -1) continue;
-    const tail = query.slice(idx + cue.length).trim();
-    for (const [name, code] of Object.entries(CITY_TO_IATA)) {
-      const re = new RegExp(`^[\\s,،]*${name}`, "i");
-      if (re.test(tail)) return code;
+    // Try every occurrence of this cue word
+    let searchFrom = 0;
+    while (searchFrom < lower.length) {
+      const idx = lower.indexOf(cue, searchFrom);
+      if (idx === -1) break;
+      // Require word boundary before cue (space, start, punctuation)
+      const prevChar = idx > 0 ? lower[idx - 1] : " ";
+      const nextChar = lower[idx + cue.length] ?? " ";
+      if (/\w/.test(prevChar) || (/\w/.test(nextChar) && !/\s/.test(nextChar))) {
+        searchFrom = idx + 1;
+        continue; // cue is part of a larger word — skip
+      }
+      const tail = query.slice(idx + cue.length).trim();
+      for (const [name, code] of Object.entries(CITY_TO_IATA)) {
+        // Use lookahead instead of \b — \b is ASCII-only and fails on Arabic text
+        const re = new RegExp(`^[\\s,،]*${name}(?=[\\s,،.!؟؛]|$)`, "i");
+        if (re.test(tail)) return code;
+      }
+      searchFrom = idx + 1;
     }
   }
   return null;
 }
 
-function findAnyCity(query: string): string | null {
+/**
+ * Parse "from ORIGIN to DESTINATION" (and Arabic equivalents) as a unit,
+ * so both cities are extracted in one pass without cue-collision.
+ */
+function parseFromTo(query: string): { origin: string | null; destination: string | null } {
+  // English: "from <ORIGIN> to <DEST>"
+  const enMatch = query.match(/\bfrom\s+([\w\s]+?)\s+to\s+([\w\s]+?)(?:\s+in\b|\s+\d|,|\.|\band\b|$)/i);
+  if (enMatch) {
+    const originCode = lookupName(enMatch[1].trim());
+    const destCode   = lookupName(enMatch[2].trim());
+    if (originCode || destCode) return { origin: originCode, destination: destCode };
+  }
+  // Arabic formal: "من <ORIGIN> إلى/الى/لـ/ل <DEST>" (space before destination)
+  const arMatch = query.match(/من\s+([؀-ۿ\s\w]+?)\s+(?:إلى|الى|لـ|ل\s)([؀-ۿ\s\w]+?)(?:\s+في|\s+\d|،|$)/);
+  if (arMatch) {
+    const originCode = lookupName(arMatch[1].trim());
+    const destCode   = lookupName(arMatch[2].trim());
+    if (originCode || destCode) return { origin: originCode, destination: destCode };
+  }
+  // Arabic contracted: "من <ORIGIN> ل<DEST>" or "من <ORIGIN> لل<DEST>" (ل/لل glued to city)
+  // e.g. "من الرياض لاسطنبول", "من جدة للمالديف" (لل = ل + ال definite article)
+  for (const [destName, destCode] of Object.entries(CITY_TO_IATA)) {
+    // Try both "ل<name>" and "لل<name>" (for cities starting with ال like "المالديف" → "للمالديف")
+    const variants = [`ل${destName}`, `لل${destName.replace(/^ال/, "")}`];
+    for (const prefix of variants) {
+      const pattern = new RegExp(`من\\s+([؀-ۿ\\s\\w]+?)\\s+${prefix}(?=[\\s,،.!؟؛]|$)`, "i");
+      const m = query.match(pattern);
+      if (m) {
+        const originCode = lookupName(m[1].trim());
+        return { origin: originCode, destination: destCode };
+      }
+    }
+  }
+  return { origin: null, destination: null };
+}
+
+function lookupName(text: string): string | null {
+  const t = text.toLowerCase().trim();
+  for (const [name, code] of Object.entries(CITY_TO_IATA)) {
+    if (t === name.toLowerCase() || t.startsWith(name.toLowerCase())) return code;
+  }
+  return null;
+}
+
+/** Find any city in query, optionally excluding a known IATA code. */
+export function findAnyCity(query: string, exclude?: string | null): string | null {
   const lower = query.toLowerCase();
   for (const [name, code] of Object.entries(CITY_TO_IATA)) {
+    if (code === exclude) continue;
     if (lower.includes(name.toLowerCase())) return code;
   }
   return null;
@@ -220,11 +284,19 @@ export function followupMessage(
  * Lets the demo flow work end-to-end without a live LLM.
  */
 export function heuristicParse(query: string): TripIntent {
+  // ── 1. Try "from ORIGIN to DESTINATION" pattern first (most reliable) ──
+  const fromTo = parseFromTo(query);
+
+  // ── 2. Fall back to individual directional cue searches ──────────────
   const origin =
-    findCity(query, ["من", "from"]) ?? null;
+    fromTo.origin ??
+    findCity(query, ["من", "from"]) ??
+    null;
+
   const destination =
+    fromTo.destination ??
     findCity(query, ["إلى", "الى", "لـ", "ل ", "to", "in", "for"]) ??
-    findAnyCity(query) ??
+    findAnyCity(query, origin) ??  // exclude origin to avoid returning same city
     "";
 
   const month = findMonth(query);
