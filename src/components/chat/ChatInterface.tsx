@@ -140,7 +140,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
   return (
     <div
-      className="flex h-full flex-col"
+      className="flex h-full w-full flex-col overflow-hidden"
       style={{
         background: "linear-gradient(160deg, #06111e 0%, #0a1a30 50%, #071524 100%)",
         borderRadius: "inherit",
@@ -149,7 +149,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     >
       {/* ── Chat header ─────────────────────────────────────────── */}
       <div
-        className="flex items-center justify-between border-b border-white/[0.08] px-5 py-3.5 backdrop-blur-xl"
+        className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-3 backdrop-blur-xl sm:px-5 sm:py-3.5"
         style={{ background: "rgba(0,0,0,0.35)", borderRadius: "inherit inherit 0 0" }}
       >
         <div className="flex items-center gap-3">
@@ -183,7 +183,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
-        className="flex-1 overflow-y-auto px-4 py-5 space-y-5"
+        className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
         style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}
       >
         <AnimatePresence initial={false}>
@@ -230,10 +230,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="border-t border-white/[0.08] px-4 pt-3 backdrop-blur-xl"
-        style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(12px, env(safe-area-inset-bottom))" }}
+        className="shrink-0 border-t border-white/[0.08] px-3 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl"
+        style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2 sm:gap-2.5">
           {/* Textarea */}
           <textarea
             ref={inputRef}
@@ -242,17 +242,17 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onKeyDown={handleKeyDown}
             placeholder={
               isAr
-                ? "اسألني عن رحلتك أو أي شيء عن السفر..."
-                : "Ask me about your trip or anything travel..."
+                ? "اسألني عن رحلتك..."
+                : "Ask me about your trip..."
             }
             disabled={isThinking}
             rows={1}
-            className="min-h-[44px] flex-1 resize-none rounded-2xl border border-white/[0.12] bg-white/[0.06] px-4 py-3 text-sm text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50"
-            style={{ maxHeight: "120px" }}
+            className="min-h-[40px] sm:min-h-[44px] flex-1 resize-none rounded-xl sm:rounded-2xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 sm:px-4 sm:py-3 text-sm text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50"
+            style={{ maxHeight: "100px" }}
             onInput={(e) => {
               const t = e.currentTarget;
               t.style.height = "auto";
-              t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+              t.style.height = `${Math.min(t.scrollHeight, 100)}px`;
             }}
           />
 
@@ -262,13 +262,13 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleVoice}
             disabled={isThinking}
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
-            className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl transition disabled:opacity-40 ${
+            className={`flex h-10 sm:h-11 w-10 sm:w-11 shrink-0 items-center justify-center rounded-lg sm:rounded-xl transition disabled:opacity-40 ${
               isListening
                 ? "animate-pulse bg-rose-500/20 text-rose-400"
                 : "border border-white/[0.12] bg-white/[0.05] text-white/35 hover:bg-white/[0.10] hover:text-white/65"
             }`}
           >
-            {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+            {isListening ? <MicOff className="h-3.5 sm:h-4 w-3.5 sm:w-4" /> : <Mic className="h-3.5 sm:h-4 w-3.5 sm:w-4" />}
           </button>
 
           {/* Send */}
@@ -277,9 +277,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleSend}
             disabled={isThinking || !input.trim()}
             aria-label={isAr ? "إرسال" : "Send"}
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-primary to-violet-600 text-white shadow-md shadow-violet-900/40 transition hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+            className="flex h-10 sm:h-11 w-10 sm:w-11 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-brand-primary to-violet-600 text-white shadow-md shadow-violet-900/40 transition hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
           >
-            <Send className="h-4 w-4 rtl:rotate-180" />
+            <Send className="h-3.5 sm:h-4 w-3.5 sm:w-4 rtl:rotate-180" />
           </button>
         </div>
 
