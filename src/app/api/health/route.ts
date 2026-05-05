@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const MARKER = process.env.TRAVELPAYOUTS_MARKER ?? "522867";
 const TP_TOKEN = process.env.TRAVELPAYOUTS_TOKEN ?? "";
-const GEMINI_KEY = process.env.GEMINI_API_KEY ?? process.env.NEXT_PUBLIC_GEMINI_API_KEY ?? "";
+const GEMINI_KEY = process.env.GEMINI_API_KEY ?? "";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
 interface CheckResult {
@@ -48,7 +48,7 @@ async function checkSupabase(): Promise<CheckResult> {
 }
 
 async function checkGemini(): Promise<CheckResult> {
-  const key = process.env.GEMINI_API_KEY ?? process.env.NEXT_PUBLIC_GEMINI_API_KEY;
+  const key = process.env.GEMINI_API_KEY;
   if (!key) return { ok: false, detail: "GEMINI_API_KEY missing" };
   try {
     const genAI = new GoogleGenerativeAI(key);

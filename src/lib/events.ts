@@ -1,5 +1,4 @@
 "use client";
-import { createSupabaseBrowser } from "./supabase/client";
 
 export type EventName =
   | "search_submitted"
@@ -14,35 +13,21 @@ export type EventName =
 
 export type EventPayload = Record<string, unknown>;
 
-let supabase: ReturnType<typeof createSupabaseBrowser> | null = null;
-function client() {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL) return null;
-  if (!supabase) {
-    try {
-      supabase = createSupabaseBrowser();
-    } catch {
-      supabase = null;
-    }
-  }
-  return supabase;
-}
-
 /** Fire-and-forget event log. Never throws, never blocks UI. */
 export function logEvent(name: EventName, payload: EventPayload = {}): void {
+  if (typeof window === "undefined") return;
   try {
-    const sb = client();
-    if (!sb) return;
-    const row = {
-      name,
-      payload,
-      locale: typeof document !== "undefined" ? document.documentElement.lang || null : null,
-      path: typeof window !== "undefined" ? window.location.pathname : null,
-      created_at: new Date().toISOString(),
-    };
-    void sb.from("events").insert(row).then(
-      () => undefined,
-      () => undefined,
-    );
+    void fetch("/api/log-event", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      keepalive: true,
+      body: JSON.stringify({
+        name,
+        payload,
+        locale: document.documentElement.lang || null,
+        path:   window.location.pathname,
+      }),
+    }).catch(() => undefined);
   } catch {
     /* swallow */
   }
