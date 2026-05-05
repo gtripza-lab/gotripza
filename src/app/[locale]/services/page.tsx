@@ -263,16 +263,6 @@ export default async function ServicesPage({
           </div>
         </section>
 
-        {/* ── Trust note ────────────────────────────────────────────── */}
-        <section className="mx-auto max-w-4xl px-4 pb-4 sm:px-6">
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 text-center">
-            <p className="text-sm text-white/45">
-              {isAr
-                ? "🔗 جميع الروابط محمية بنظام تتبع Travelpayouts. عمولاتك مضمونة على كل حجز."
-                : "🔗 All links are tracked through Travelpayouts. Your commissions are guaranteed on every booking."}
-            </p>
-          </div>
-        </section>
       </main>
 
       <Footer dict={dict} locale={locale} />

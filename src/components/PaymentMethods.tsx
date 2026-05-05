@@ -4,16 +4,12 @@ import type { Dictionary } from "@/i18n/get-dictionary";
 type Method = { name: string; subtitle?: string };
 
 const GULF_METHODS: Method[] = [
-  { name: "Tamara", subtitle: "Split in 4" },
-  { name: "Tabby", subtitle: "Pay later" },
   { name: "Mada" },
-  { name: "Apple Pay" },
   { name: "Visa" },
   { name: "Mastercard" },
 ];
 
 const WORLD_METHODS: Method[] = [
-  { name: "Apple Pay" },
   { name: "PayPal" },
   { name: "Visa" },
   { name: "Mastercard" },
