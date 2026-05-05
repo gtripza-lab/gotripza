@@ -76,6 +76,17 @@ const config: Config = {
       },
     },
   },
+  // Safelist dynamic color classes used in budget/visa/seasons pages
+  // These are constructed as template literals (e.g. `border-${color}-500/20`)
+  // and cannot be detected by Tailwind's content scanner — must be explicit.
+  safelist: [
+    {
+      pattern: /^(border|bg|text)-(emerald|sky|amber|rose|red)-(300|400|500)(\/[0-9]+)?$/,
+    },
+    {
+      pattern: /^(border|bg)-(emerald|sky|amber|rose|red)-500\/(10|20)$/,
+    },
+  ],
   plugins: [],
 };
 export default config;

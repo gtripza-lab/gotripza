@@ -4,8 +4,21 @@ import { notFound } from "next/navigation";
 import { Plane, Clock, Calendar, ExternalLink, Sparkles, ChevronDown } from "lucide-react";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getRoutePair, ROUTE_SLUGS } from "@/lib/route-pairs";
+import { DESTINATIONS } from "@/lib/seo-destinations";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
+
+const MONTH_NAMES_EN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTH_NAMES_AR = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"];
+
+function bestMonthsLabel(destSlug: string, isAr: boolean): string {
+  const dest = DESTINATIONS.find((d) => d.slug === destSlug);
+  if (!dest?.bestMonths?.length) return isAr ? "طوال العام" : "Year-round";
+  const names = isAr ? MONTH_NAMES_AR : MONTH_NAMES_EN;
+  const months = dest.bestMonths.map((m) => names[m - 1]);
+  if (months.length === 1) return months[0];
+  return `${months[0]} – ${months[months.length - 1]}`;
+}
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
@@ -352,7 +365,7 @@ export default async function RoutePage({ params }: Props) {
                 {isAr ? "أفضل وقت للسفر" : "Best time to fly"}
               </div>
               <div className="text-sm font-semibold text-white/90">
-                {isAr ? "يناير – أبريل" : "Jan – Apr"}
+                {bestMonthsLabel(route.toDestSlug, isAr)}
               </div>
             </div>
           </section>

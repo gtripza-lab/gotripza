@@ -48,7 +48,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احصل على التأمين",
     cta_en: "Get Insured",
     url: "https://visitorscoverage.tpm.li/OjLSplyJ",
-    accentBg: "bg-blue-50", accentText: "text-blue-700", accentBorder: "border-blue-200", accentButton: "bg-blue-600",
+    accentBg: "bg-blue-500/[0.08]", accentText: "text-blue-300", accentBorder: "border-blue-500/20", accentButton: "bg-blue-600",
   },
 
   // ── eSIM ─────────────────────────────────────────────────────────────
@@ -63,7 +63,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "اشتر شريحة الإنترنت",
     cta_en: "Buy eSIM",
     url: "https://airalo.tpm.li/6HeGxPwG",
-    accentBg: "bg-indigo-50", accentText: "text-indigo-700", accentBorder: "border-indigo-200", accentButton: "bg-indigo-600",
+    accentBg: "bg-indigo-500/[0.08]", accentText: "text-indigo-300", accentBorder: "border-indigo-500/20", accentButton: "bg-indigo-600",
   },
   {
     icon: "🌐",
@@ -76,7 +76,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احصل على Yesim",
     cta_en: "Get Yesim",
     url: "https://yesim.tpm.li/E7IOi4Zs",
-    accentBg: "bg-cyan-50", accentText: "text-cyan-700", accentBorder: "border-cyan-200", accentButton: "bg-cyan-600",
+    accentBg: "bg-cyan-500/[0.08]", accentText: "text-cyan-300", accentBorder: "border-cyan-500/20", accentButton: "bg-cyan-600",
   },
   {
     icon: "🔒",
@@ -89,7 +89,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احصل على NordVPN",
     cta_en: "Get NordVPN",
     url: "https://nordvpn.tpm.li/fExKzOuM",
-    accentBg: "bg-blue-50", accentText: "text-blue-800", accentBorder: "border-blue-200", accentButton: "bg-blue-700",
+    accentBg: "bg-blue-500/[0.08]", accentText: "text-blue-200", accentBorder: "border-blue-500/20", accentButton: "bg-blue-700",
   },
 
   // ── Activities ────────────────────────────────────────────────────────
@@ -104,7 +104,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احجز تذاكرك",
     cta_en: "Book Tickets",
     url: "https://tiqets.tpm.li/5hX5mUmz",
-    accentBg: "bg-rose-50", accentText: "text-rose-700", accentBorder: "border-rose-200", accentButton: "bg-rose-600",
+    accentBg: "bg-rose-500/[0.08]", accentText: "text-rose-300", accentBorder: "border-rose-500/20", accentButton: "bg-rose-600",
   },
   {
     icon: "🎡",
@@ -117,7 +117,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "اكتشف Klook",
     cta_en: "Explore Klook",
     url: "https://klook.tpm.li/nrGsmP4o",
-    accentBg: "bg-orange-50", accentText: "text-orange-700", accentBorder: "border-orange-200", accentButton: "bg-orange-600",
+    accentBg: "bg-orange-500/[0.08]", accentText: "text-orange-300", accentBorder: "border-orange-500/20", accentButton: "bg-orange-600",
   },
   {
     icon: "🏮",
@@ -130,7 +130,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "اكتشف KKday",
     cta_en: "Explore KKday",
     url: "https://kkday.tpm.li/WCCNnGsA",
-    accentBg: "bg-amber-50", accentText: "text-amber-700", accentBorder: "border-amber-200", accentButton: "bg-amber-600",
+    accentBg: "bg-amber-500/[0.08]", accentText: "text-amber-300", accentBorder: "border-amber-500/20", accentButton: "bg-amber-600",
   },
 
   // ── Flights ───────────────────────────────────────────────────────────
@@ -145,7 +145,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "ابحث عن رحلة",
     cta_en: "Search Flights",
     url: "https://kiwi.tpm.li/UjCGbORd",
-    accentBg: "bg-teal-50", accentText: "text-teal-700", accentBorder: "border-teal-200", accentButton: "bg-teal-600",
+    accentBg: "bg-teal-500/[0.08]", accentText: "text-teal-300", accentBorder: "border-teal-500/20", accentButton: "bg-teal-600",
   },
 
   // ── Flight Compensation ────────────────────────────────────────────────
@@ -160,7 +160,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "تحقق من رحلتك",
     cta_en: "Check Your Flight",
     url: "https://airhelp.tpm.li/mmjS6uvS",
-    accentBg: "bg-violet-50", accentText: "text-violet-700", accentBorder: "border-violet-200", accentButton: "bg-violet-600",
+    accentBg: "bg-violet-500/[0.08]", accentText: "text-violet-300", accentBorder: "border-violet-500/20", accentButton: "bg-violet-600",
   },
 
   // ── Car Rental ────────────────────────────────────────────────────────
@@ -175,7 +175,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احجز سيارتك",
     cta_en: "Book a Car",
     url: "https://autoeurope.tpm.li/juSTrVaH",
-    accentBg: "bg-sky-50", accentText: "text-sky-700", accentBorder: "border-sky-200", accentButton: "bg-sky-600",
+    accentBg: "bg-sky-500/[0.08]", accentText: "text-sky-300", accentBorder: "border-sky-500/20", accentButton: "bg-sky-600",
   },
   {
     icon: "🌍",
@@ -188,7 +188,7 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "قارن السيارات",
     cta_en: "Compare Cars",
     url: "https://qeeq.tpm.li/xODdj69U",
-    accentBg: "bg-emerald-50", accentText: "text-emerald-700", accentBorder: "border-emerald-200", accentButton: "bg-emerald-600",
+    accentBg: "bg-emerald-500/[0.08]", accentText: "text-emerald-300", accentBorder: "border-emerald-500/20", accentButton: "bg-emerald-600",
   },
 ];
 
@@ -206,7 +206,7 @@ export default async function ServicesPage({
     <>
       <Navbar dict={dict} locale={locale} />
 
-      <main className="min-h-screen bg-white pb-24">
+      <main className="min-h-screen bg-ink-950 pb-24">
 
         {/* ── Hero ──────────────────────────────────────────────────── */}
         <section className="bg-gradient-to-br from-ink-950 via-[#1a1040] to-ink-950 px-4 py-16 sm:py-20">
@@ -239,18 +239,18 @@ export default async function ServicesPage({
               >
                 <div className="mb-4 flex items-start justify-between">
                   <span className="text-3xl">{s.icon}</span>
-                  <span className={`rounded-full border ${s.accentBorder} bg-white px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${s.accentText}`}>
+                  <span className={`rounded-full border ${s.accentBorder} bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${s.accentText}`}>
                     {isAr ? "عبر Travelpayouts" : "via TP"}
                   </span>
                 </div>
 
-                <h2 className="text-base font-bold text-gray-900">
+                <h2 className="text-base font-bold text-white/90">
                   {isAr ? s.name_ar : s.name_en}
                 </h2>
                 <p className={`mt-0.5 text-xs font-medium ${s.accentText}`}>
                   {isAr ? s.tagline_ar : s.tagline_en}
                 </p>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-gray-600">
+                <p className="mt-3 flex-1 text-sm leading-relaxed text-white/55">
                   {isAr ? s.desc_ar : s.desc_en}
                 </p>
 
@@ -265,8 +265,8 @@ export default async function ServicesPage({
 
         {/* ── Trust note ────────────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 pb-4 sm:px-6">
-          <div className="rounded-2xl border border-gray-100 bg-gray-50 p-6 text-center">
-            <p className="text-sm text-gray-500">
+          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 text-center">
+            <p className="text-sm text-white/45">
               {isAr
                 ? "🔗 جميع الروابط محمية بنظام تتبع Travelpayouts. عمولاتك مضمونة على كل حجز."
                 : "🔗 All links are tracked through Travelpayouts. Your commissions are guaranteed on every booking."}

@@ -233,10 +233,11 @@ const IATA_TO_CITY: Record<string, string> = {
   ICN: "Seoul", PEK: "Beijing", PVG: "Shanghai", DEL: "New Delhi",
   BOM: "Mumbai", CMB: "Colombo", MLE: "Maldives", KHI: "Karachi",
   LHE: "Lahore", TBS: "Tbilisi", GYD: "Baku",
-  // Africa
+  // Africa / Egypt
   NBO: "Nairobi", CPT: "Cape Town", JNB: "Johannesburg",
   ADD: "Addis Ababa", DAR: "Dar es Salaam", RAK: "Marrakech",
   CMN: "Casablanca", TUN: "Tunis", ALG: "Algiers",
+  SSH: "Sharm El Sheikh", HRG: "Hurghada", LXR: "Luxor", ASW: "Aswan",
   // Americas
   JFK: "New York", LAX: "Los Angeles", MIA: "Miami", ORD: "Chicago",
   SFO: "San Francisco", IAD: "Washington", BOS: "Boston",

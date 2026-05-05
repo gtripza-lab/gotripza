@@ -111,7 +111,7 @@ export async function searchFlights(params: {
   currency?: string;
   subid?: string;
 }): Promise<FlightOffer[]> {
-  const currency = params.currency ?? "usd";
+  const currency = (params.currency ?? "usd").toLowerCase();
   // If no origin specified, skip flight search (can't query without origin)
   if (!params.origin) return [];
 
@@ -196,7 +196,7 @@ export async function searchHotels(params: {
   currency?: string;
   subid?: string;
 }): Promise<HotelOffer[]> {
-  const currency = params.currency ?? "usd";
+  const currency = (params.currency ?? "usd").toLowerCase();
   const adults = params.adults ?? 1;
 
   // First attempt: with dates if in range

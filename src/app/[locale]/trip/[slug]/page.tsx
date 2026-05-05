@@ -16,6 +16,8 @@ import {
   FlightRichSnippet,
   HotelRichSnippet,
 } from "@/components/JsonLd";
+import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
@@ -199,6 +201,7 @@ export default async function TripPage({ params }: PageProps) {
         <HotelRichSnippet hotels={hotels.slice(0, 5)} currency={currency} destination={dest} />
       )}
 
+      <Navbar dict={dict} locale={locale} />
       <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
         {/* Back link */}
         <div className="container mx-auto max-w-5xl px-4 pt-6">
@@ -462,6 +465,7 @@ export default async function TripPage({ params }: PageProps) {
           </div>
         </section>
       </main>
+      <Footer dict={dict} locale={locale} />
     </>
   );
 }

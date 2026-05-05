@@ -203,7 +203,8 @@ export default async function ComparisonPage({ params }: Props) {
           <SeoBreadcrumb
             items={[
               { label: isAr ? "الرئيسية" : "Home", href: `/${locale}` },
-              { label: isAr ? "مقارنات" : "Comparisons" },
+              { label: isAr ? "مقارنات" : "Comparisons", href: `/${locale}/destinations` },
+              { label: isAr ? `${nameA} أم ${nameB}` : `${destA.nameEn} vs ${destB.nameEn}` },
             ]}
             locale={locale}
           />
