@@ -16,8 +16,8 @@ export async function generateMetadata({
   const isAr = params.locale === "ar";
   return {
     title: isAr
-      ? "ريا — مستشارة السفر الذكية | GoTripza"
-      : "Raya — AI Travel Advisor | GoTripza",
+      ? "ريا — مستشارة السفر الذكية"
+      : "Raya — AI Travel Advisor",
     description: isAr
       ? "تحدث مع ريا، أول مساعد سفر ذكي مجاني يفهمك ويخطط رحلتك معك خطوة بخطوة. طيران · فنادق · تأمين · أنشطة."
       : "Chat with Raya, the first free AI travel assistant that actually understands your trip and plans it step by step.",

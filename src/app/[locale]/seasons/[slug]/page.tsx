@@ -35,8 +35,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = isAr ? dest.nameAr : dest.nameEn;
 
   const title = isAr
-    ? `أفضل وقت لزيارة ${name} — دليل المواسم 2025 | GoTripza`
-    : `Best Time to Visit ${dest.nameEn} — Season Guide 2025 | GoTripza`;
+    ? `أفضل وقت لزيارة ${name} — دليل المواسم 2025`
+    : `Best Time to Visit ${dest.nameEn} — Season Guide 2025`;
   const description = isAr
     ? `اكتشف أفضل وقت لزيارة ${name}: الطقس شهراً بشهر، موسم الذروة، الأسعار، وما تتوقعه في كل فصل.`
     : `Find the best time to visit ${dest.nameEn}: month-by-month weather, peak season, prices, and what to expect each season.`;
@@ -197,7 +197,7 @@ export default async function SeasonsPage({ params }: Props) {
         ]}
       />
 
-      <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-3xl px-4 py-12">
           <SeoBreadcrumb
             items={[

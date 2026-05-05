@@ -12,8 +12,8 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
   return {
     title:
       locale === "ar"
-        ? "الشروط والأحكام — GoTripza"
-        : "Terms & Conditions — GoTripza",
+        ? "الشروط والأحكام"
+        : "Terms & Conditions",
     description:
       locale === "ar"
         ? "اقرأ الشروط والأحكام الخاصة باستخدام منصة GoTripza للبحث عن السفر."
@@ -42,7 +42,7 @@ export default async function TermsPage({
   return (
     <>
       <Navbar dict={dict} locale={locale as Locale} />
-      <main className="mx-auto max-w-3xl px-6 py-20">
+      <main className="mx-auto max-w-3xl px-6 py-20 pb-20 md:pb-0">
         <div className="mb-10">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-primary/70">
             {isAr ? "قانوني" : "Legal"}

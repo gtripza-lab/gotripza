@@ -33,8 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = isAr ? dest.nameAr : dest.nameEn;
 
   const title = isAr
-    ? `هل ${bp.budgetUsd} دولار كافية لـ${name} (${bp.durationDays} أيام)؟ دليل الميزانية 2025 | GoTripza`
-    : `Is $${bp.budgetUsd} Enough for ${dest.nameEn} (${bp.durationDays} Days)? Budget Guide 2025 | GoTripza`;
+    ? `هل ${bp.budgetUsd} دولار كافية لـ${name} (${bp.durationDays} أيام)؟ دليل الميزانية 2025`
+    : `Is $${bp.budgetUsd} Enough for ${dest.nameEn} (${bp.durationDays} Days)? Budget Guide 2025`;
   const description = isAr
     ? `خطة ميزانية كاملة لرحلة ${name} بـ${bp.budgetUsd} دولار لمدة ${bp.durationDays} أيام: الفنادق، الطعام، المواصلات، والأنشطة.`
     : `Complete budget breakdown for ${dest.nameEn} with $${bp.budgetUsd} for ${bp.durationDays} days — hotels, food, transport, and activities covered.`;
@@ -191,7 +191,7 @@ export default async function BudgetPage({ params }: Props) {
         ]}
       />
 
-      <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-3xl px-4 py-12">
           <SeoBreadcrumb
             items={[

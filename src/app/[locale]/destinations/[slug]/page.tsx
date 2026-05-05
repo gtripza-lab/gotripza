@@ -44,8 +44,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const country = isAr ? dest.countryAr : dest.country;
 
   const title = isAr
-    ? `${name} ${dest.flag} — دليل السفر الشامل، أفضل الفنادق والطيران | GoTripza`
-    : `${name} ${dest.flag} Travel Guide — Flights, Hotels & Tips | GoTripza`;
+    ? `${name} ${dest.flag} — دليل السفر الشامل، أفضل الفنادق والطيران`
+    : `${name} ${dest.flag} Travel Guide — Flights, Hotels & Tips`;
 
   const description = isAr
     ? `دليل ${name} الشامل: أرخص تذاكر الطيران، أفضل الفنادق، ميزانية الرحلة، أفضل وقت للزيارة، ومتطلبات التأشيرة. احجز الآن عبر GoTripza.`
@@ -167,7 +167,7 @@ export default async function DestinationHubPage({ params }: Props) {
         pageUrl={pageUrl}
       />
 
-      <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         {/* HERO */}
         <section className="relative">
           {photo?.url ? (

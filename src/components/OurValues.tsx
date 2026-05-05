@@ -19,7 +19,7 @@ const TONES: Record<string, string> = {
   speed: "text-brand-violet",
 };
 
-export function OurValues({ dict }: { dict: Dictionary }) {
+export function OurValues({ dict, isAr }: { dict: Dictionary; isAr?: boolean }) {
   const keys = ["empathy", "simplicity", "inspiration", "trust", "speed"] as const;
 
   return (
@@ -32,7 +32,7 @@ export function OurValues({ dict }: { dict: Dictionary }) {
         className="mb-12"
       >
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-primary/70">
-          {dict.ourValues.title === "ما نضمنه لك" ? "ضماناتنا" : "Our Promise"}
+          {isAr ? "ضماناتنا" : "Our Promise"}
         </p>
         <h2 className="font-display text-3xl font-bold sm:text-4xl">
           {dict.ourValues.title}

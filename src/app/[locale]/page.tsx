@@ -71,6 +71,7 @@ export default async function LandingPage({
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
   const { currency } = detectGeo();
+  const isAr = locale === "ar";
 
   return (
     <SearchProvider initialLocale={locale as Locale} initialCurrency={currency}>
@@ -81,8 +82,8 @@ export default async function LandingPage({
         <StatsBar dict={dict} />
         <BrandStory dict={dict} />
         <MobileMockups dict={dict} />
-        <ValuesGrid dict={dict} />
-        <OurValues dict={dict} />
+        <ValuesGrid dict={dict} isAr={isAr} />
+        <OurValues dict={dict} isAr={isAr} />
         <DestinationsGrid dict={dict} />
         <TrustSection dict={dict} locale={locale as Locale} />
       </main>

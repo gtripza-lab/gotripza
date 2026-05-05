@@ -9,8 +9,8 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
   const isAr = params.locale === "ar";
   return {
     title: isAr
-      ? "احتياجات المسافر — تأمين · شريحة إنترنت · أنشطة · قطارات | GoTripza"
-      : "Traveler Services — Insurance · eSIM · Activities · Trains | GoTripza",
+      ? "احتياجات المسافر — تأمين · شريحة إنترنت · أنشطة · قطارات"
+      : "Traveler Services — Insurance · eSIM · Activities · Trains",
     description: isAr
       ? "كل ما يحتاجه المسافر في مكان واحد: تأمين السفر، شرائح إنترنت عالمية، أنشطة وجولات، ومزيد."
       : "Everything you need for your trip: travel insurance, global eSIMs, tours, and more.",

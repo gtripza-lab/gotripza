@@ -42,8 +42,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const airlinesList = route.airlines.join(", ");
 
   const title = isAr
-    ? `رحلات رخيصة من ${route.fromNameAr} إلى ${route.toNameAr} ${currentYear} — احجز الآن | GoTripza`
-    : `Cheap Flights from ${route.fromNameEn} to ${route.toNameEn} ${currentYear} — Book Now | GoTripza`;
+    ? `رحلات رخيصة من ${route.fromNameAr} إلى ${route.toNameAr} ${currentYear} — احجز الآن`
+    : `Cheap Flights from ${route.fromNameEn} to ${route.toNameEn} ${currentYear} — Book Now`;
 
   const description = isAr
     ? `اعثر على أرخص رحلات من ${route.fromNameAr} إلى ${route.toNameAr}. قارن أسعار ${airlinesList}. السعر المتوسط من $${route.avgPriceUsd}. احجز مع مستشارة ريا الذكية.`
@@ -236,7 +236,7 @@ export default async function RoutePage({ params }: Props) {
       />
       <FaqJsonLd items={faqItems} />
 
-      <main className="min-h-screen bg-[#06111e] text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-[#06111e] text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
 
         {/* ── HERO ── */}
         <section className="relative overflow-hidden bg-gradient-to-b from-brand-primary/20 via-[#06111e]/80 to-[#06111e] pb-12 pt-10">

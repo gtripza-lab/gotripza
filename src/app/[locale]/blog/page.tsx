@@ -11,7 +11,7 @@ import { Footer } from "@/components/Footer";
 export function generateMetadata({ params }: { params: { locale: string } }) {
   const isAr = params.locale === "ar";
   return {
-    title: isAr ? "دليل السفر — GoTripza" : "Travel Guide — GoTripza",
+    title: isAr ? "دليل السفر" : "Travel Guide",
     description: isAr
       ? "مقالات ودلائل سفر شاملة لأفضل الوجهات — فنادق، طيران، ونصائح موفّرة."
       : "Comprehensive travel guides for top destinations — hotels, flights, and money-saving tips.",
@@ -32,7 +32,7 @@ export default async function BlogListPage({
   return (
     <>
       <Navbar dict={dict} locale={locale as Locale} />
-      <main className="mx-auto max-w-6xl px-6 py-20">
+      <main className="mx-auto max-w-6xl px-6 py-20 pb-20 md:pb-0">
         <div className="mb-14">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-primary/70">
             {isAr ? "محتوى سفر" : "Travel Content"}

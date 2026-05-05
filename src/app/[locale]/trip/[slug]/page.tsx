@@ -70,22 +70,22 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (type === "flight" && orig) {
     title = isAr
-      ? `أرخص طيران من ${orig} إلى ${dest} | GoTripza`
-      : `Cheap Flights from ${orig} to ${dest} | GoTripza`;
+      ? `أرخص طيران من ${orig} إلى ${dest}`
+      : `Cheap Flights from ${orig} to ${dest}`;
     description = isAr
       ? `احجز أرخص تذاكر الطيران من ${orig} إلى ${dest}. أسعار حصرية، دفع بتمارا وتابي، أفضل عروض الطيران عبر GoTripza.`
       : `Book the cheapest flights from ${orig} to ${dest}. Exclusive fares, instant booking, best deals on GoTripza.`;
   } else if (type === "hotel") {
     title = isAr
-      ? `أفضل فنادق ${dest} بأرخص الأسعار | GoTripza`
-      : `Best Hotels in ${dest} — Best Price Guaranteed | GoTripza`;
+      ? `أفضل فنادق ${dest} بأرخص الأسعار`
+      : `Best Hotels in ${dest} — Best Price Guaranteed`;
     description = isAr
       ? `احجز أفضل فنادق ${dest} بأسعار لا تقبل المنافسة. دفع بتمارا وتابي وأبل باي عبر GoTripza.`
       : `Discover the best hotels in ${dest} with guaranteed lowest prices. Book instantly on GoTripza.`;
   } else {
     title = isAr
-      ? `سفر إلى ${dest} — طيران وفنادق بأفضل الأسعار | GoTripza`
-      : `${dest} Travel — Flights & Hotels | GoTripza`;
+      ? `سفر إلى ${dest} — طيران وفنادق بأفضل الأسعار`
+      : `${dest} Travel — Flights & Hotels`;
     description = isAr
       ? `احجز رحلتك إلى ${dest}: أرخص طيران وأفضل فنادق. عروض حصرية من GoTripza للمسافرين من السعودية.`
       : `Plan your trip to ${dest}: cheap flights and top-rated hotels. Exclusive deals on GoTripza.`;
@@ -202,7 +202,7 @@ export default async function TripPage({ params }: PageProps) {
       )}
 
       <Navbar dict={dict} locale={locale} />
-      <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         {/* Back link */}
         <div className="container mx-auto max-w-5xl px-4 pt-6">
           <Link

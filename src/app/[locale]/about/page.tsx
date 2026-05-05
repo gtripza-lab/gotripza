@@ -12,8 +12,8 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
   return {
     title:
       locale === "ar"
-        ? "من نحن — GoTripza"
-        : "About Us — GoTripza",
+        ? "من نحن"
+        : "About Us",
     description:
       locale === "ar"
         ? "تعرّف على GoTripza، منصة البحث الذكي عن السفر التي تساعدك في إيجاد أفضل رحلاتك وفنادقك بسهولة."
@@ -42,7 +42,7 @@ export default async function AboutPage({
   return (
     <>
       <Navbar dict={dict} locale={locale as Locale} />
-      <main className="mx-auto max-w-3xl px-6 py-20">
+      <main className="mx-auto max-w-3xl px-6 py-20 pb-20 md:pb-0">
 
         {/* Hero */}
         <div className="mb-14">

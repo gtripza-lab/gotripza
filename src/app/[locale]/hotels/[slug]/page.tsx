@@ -30,8 +30,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = isAr ? dest.nameAr : dest.nameEn;
 
   const title = isAr
-    ? `أفضل فنادق ${name} 2025 — مقارنة أسعار وحجز فوري | GoTripza`
-    : `Best Hotels in ${dest.nameEn} 2025 — Price Comparison & Instant Booking | GoTripza`;
+    ? `أفضل فنادق ${name} 2025 — مقارنة أسعار وحجز فوري`
+    : `Best Hotels in ${dest.nameEn} 2025 — Price Comparison & Instant Booking`;
   const description = isAr
     ? `اكتشف أفضل فنادق ${name} لكل الميزانيات: فنادق فاخرة، متوسطة، واقتصادية. مقارنة فورية وأسعار مضمونة.`
     : `Discover the best hotels in ${dest.nameEn} for every budget — luxury, mid-range, and budget. Instant price comparison and guaranteed best rates.`;
@@ -115,7 +115,7 @@ export default async function HotelsPage({ params }: Props) {
         <HotelRichSnippet hotels={hotels.slice(0, 5)} currency={currency} destination={dest.nameEn} />
       )}
 
-      <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-4xl px-4 py-12">
           <SeoBreadcrumb
             items={[

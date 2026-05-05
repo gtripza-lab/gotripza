@@ -12,8 +12,8 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
   return {
     title:
       locale === "ar"
-        ? "تواصل معنا — GoTripza"
-        : "Contact Us — GoTripza",
+        ? "تواصل معنا"
+        : "Contact Us",
     description:
       locale === "ar"
         ? "تواصل مع فريق GoTripza للاستفسارات والشراكات والدعم."
@@ -104,7 +104,7 @@ export default async function ContactPage({
   return (
     <>
       <Navbar dict={dict} locale={locale as Locale} />
-      <main className="mx-auto max-w-3xl px-6 py-20">
+      <main className="mx-auto max-w-3xl px-6 py-20 pb-20 md:pb-0">
 
         <div className="mb-12">
           <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-brand-primary/70">

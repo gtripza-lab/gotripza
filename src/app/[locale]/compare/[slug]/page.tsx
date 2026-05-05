@@ -35,8 +35,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const nameB = isAr ? destB.nameAr : destB.nameEn;
 
   const title = isAr
-    ? `${nameA} أم ${nameB}؟ مقارنة شاملة 2025 | GoTripza`
-    : `${destA.nameEn} vs ${destB.nameEn} — Full Comparison 2025 | GoTripza`;
+    ? `${nameA} أم ${nameB}؟ مقارنة شاملة 2025`
+    : `${destA.nameEn} vs ${destB.nameEn} — Full Comparison 2025`;
   const description = isAr
     ? `مقارنة شاملة بين ${nameA} و${nameB}: التكاليف، الطقس، التأشيرة، الفنادق، الأنشطة. اختر الوجهة المثالية لرحلتك.`
     : `${destA.nameEn} vs ${destB.nameEn}: full comparison of costs, weather, visa, hotels, and activities. Find out which destination is right for your trip.`;
@@ -198,7 +198,7 @@ export default async function ComparisonPage({ params }: Props) {
         pageUrl={pageUrl}
       />
 
-      <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-4xl px-4 py-12">
           <SeoBreadcrumb
             items={[

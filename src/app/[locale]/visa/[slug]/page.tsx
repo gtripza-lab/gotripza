@@ -31,8 +31,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = isAr ? dest.nameAr : dest.nameEn;
 
   const title = isAr
-    ? `تأشيرة ${name} — المتطلبات والتطبيق 2025 | GoTripza`
-    : `${dest.nameEn} Visa Requirements & How to Apply 2025 | GoTripza`;
+    ? `تأشيرة ${name} — المتطلبات والتطبيق 2025`
+    : `${dest.nameEn} Visa Requirements & How to Apply 2025`;
   const description = isAr
     ? `دليل تأشيرة ${name} الشامل: من يحتاج تأشيرة؟ التأشيرة الإلكترونية، الوثائق المطلوبة، والنصائح العملية.`
     : `Complete ${dest.nameEn} visa guide: who needs a visa, e-Visa options, required documents, and practical application tips.`;
@@ -202,7 +202,7 @@ export default async function VisaPage({ params }: Props) {
         ]}
       />
 
-      <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+      <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-3xl px-4 py-12">
           <SeoBreadcrumb
             items={[

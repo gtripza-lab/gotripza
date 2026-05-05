@@ -11,8 +11,8 @@ interface Props { params: { locale: string } }
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isAr = params.locale === "ar";
   const title = isAr
-    ? "دليل الوجهات السياحية — أفضل 50 وجهة في العالم | GoTripza"
-    : "Destination Travel Guides — World's Best 50 Destinations | GoTripza";
+    ? "دليل الوجهات السياحية — أفضل 50 وجهة في العالم"
+    : "Destination Travel Guides — World's Best 50 Destinations";
   const description = isAr
     ? "استكشف أفضل الوجهات السياحية في العالم: دليل شامل للطيران والفنادق والميزانية والتأشيرة وأفضل وقت للزيارة."
     : "Explore the world's best travel destinations with complete guides: flights, hotels, budget planning, visa requirements, and the best time to visit.";
@@ -50,7 +50,7 @@ export default async function DestinationsIndexPage({ params }: Props) {
   }, {});
 
   return (
-    <main className="min-h-screen bg-ink-950 text-white" dir={isAr ? "rtl" : "ltr"}>
+    <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
       <div className="container mx-auto max-w-5xl px-4 py-16">
         <h1 className="font-display text-3xl font-bold md:text-4xl mb-3">
           {isAr ? "🌍 استكشف وجهات العالم" : "🌍 Explore World Destinations"}

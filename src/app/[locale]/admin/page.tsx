@@ -7,7 +7,7 @@ import { Footer } from "@/components/Footer";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminLoginForm } from "@/components/AdminLoginForm";
 
-export const metadata = { title: "Admin — GoTripza", robots: "noindex,nofollow" };
+export const metadata = { title: "Admin", robots: "noindex,nofollow" };
 
 // Never cache this page
 export const dynamic = "force-dynamic";

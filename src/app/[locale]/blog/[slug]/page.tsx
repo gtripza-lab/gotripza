@@ -29,7 +29,7 @@ export async function generateMetadata({
   const post = getPost(params.slug, (params.locale as Locale) ?? "ar");
   if (!post) return {};
   return {
-    title: `${post.title} | GoTripza`,
+    title: `${post.title}`,
     description: post.description,
     keywords: post.keywords,
     openGraph: {
@@ -66,7 +66,7 @@ export default async function BlogPostPage({
         imageUrl={post.coverImage}
         url={`${BASE}/${locale}/blog/${slug}`}
       />
-      <main className="mx-auto max-w-3xl px-6 py-20">
+      <main className="mx-auto max-w-3xl px-6 py-20 pb-20 md:pb-0">
         <a
           href={`/${locale}/blog`}
           className="mb-10 inline-flex items-center gap-1.5 text-sm text-white/40 transition hover:text-white/70"

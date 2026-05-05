@@ -17,14 +17,14 @@ const TONES: Record<string, { icon: string; bar: string }> = {
   secure: { icon: "text-emerald-300", bar: "bg-emerald-300" },
 };
 
-export function ValuesGrid({ dict }: { dict: Dictionary }) {
+export function ValuesGrid({ dict, isAr }: { dict: Dictionary; isAr?: boolean }) {
   const keys = ["ai", "smart", "fast", "support", "secure"] as const;
 
   return (
     <section className="mx-auto max-w-7xl px-6 py-20">
       <div className="mb-12 text-center">
         <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.25em] text-brand-primary/70">
-          {dict.values.title === "لماذا GoTripza؟" ? "الميزة" : "The Advantage"}
+          {isAr ? "الميزة" : "The Advantage"}
         </p>
         <h2 className="font-display text-3xl font-bold sm:text-4xl">
           {dict.values.title}
