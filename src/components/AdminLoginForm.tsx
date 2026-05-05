@@ -18,16 +18,27 @@ export function AdminLoginForm({ locale }: { locale: Locale }) {
     setLoading(true);
     setError(false);
 
-    // Navigate to same page with key param — Next.js Server Component
-    // will validate it against ADMIN_KEY env var
-    router.push(`/${locale}/admin?key=${encodeURIComponent(key.trim())}`);
+    try {
+      // POST to API route — key never appears in URL, logs, or browser history
+      const res = await fetch("/api/admin-login", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ key: key.trim() }),
+      });
 
-    // Small delay so user sees spinner before server re-render
-    await new Promise((r) => setTimeout(r, 1200));
-    setLoading(false);
-    setError(true); // If still on this page, key was wrong
-    setKey("");
-    inputRef.current?.focus();
+      if (res.ok) {
+        // Cookie is now set — reload the page as Server Component to verify
+        router.refresh();
+      } else {
+        setError(true);
+        setKey("");
+        inputRef.current?.focus();
+      }
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

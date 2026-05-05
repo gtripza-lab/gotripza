@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
@@ -8,21 +9,36 @@ import { AdminLoginForm } from "@/components/AdminLoginForm";
 
 export const metadata = { title: "Admin — GoTripza", robots: "noindex,nofollow" };
 
+// Never cache this page
+export const dynamic = "force-dynamic";
+
 export default async function AdminPage({
   params,
-  searchParams,
 }: {
   params: { locale: string };
-  searchParams: { key?: string };
 }) {
   const { locale } = params;
   if (!isLocale(locale)) notFound();
 
-  const adminKey = process.env.ADMIN_KEY ?? "gotripza_admin_2025";
+  const adminKey = process.env.ADMIN_KEY;
   const isAr = locale === "ar";
 
-  // Not authenticated — show login form
-  if (searchParams.key !== adminKey) {
+  // ADMIN_KEY must always be configured — refuse if missing
+  if (!adminKey) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0f]">
+        <p className="text-sm text-red-400">
+          ADMIN_KEY environment variable is not configured.
+        </p>
+      </div>
+    );
+  }
+
+  // Validate httpOnly session cookie (set by POST /api/admin-login)
+  const sessionCookie = cookies().get("admin_session");
+  const isAuthenticated = sessionCookie?.value === adminKey;
+
+  if (!isAuthenticated) {
     return (
       <div
         className="flex min-h-screen flex-col items-center justify-center bg-[#0a0a0f]"
