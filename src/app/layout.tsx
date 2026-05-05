@@ -1,27 +1,14 @@
-import Script from "next/script";
-
+/**
+ * Root layout — must exist for Next.js App Router but should be a thin
+ * passthrough when a child layout (e.g. [locale]/layout.tsx) owns the
+ * <html> and <body> elements.  Returning children directly avoids the
+ * nested-html-body hydration mismatch that `beforeInteractive` scripts
+ * used to cause here.
+ */
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return (
-    <html suppressHydrationWarning>
-      <body>
-        {children}
-
-        {/*
-         * Travelpayouts Drive — marker 522867
-         * strategy="beforeInteractive" → injected into the initial server-rendered HTML
-         * before any hydration. Must live in the ROOT layout (not locale layout) and
-         * must NOT be placed inside <head> (App Router constraint).
-         */}
-        <Script
-          id="travelpayouts-drive"
-          src="https://emrld.ltd/NTIyODY3.js?t=522867"
-          strategy="beforeInteractive"
-        />
-      </body>
-    </html>
-  );
+  return children as React.ReactElement;
 }

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import { Calendar, ArrowLeft, ArrowRight } from "lucide-react";
 import { MDXRemote } from "next-mdx-remote/rsc";
+import remarkGfm from "remark-gfm";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { getPost, getPostSlugs } from "@/lib/blog";
@@ -118,7 +119,10 @@ export default async function BlogPostPage({
           prose-ul:text-white/75 prose-li:marker:text-brand-primary
           prose-blockquote:border-brand-primary prose-blockquote:text-white/60
           prose-hr:border-white/10">
-          <MDXRemote source={post.content} />
+          <MDXRemote
+            source={post.content}
+            options={{ mdxOptions: { remarkPlugins: [remarkGfm] } }}
+          />
         </article>
 
         <BlogSearchCTA locale={locale as Locale} />

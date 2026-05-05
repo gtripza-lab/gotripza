@@ -52,8 +52,7 @@ export default async function SearchPage({
     <>
       <Navbar dict={dict} locale={locale as Locale} />
       <main
-        className="overflow-hidden bg-[#06111e]"
-        style={{ height: "calc(100dvh - 64px)" }}
+        className="overflow-hidden bg-[#06111e] h-[calc(100dvh-128px)] md:h-[calc(100dvh-64px)]"
       >
         <ChatProvider locale={locale as Locale} initialCurrency={currency} initialMessage={initialMessage}>
           <ChatInterface dict={dict} />

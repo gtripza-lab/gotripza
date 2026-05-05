@@ -141,9 +141,10 @@ export default function LocaleLayout({
   const dir = localeMeta[locale as Locale].dir;
 
   return (
-    <html lang={locale} dir={dir} className="dark">
+    <html lang={locale} dir={dir} className="dark" suppressHydrationWarning>
       <body
         className={`${sans.variable} ${display.variable} ${arabic.variable} antialiased font-sans`}
+        suppressHydrationWarning
       >
         <OrganizationJsonLd />
         <WebsiteJsonLd />
@@ -152,6 +153,13 @@ export default function LocaleLayout({
         {children}
         <BottomNav locale={locale as Locale} />
         <CookieConsent locale={locale as Locale} />
+
+        {/* Travelpayouts Drive — affiliate tracking, loaded after hydration */}
+        <Script
+          id="travelpayouts-drive"
+          src="https://emrld.ltd/NTIyODY3.js?t=522867"
+          strategy="afterInteractive"
+        />
 
         {GA_ID && (
           <>
