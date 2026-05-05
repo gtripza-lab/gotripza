@@ -47,25 +47,34 @@ async function checkSupabase(): Promise<CheckResult> {
   }
 }
 
+// Same fallback order as gemini.ts so the health check reflects real availability
+const GEMINI_FALLBACK_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-1.5-flash",
+];
+
 async function checkGemini(): Promise<CheckResult> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { ok: false, detail: "GEMINI_API_KEY missing" };
-  try {
-    const genAI = new GoogleGenerativeAI(key);
-    // Use same model + JSON mode that powers /api/parse — proven to work in production
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: { responseMimeType: "application/json", temperature: 0 },
-    });
-    const res = await model.generateContent(
-      'Return exactly this JSON: {"status":"ok"}'
-    );
-    const text = res.response.text().trim();
-    const parsed = JSON.parse(text);
-    return { ok: parsed.status === "ok", detail: `model=gemini-2.5-flash status=${parsed.status}` };
-  } catch (e) {
-    return { ok: false, detail: (e as Error).message.slice(0, 150) };
+  const genAI = new GoogleGenerativeAI(key);
+  let lastError = "";
+  for (const modelName of GEMINI_FALLBACK_MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: { responseMimeType: "application/json", temperature: 0 },
+      });
+      const res = await model.generateContent('Return exactly this JSON: {"status":"ok"}');
+      const parsed = JSON.parse(res.response.text().trim());
+      if (parsed.status === "ok") {
+        return { ok: true, detail: `model=${modelName} status=ok` };
+      }
+    } catch (e) {
+      lastError = (e as Error).message.slice(0, 100);
+    }
   }
+  return { ok: false, detail: lastError };
 }
 
 function checkAffiliateMarker(): CheckResult {
