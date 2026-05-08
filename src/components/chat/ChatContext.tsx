@@ -9,7 +9,14 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { TripIntent, BudgetVerdict, ConfidenceScore, DestinationIntel, ChatTurn, ChatMode, TravelContext } from "@/lib/gemini";
+import type { TripIntent, TravelContext } from "@/lib/ai/schemas/intent";
+import type {
+  BudgetVerdict,
+  ConfidenceScore,
+  DestinationIntel,
+  ChatTurn,
+  ChatMode,
+} from "@/lib/ai/schemas/intelligence";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { Locale } from "@/i18n/config";
 import { currencyForLocale, type Currency } from "@/lib/utils";
@@ -184,13 +191,16 @@ export function ChatProvider({
     logEvent("chat_message_sent", { query: text, locale });
 
     try {
-      // Build conversation history to send (last 12 messages, excluding current loading msg)
-      const historySnap = messagesRef.current
+      // Build conversation history to send (last 12 messages, excluding current loading msg).
+      // Loop-fix E: include the assistant's prior `mode` so the model can see its
+      // own state and never re-clarifies after searching.
+      const historySnap: ChatTurn[] = messagesRef.current
         .filter((m) => !m.isLoading && m.text.trim())
         .slice(-12)
-        .map((m): ChatTurn => ({
-          role: m.role === "user" ? "user" : "model",
+        .map((m) => ({
+          role: m.role === "user" ? "user" : "assistant",
           text: m.text,
+          mode: m.role === "user" ? undefined : m.mode,
         }));
 
       // 3 — Parse intent + determine mode

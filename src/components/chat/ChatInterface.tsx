@@ -230,10 +230,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="shrink-0 border-t border-white/[0.08] px-3 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl"
+        className="shrink-0 w-full border-t border-white/[0.08] px-2 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl overflow-hidden"
         style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex items-end gap-2 sm:gap-2.5">
+        <div className="flex w-full items-end gap-1.5 sm:gap-2.5 min-w-0">
           {/* Textarea */}
           <textarea
             ref={inputRef}
@@ -247,7 +247,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             }
             disabled={isThinking}
             rows={1}
-            className="min-h-[40px] sm:min-h-[44px] flex-1 resize-none rounded-xl sm:rounded-2xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 sm:px-4 sm:py-3 text-sm text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50"
+            className="min-h-[40px] sm:min-h-[44px] flex-1 min-w-0 resize-none rounded-xl sm:rounded-2xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 sm:px-4 sm:py-3 text-sm text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50"
             style={{ maxHeight: "100px" }}
             onInput={(e) => {
               const t = e.currentTarget;
@@ -256,13 +256,13 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             }}
           />
 
-          {/* Voice */}
+          {/* Voice — hidden on extra-small screens to ensure send button stays visible */}
           <button
             type="button"
             onClick={handleVoice}
             disabled={isThinking}
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
-            className={`flex h-10 sm:h-11 w-10 sm:w-11 shrink-0 items-center justify-center rounded-lg sm:rounded-xl transition disabled:opacity-40 ${
+            className={`hidden xs:flex sm:flex h-10 sm:h-11 w-10 sm:w-11 shrink-0 items-center justify-center rounded-lg sm:rounded-xl transition disabled:opacity-40 ${
               isListening
                 ? "animate-pulse bg-rose-500/20 text-rose-400"
                 : "border border-white/[0.12] bg-white/[0.05] text-white/35 hover:bg-white/[0.10] hover:text-white/65"
@@ -271,7 +271,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             {isListening ? <MicOff className="h-3.5 sm:h-4 w-3.5 sm:w-4" /> : <Mic className="h-3.5 sm:h-4 w-3.5 sm:w-4" />}
           </button>
 
-          {/* Send */}
+          {/* Send — ALWAYS visible, never pushed off-screen */}
           <button
             type="button"
             onClick={handleSend}
@@ -433,7 +433,7 @@ function ChatSearchResults({
 
       {/* Destination intel (collapsed) */}
       {data.destination_intel && (
-        <CompactDestinationIntel intel={data.destination_intel} isAr={isAr} destination={data.intent.destination} />
+        <CompactDestinationIntel intel={data.destination_intel} isAr={isAr} destination={data.intent.destination ?? ""} />
       )}
 
       {/* Flights */}
@@ -458,7 +458,7 @@ function ChatSearchResults({
               accent="primary"
             />
           ) : (
-            <FlightCards flights={data.flights} fmt={fmt} locale={locale} destination={data.intent.destination} currency={currency} searchUrl={data.flightSearchUrl} dict={dict} />
+            <FlightCards flights={data.flights} fmt={fmt} locale={locale} destination={data.intent.destination ?? ""} currency={currency} searchUrl={data.flightSearchUrl} dict={dict} />
           )}
         </div>
       )}
@@ -496,7 +496,7 @@ function ChatSearchResults({
               accent="mint"
             />
           ) : (
-            <HotelCards hotels={data.hotels} nights={nights} fmt={fmt} locale={locale} destination={data.intent.destination} currency={currency} searchUrl={data.hotelSearchUrl} dict={dict} />
+            <HotelCards hotels={data.hotels} nights={nights} fmt={fmt} locale={locale} destination={data.intent.destination ?? ""} currency={currency} searchUrl={data.hotelSearchUrl} dict={dict} />
           )}
         </div>
       )}
@@ -898,11 +898,11 @@ function SmartChatPartners({
   intent,
   isAr,
 }: {
-  intent: import("@/lib/gemini").TripIntent;
+  intent: import("@/lib/ai/schemas/intent").TripIntent;
   isAr: boolean;
 }) {
   const urlParams = {
-    destination: intent.destination,
+    destination: intent.destination ?? "",
     origin: intent.origin ?? undefined,
     departure_date: intent.departure_date,
     return_date: intent.return_date,
@@ -946,7 +946,7 @@ function SmartChatPartners({
           </p>
           <div className="grid grid-cols-2 gap-2">
             {essentials.slice(0, 4).map((rec) => (
-              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination} />
+              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination ?? undefined} />
             ))}
           </div>
         </div>
@@ -960,7 +960,7 @@ function SmartChatPartners({
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {extras.slice(0, 6).map((rec) => (
-              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination} />
+              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination ?? undefined} />
             ))}
           </div>
         </div>

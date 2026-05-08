@@ -18,7 +18,7 @@ import {
   type PartnerId,
   type PartnerUrlParams,
 } from "./partners";
-import type { TripIntent } from "./gemini";
+import type { TripIntent } from "./ai/schemas/intent";
 
 export type PartnerRec = {
   partner: Partner;

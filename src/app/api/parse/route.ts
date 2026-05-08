@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTravelIntelligence, type TravelIntelligence, type TravelContext, type ChatTurn } from "@/lib/gemini";
+import {
+  getTravelIntelligence,
+  getLiveTips,
+  type TravelIntelligence,
+  type TravelContext,
+  type ChatTurn,
+} from "@/lib/ai";
 import {
   heuristicParse,
   detectLocale,
@@ -24,8 +30,8 @@ function isRateLimited(ip: string): boolean {
 
 const MAX_QUERY_LENGTH = 600;
 
-function isGeminiError(message: string) {
-  return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid/i.test(
+function isProviderError(message: string) {
+  return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid|openai|gemini/i.test(
     message,
   );
 }
@@ -273,9 +279,26 @@ export async function POST(req: NextRequest) {
   let history: ChatTurn[] = [];
   let context: TravelContext | undefined;
   try {
-    const body = (await req.json()) as { query?: string; history?: ChatTurn[]; context?: TravelContext };
+    // Accept legacy { role: "model" } from older clients; normalize to "assistant".
+    type IncomingTurn = { role?: string; text?: string; mode?: string };
+    const body = (await req.json()) as {
+      query?: string;
+      history?: IncomingTurn[];
+      context?: TravelContext;
+    };
     query = body.query?.trim() ?? "";
-    history = Array.isArray(body.history) ? body.history.slice(-12) : [];
+    history = Array.isArray(body.history)
+      ? body.history.slice(-12).flatMap((t): ChatTurn[] => {
+          if (typeof t?.text !== "string") return [];
+          const role: ChatTurn["role"] =
+            t.role === "user" ? "user" : "assistant";
+          const mode =
+            t.mode === "clarify" || t.mode === "search" || t.mode === "advice"
+              ? (t.mode as ChatTurn["mode"])
+              : undefined;
+          return [{ role, text: t.text, mode }];
+        })
+      : [];
     context = body.context;
     if (!query || query.length < 2) {
       return NextResponse.json({ error: "Empty query" }, { status: 400 });
@@ -288,16 +311,30 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    let intel = await getTravelIntelligence(query, history, context);
+    // Default to empty context if client didn't send one (older client builds).
+    const ctx: TravelContext = context ?? {
+      destination: null,
+      origin: null,
+      departure_date: null,
+      return_date: null,
+      adults: 2,
+      budget_usd: null,
+      trip_type: null,
+    };
+
+    let intel = await getTravelIntelligence(query, history, ctx);
 
     // ── Safety net: enforce conversational mode ───────────────────────────
-    intel = enforceConversationalMode(intel, history, context);
+    // (Will be replaced by orchestrator post-process in Phase 3.)
+    intel = enforceConversationalMode(intel, history, ctx);
 
-    // Live tips only worth fetching in confirmed search mode
-    const { getLiveTips } = await import("@/lib/gemini");
-    const tips = intel.mode === "search"
-      ? await getLiveTips(intel.intent.destination, intel.locale).catch(() => null)
-      : null;
+    // Live tips only worth fetching in confirmed search mode + with a destination.
+    const tips =
+      intel.mode === "search" && intel.intent.destination
+        ? await getLiveTips(intel.intent.destination, intel.locale).catch(
+            () => null,
+          )
+        : null;
 
     return NextResponse.json({
       intent: intel.intent,
@@ -316,10 +353,15 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[parse] Intelligence engine error, using heuristic fallback:", message);
+    console.error(
+      "[parse] AI engine error, falling back to heuristic:",
+      message,
+    );
     return heuristicFallback(
       query,
-      isGeminiError(message) ? "gemini_error_using_heuristic" : "unknown_error_using_heuristic",
+      isProviderError(message)
+        ? "ai_error_using_heuristic"
+        : "unknown_error_using_heuristic",
       history,
       context,
     );
