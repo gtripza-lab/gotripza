@@ -1,17 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getTravelIntelligence,
   getLiveTips,
-  type TravelIntelligence,
   type TravelContext,
   type ChatTurn,
 } from "@/lib/ai";
+import { runRayaOrchestrator } from "@/lib/ai/orchestrator/pipeline";
+import { getCurrentUser } from "@/lib/auth/session";
 import {
   heuristicParse,
   detectLocale,
   detectWants,
   findAnyCity,
 } from "@/lib/mock-intent";
+
+function genAnonSid(): string {
+  // 22-char URL-safe random id
+  const bytes = new Uint8Array(16);
+  if (typeof crypto !== "undefined") crypto.getRandomValues(bytes);
+  else for (let i = 0; i < 16; i++) bytes[i] = Math.floor(Math.random() * 256);
+  return Buffer.from(bytes).toString("base64url");
+}
 
 export const runtime = "nodejs";
 
@@ -36,55 +44,8 @@ function isProviderError(message: string) {
   );
 }
 
-/**
- * SERVER-SIDE CONVERSATION ENFORCEMENT
- * ─────────────────────────────────────
- * Regardless of what Gemini returns, we never trigger a search unless
- * the minimum required context is present. This is the safety net that
- * prevents "dumb" behaviour when the model ignores prompt instructions.
- *
- * Rules:
- *  1. No departure date  → clarify (ask when)
- *  2. Wants flights but no origin city → clarify (ask from where)
- *  3. First message AND destination is vague (country-level) → clarify
- */
-function enforceConversationalMode(
-  intel: TravelIntelligence,
-  _history: ChatTurn[],
-  context?: TravelContext,
-): TravelIntelligence {
-  // Advice mode is always appropriate — never override it
-  if (intel.mode === "advice") return intel;
-  // Already clarifying — respect that
-  if (intel.mode === "clarify") return intel;
-
-  const isAr = intel.locale === "ar";
-  const dest = context?.destination || intel.intent.destination || (isAr ? "وجهتك" : "your destination");
-  const wantsFlights = intel.wants.includes("flights");
-  const hasDate = !!(context?.departure_date || intel.intent.departure_date);
-  const hasOrigin = !!(context?.origin || intel.intent.origin);
-
-  // Rule 1: No dates → ask when
-  if (!hasDate) {
-    intel.mode = "clarify";
-    intel.message = isAr
-      ? `${dest} — اختيار ممتاز! 🌍 متى تفكر تسافر؟ حتى لو مجرد شهر تقريبي يكفي.`
-      : `${dest} sounds amazing! 🌍 When are you thinking of going? Even a rough month helps me search better.`;
-    return intel;
-  }
-
-  // Rule 2: Wants flights but no origin → ask from where
-  if (wantsFlights && !hasOrigin) {
-    intel.mode = "clarify";
-    intel.message = isAr
-      ? `ممتاز! من أي مدينة أو مطار ستسافر؟`
-      : `Great! Which city or airport are you flying from?`;
-    return intel;
-  }
-
-  // All good — search is appropriate
-  return intel;
-}
+// NOTE: The legacy enforceConversationalMode override has been replaced by
+// the Ria orchestrator's post-process step (see src/lib/ai/orchestrator/).
 
 // Destination name lookup for heuristic fallback responses
 const IATA_TO_NAME_AR: Record<string, string> = {
@@ -322,11 +283,28 @@ export async function POST(req: NextRequest) {
       trip_type: null,
     };
 
-    let intel = await getTravelIntelligence(query, history, ctx);
+    // Identity: signed-in user (for memory) + anon session id (for cross-turn
+    // tracking when not signed in). `gtz_sid` cookie is set on the response if
+    // a new one was minted.
+    const user = await getCurrentUser();
+    let anonSid = req.cookies.get("gtz_sid")?.value ?? null;
+    let mintedSid: string | null = null;
+    if (!user && !anonSid) {
+      mintedSid = genAnonSid();
+      anonSid = mintedSid;
+    }
 
-    // ── Safety net: enforce conversational mode ───────────────────────────
-    // (Will be replaced by orchestrator post-process in Phase 3.)
-    intel = enforceConversationalMode(intel, history, ctx);
+    // Ria orchestrator: pre-filter + LLM + post-process (Phase 3 + 4).
+    // Replaces the legacy enforceConversationalMode override layer.
+    const { intelligence: intel, mergedContext, telemetry } =
+      await runRayaOrchestrator(query, history, ctx, {
+        userId: user?.id ?? null,
+        sessionId: anonSid,
+      });
+
+    console.log(
+      `[parse] orch mode=${telemetry.finalMode} prefilter=${telemetry.preFilterExtracted.join(",") || "none"} ms=${telemetry.durationMs}`,
+    );
 
     // Live tips only worth fetching in confirmed search mode + with a destination.
     const tips =
@@ -336,8 +314,11 @@ export async function POST(req: NextRequest) {
           )
         : null;
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       intent: intel.intent,
+      // Echo back the merged context so the client can update its store
+      // from the server's authoritative view (instead of merging client-side).
+      context: mergedContext,
       locale: intel.locale,
       mode: intel.mode,
       message: intel.message,
@@ -351,6 +332,18 @@ export async function POST(req: NextRequest) {
       clarification_question: intel.clarification_question ?? null,
       mock: false,
     });
+
+    if (mintedSid) {
+      response.cookies.set("gtz_sid", mintedSid, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 365, // 1 year
+        path: "/",
+      });
+    }
+
+    return response;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(

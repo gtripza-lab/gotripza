@@ -213,6 +213,9 @@ export function ChatProvider({
 
       type ParseResponse = {
         intent?: TripIntent;
+        // Server-authoritative merged context (Phase 3). When present,
+        // we trust this over any client-side merge.
+        context?: TravelContext;
         locale?: "ar" | "en";
         mode?: ChatMode;
         message?: string;
@@ -241,8 +244,14 @@ export function ChatProvider({
         ? parsedJson.wants.filter((w) => w === "flights" || w === "hotels") as ("flights" | "hotels")[]
         : ["flights", "hotels"];
 
-      // Accumulate context from every successful parse
-      setTravelContext((prev) => mergeContext(prev, intent));
+      // Accumulate context. Prefer server's authoritative merged context
+      // (Phase 3 orchestrator); fall back to client-side merge for older
+      // server builds that don't echo `context` yet.
+      if (parsedJson.context) {
+        setTravelContext(parsedJson.context);
+      } else {
+        setTravelContext((prev) => mergeContext(prev, intent));
+      }
 
       // 4 — ONLY call search API when mode === "search"
       if (mode !== "search") {

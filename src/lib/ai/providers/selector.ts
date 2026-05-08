@@ -27,10 +27,16 @@ import {
 } from "./gemini";
 import { HAS_GEMINI_KEY, HAS_OPENAI_KEY } from "../config";
 
+export type IntelligenceOptions = {
+  userId?: string | null;
+  summary?: string | null;
+};
+
 export async function getTravelIntelligence(
   query: string,
   history: ChatTurn[],
   context: TravelContext,
+  options: IntelligenceOptions = {},
 ): Promise<TravelIntelligence> {
   const primary = effectiveProvider();
 
@@ -54,7 +60,7 @@ export async function getTravelIntelligence(
       const t0 = Date.now();
       const res =
         p === "openai"
-          ? await getTravelIntelligenceOpenAI(query, history, context)
+          ? await getTravelIntelligenceOpenAI(query, history, context, options)
           : await getTravelIntelligenceGemini(query, history, context);
       console.log(
         `[ai/selector] success provider=${p} mode=${res.mode} ms=${Date.now() - t0}`,

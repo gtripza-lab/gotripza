@@ -35,7 +35,7 @@ export function AuthModal({ open, onClose, locale }: Props) {
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmed,
         options: {
-          emailRedirectTo: `${appUrl}/${locale}/search`,
+          emailRedirectTo: `${appUrl}/auth/callback?next=/${locale}/search`,
           shouldCreateUser: true,
         },
       });

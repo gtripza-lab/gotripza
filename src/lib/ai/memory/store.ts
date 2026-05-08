@@ -1,0 +1,258 @@
+import "server-only";
+/**
+ * Memory store — Supabase reads/writes for Ria's persistent memory.
+ *
+ * All writes go through the service-role client (bypasses RLS).
+ * Reads also use service-role since the parse route is server-only and
+ * we've already authenticated the user via cookie.
+ */
+import { createSupabaseService } from "@/lib/supabase/service";
+import type {
+  Profile,
+  TravelerPreferences,
+  Conversation,
+  StoredMessage,
+} from "./types";
+
+// Tables defined in 20260508000001 migration aren't in the auto-generated
+// Supabase types yet; cast at the boundary. Once `supabase gen types` is
+// run after the migration deploys, these casts can be removed.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyTable = any;
+
+const EMPTY_PREFS = (userId: string): TravelerPreferences => ({
+  user_id: userId,
+  travel_style: null,
+  budget_tier: null,
+  travels_with: [],
+  trip_pace: null,
+  interests: [],
+  dietary: [],
+  accessibility_needs: [],
+  preferred_airlines: [],
+  past_destinations: [],
+  notes: {},
+});
+
+// ── Profiles ─────────────────────────────────────────────────────────
+
+export async function getProfile(userId: string): Promise<Profile | null> {
+  const sb = createSupabaseService() as AnyTable;
+  const { data, error } = await sb
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) {
+    console.warn("[memory] getProfile error:", error.message);
+    return null;
+  }
+  return (data as Profile | null) ?? null;
+}
+
+export async function upsertProfile(
+  userId: string,
+  patch: Partial<Profile>,
+): Promise<void> {
+  const sb = createSupabaseService() as AnyTable;
+  const { error } = await sb
+    .from("profiles")
+    .upsert({ id: userId, ...patch }, { onConflict: "id" });
+  if (error) console.warn("[memory] upsertProfile error:", error.message);
+}
+
+// ── Preferences ──────────────────────────────────────────────────────
+
+export async function getPreferences(
+  userId: string,
+): Promise<TravelerPreferences> {
+  const sb = createSupabaseService() as AnyTable;
+  const { data, error } = await sb
+    .from("traveler_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) {
+    console.warn("[memory] getPreferences error:", error.message);
+    return EMPTY_PREFS(userId);
+  }
+  return (data as TravelerPreferences | null) ?? EMPTY_PREFS(userId);
+}
+
+export async function updatePreferences(
+  userId: string,
+  patch: Partial<TravelerPreferences>,
+): Promise<void> {
+  const sb = createSupabaseService() as AnyTable;
+  const { error } = await sb
+    .from("traveler_preferences")
+    .upsert({ user_id: userId, ...patch }, { onConflict: "user_id" });
+  if (error) console.warn("[memory] updatePreferences error:", error.message);
+}
+
+// ── Conversations ────────────────────────────────────────────────────
+
+export async function getOrCreateConversation(opts: {
+  userId?: string | null;
+  sessionId?: string | null;
+  locale: "ar" | "en";
+}): Promise<Conversation | null> {
+  const sb = createSupabaseService() as AnyTable;
+  const { userId, sessionId, locale } = opts;
+
+  // Try to find an open conversation for this user/session in the last hour
+  const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  let q = sb
+    .from("conversations")
+    .select("*")
+    .gte("last_at", cutoff)
+    .is("closed_at", null)
+    .order("last_at", { ascending: false })
+    .limit(1);
+  if (userId) q = q.eq("user_id", userId);
+  else if (sessionId) q = q.eq("session_id", sessionId);
+  else return null; // no identity, can't track conversation
+
+  const { data: existing } = await q.maybeSingle();
+  if (existing) return existing as Conversation;
+
+  const { data: created, error } = await sb
+    .from("conversations")
+    .insert({
+      user_id: userId ?? null,
+      session_id: sessionId ?? null,
+      locale,
+    })
+    .select()
+    .single();
+  if (error) {
+    console.warn("[memory] create conversation error:", error.message);
+    return null;
+  }
+  return created as Conversation;
+}
+
+export async function appendMessage(opts: {
+  conversationId: string;
+  role: StoredMessage["role"];
+  content: string;
+  mode?: StoredMessage["mode"];
+  intent?: Record<string, unknown> | null;
+  tokensIn?: number | null;
+  tokensOut?: number | null;
+  model?: string | null;
+}): Promise<void> {
+  const sb = createSupabaseService() as AnyTable;
+  const {
+    conversationId,
+    role,
+    content,
+    mode = null,
+    intent = null,
+    tokensIn = null,
+    tokensOut = null,
+    model = null,
+  } = opts;
+
+  const { error: insertError } = await sb.from("messages").insert({
+    conversation_id: conversationId,
+    role,
+    content,
+    mode,
+    intent,
+    tokens_in: tokensIn,
+    tokens_out: tokensOut,
+    model,
+  });
+  if (insertError)
+    console.warn("[memory] appendMessage error:", insertError.message);
+
+  // Touch conversation last_at + bump message_count
+  await sb
+    .from("conversations")
+    .update({
+      last_at: new Date().toISOString(),
+    })
+    .eq("id", conversationId);
+}
+
+export async function getRecentMessages(
+  conversationId: string,
+  limit = 12,
+): Promise<StoredMessage[]> {
+  const sb = createSupabaseService() as AnyTable;
+  const { data, error } = await sb
+    .from("messages")
+    .select("*")
+    .eq("conversation_id", conversationId)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+  if (error) {
+    console.warn("[memory] getRecentMessages error:", error.message);
+    return [];
+  }
+  return ((data as StoredMessage[]) ?? []).reverse();
+}
+
+// ── Destination Intel Cache ──────────────────────────────────────────
+
+export async function getCachedDestinationIntel<T = unknown>(
+  destination: string,
+  locale: "ar" | "en",
+): Promise<T | null> {
+  if (!destination) return null;
+  const sb = createSupabaseService() as AnyTable;
+  const { data, error } = await sb
+    .from("destination_intel_cache")
+    .select("payload, expires_at")
+    .eq("destination", destination)
+    .eq("locale", locale)
+    .maybeSingle();
+  if (error) return null;
+  if (!data) return null;
+  if (new Date((data as { expires_at: string }).expires_at) < new Date())
+    return null;
+  return (data as { payload: T }).payload;
+}
+
+export async function setCachedDestinationIntel(
+  destination: string,
+  locale: "ar" | "en",
+  payload: unknown,
+  ttlDays = 7,
+): Promise<void> {
+  if (!destination) return;
+  const sb = createSupabaseService() as AnyTable;
+  const expires = new Date(Date.now() + ttlDays * 86_400_000).toISOString();
+  await sb.from("destination_intel_cache").upsert(
+    {
+      destination,
+      locale,
+      payload,
+      expires_at: expires,
+    },
+    { onConflict: "destination,locale" },
+  );
+}
+
+// ── Subscriptions / entitlements ─────────────────────────────────────
+
+export async function getSubscription(userId: string) {
+  const sb = createSupabaseService() as AnyTable;
+  const { data } = await sb
+    .from("subscriptions")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  return data;
+}
+
+export async function ensureLaunchFreeSubscription(userId: string) {
+  const sb = createSupabaseService() as AnyTable;
+  await sb
+    .from("subscriptions")
+    .upsert(
+      { user_id: userId, plan: "launch_free", status: "active" },
+      { onConflict: "user_id", ignoreDuplicates: true },
+    );
+}

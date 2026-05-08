@@ -9,6 +9,7 @@ import type { TravelContext } from "../schemas/intent";
 import {
   buildContextBlock,
   buildHistoryBlock,
+  buildSummaryBlock,
   buildSystemPrompt,
 } from "../prompts/raya-system";
 import {
@@ -18,6 +19,7 @@ import {
   MODEL_LITE,
   MODEL_PRIMARY,
 } from "../config";
+import { buildMemoryBlock } from "../memory/inject";
 
 let _client: OpenAI | null = null;
 function client(): OpenAI {
@@ -43,12 +45,15 @@ export async function getTravelIntelligenceOpenAI(
   query: string,
   history: ChatTurn[] = [],
   context: TravelContext,
+  options: { userId?: string | null; summary?: string | null } = {},
 ): Promise<TravelIntelligence> {
   const system = buildSystemPrompt();
+  const memoryBlock = await buildMemoryBlock(options.userId);
+  const summaryBlock = buildSummaryBlock(options.summary ?? null);
   const ctxBlock = buildContextBlock(context);
   const historyBlock = buildHistoryBlock(history);
 
-  const userPrompt = `${ctxBlock}${historyBlock}\n\nNew user message:\n${query}`;
+  const userPrompt = `${memoryBlock}${summaryBlock}${ctxBlock}${historyBlock}\n\nNew user message:\n${query}`;
 
   const res = await client().chat.completions.create({
     model: MODEL_PRIMARY,

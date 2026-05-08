@@ -130,16 +130,50 @@ src/lib/ai/
 | Phase | Scope | Owner | Status |
 |---|---|---|---|
 | 1 | Audit + architecture map | Opus | ✅ done |
-| 2 | OpenAI module + Strangler flag | Opus | 🚧 in progress |
-| 3 | Ria Core: pre-filter + state machine + post-process | Opus | pending |
-| 4 | Memory: profiles, conversations, preferences (Supabase) | Opus | pending |
-| 5 | Auth completion (magic-link callback + middleware) | Sonnet | pending |
-| 6 | Tool/function calling: flights, hotels, partners, memory | Opus | pending |
-| 7 | Subscription scaffolding (Stripe + entitlements, free for now) | Sonnet | pending |
-| 8 | AI Support workflows + escalation | Opus | pending |
-| 9 | Future-agent foundation (marketing/SEO/analytics agent shells) | Opus | pending |
-| 10 | Cost optimization (rolling summaries, model tiering, caching) | Opus | pending |
-| 11 | Cutover: delete Gemini code, flip default flag | Opus | pending |
+| 2 | OpenAI module + Strangler flag | Opus | ✅ done |
+| 3 | Ria Core: pre-filter + state machine + post-process | Opus | ✅ done |
+| 4 | Memory: profiles, conversations, preferences (Supabase) | Opus | ✅ done |
+| 5 | Auth completion (magic-link callback + middleware) | Sonnet | ✅ done |
+| 6 | Tool/function calling: flights, hotels, partners, memory | Opus | ✅ done |
+| 7 | Subscription scaffolding (Stripe + entitlements, free for now) | Sonnet | ✅ done |
+| 8 | AI Support workflows + escalation | Opus | ✅ done |
+| 9 | Future-agent foundation (marketing/SEO/analytics agent shells) | Opus | ✅ done |
+| 10 | Cost optimization (rolling summaries, model tiering, caching) | Opus | ✅ done |
+| 11 | Cutover: delete Gemini code, flip default flag | Opus | pending (after OpenAI billing live) |
+
+## Phase 11 Cutover Checklist
+
+Once `OPENAI_API_KEY` is funded and stable for ~7 days:
+
+1. Set `AI_PROVIDER=openai` (no fallback) in production env.
+2. Monitor `[ai/selector]` logs for errors for 48h.
+3. Run `npm run build` and verify no Gemini calls in flame graph.
+4. Delete `src/lib/gemini.ts`, `src/lib/ai/providers/gemini.ts`.
+5. Remove the Gemini health-check branch in `src/app/api/health/route.ts`.
+6. Delete `GEMINI_API_KEY` from `.env.local` and Vercel env.
+7. Delete `@google/generative-ai` from `package.json`.
+
+## Operator Setup Checklist (post-deploy)
+
+Things you (operator) must do in external dashboards:
+
+**OpenAI** — [platform.openai.com](https://platform.openai.com)
+- [ ] Add billing credits ($10+ recommended for first 30 days)
+- [ ] Rotate API key (the one shared in chat is exposed)
+
+**Supabase** — [supabase.com/dashboard](https://supabase.com/dashboard)
+- [ ] Run migration `supabase/migrations/20260508000001_ria_memory_and_billing.sql`
+- [ ] (Optional) `supabase gen types typescript` to drop the `as any` casts in `src/lib/ai/memory/store.ts`
+
+**Stripe** — [dashboard.stripe.com](https://dashboard.stripe.com) (only when ready to charge)
+- [ ] Create product "Ria Plus" with monthly + yearly prices
+- [ ] Copy price IDs into `STRIPE_PRICE_RIA_PLUS_MONTHLY` / `_YEARLY`
+- [ ] Add webhook endpoint: `https://gotripza.com/api/billing/webhook` listening to:
+  - `checkout.session.completed`
+  - `customer.subscription.updated`
+  - `customer.subscription.deleted`
+- [ ] Copy webhook signing secret into `STRIPE_WEBHOOK_SECRET`
+- [ ] Set `RIA_PLUS_GATING_ENABLED=true` only when you want to start charging
 
 ---
 

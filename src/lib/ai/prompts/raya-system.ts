@@ -273,6 +273,19 @@ export function buildContextBlock(
 }
 
 /**
+ * Inject a rolling conversation summary block (Phase 10 cost ops).
+ * Only emitted when conversation has been compressed.
+ */
+export function buildSummaryBlock(summary: string | null): string {
+  if (!summary) return "";
+  return (
+    `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `EARLIER CONVERSATION SUMMARY (older turns compressed):\n${summary}\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+  );
+}
+
+/**
  * Format conversation history for prompt injection.
  * Loop-fix E: includes assistant's prior `mode` so the model can see its
  * own state (avoids re-clarifying after searching).
