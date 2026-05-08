@@ -23,7 +23,7 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
       languages: {
         ar: `${BASE}/ar/contact`,
         en: `${BASE}/en/contact`,
-        "x-default": `${BASE}/ar/contact`,
+        "x-default": `${BASE}/en/contact`,
       },
     },
   };

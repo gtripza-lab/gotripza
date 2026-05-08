@@ -22,9 +22,11 @@ import type { TravelContext } from "../schemas/intent";
 import {
   appendMessage,
   getOrCreateConversation,
+  getCachedDestinationIntel,
 } from "../memory/store";
 import { extractAndUpdate } from "../memory/extract";
 import { maybeSummarize } from "../memory/summarize";
+import type { DestinationIntel } from "../schemas/intelligence";
 
 export type OrchestratorOptions = {
   /** Optional user id for memory injection. */
@@ -117,6 +119,24 @@ export async function runRayaOrchestrator(
 
   if (userId) {
     void extractAndUpdate(userId, finalIntel.intent, query);
+  }
+
+  // N4: Populate destination_intel in advice mode when LLM left it null.
+  // Advice answers about "is Dubai safe?" / "best time for Istanbul?" deserve
+  // the side-panel intel card, not a blank. Read from cache (free, fast).
+  if (
+    finalIntel.mode === "advice" &&
+    !finalIntel.destination_intel &&
+    (finalIntel.intent.destination || mergedContext.destination)
+  ) {
+    const dest =
+      (finalIntel.intent.destination || mergedContext.destination) ?? "";
+    const locale = finalIntel.locale;
+    const cached = await getCachedDestinationIntel<DestinationIntel>(
+      dest,
+      locale,
+    ).catch(() => null);
+    if (cached) finalIntel.destination_intel = cached;
   }
 
   // 4. Mirror merged context back into the response intent so the client

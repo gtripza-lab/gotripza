@@ -45,8 +45,8 @@ const STEPS_EN = [
   },
 ];
 
-export function BrandStory({ dict }: { dict: Dictionary }) {
-  const isAr = dict.hero.tagline.includes("ثوانٍ") || dict.hero.tagline.includes("أفضل");
+export function BrandStory({ dict, locale }: { dict: Dictionary; locale?: string }) {
+  const isAr = locale === "ar";
   const steps = isAr ? STEPS_AR : STEPS_EN;
 
   return (

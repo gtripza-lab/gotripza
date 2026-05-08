@@ -117,6 +117,24 @@ const AR_MONTHS: Record<string, number> = {
   "اكتوبر": 10,
   "نوفمبر": 11,
   "ديسمبر": 12,
+  // C3: Arabic season words → representative month
+  "الصيف": 7,  "صيف": 7,
+  "الشتاء": 1, "شتاء": 1,
+  "الربيع": 4, "ربيع": 4,
+  "الخريف": 10, "خريف": 10,
+};
+
+// C4: Arabic number words for adult/passenger count
+const AR_NUMBERS: Record<string, number> = {
+  "اثنين": 2, "اثنان": 2,
+  "ثلاثة": 3, "ثلاث": 3,
+  "أربعة": 4, "اربعة": 4,
+  "خمسة": 5,
+  "ستة": 6,
+  "سبعة": 7,
+  "ثمانية": 8,
+  "تسعة": 9,
+  "عشرة": 10,
 };
 
 const EN_MONTHS: Record<string, number> = {
@@ -135,9 +153,19 @@ const EN_MONTHS: Record<string, number> = {
 };
 
 /**
+ * C2: Strip Arabic prepositional prefixes that attach directly to city names.
+ * Covers: ل (to), ب (in/by), ف (so/in), لل (to the), فال/بال/وال (in/by the).
+ * e.g. "لإسطنبول" → "إسطنبول", "فالمالديف" → "المالديف", "بدبي" → "دبي"
+ */
+function stripArabicPrepositions(text: string): string {
+  return text.replace(/^(لل|فال|بال|وال|لـ|ل|ب|ف|و)(?=[ء-ي])/, "");
+}
+
+/**
  * Find a city IATA code after a directional keyword (e.g. "from", "to").
  * Tries ALL occurrences of the cue (not just the first), so "want to fly
  * from Riyadh to London" correctly finds "London" after the second "to".
+ * Also tries stripping a leading Arabic prepositional prefix (C2 fix).
  */
 function findCity(query: string, after: string[]): string | null {
   const lower = query.toLowerCase();
@@ -155,10 +183,14 @@ function findCity(query: string, after: string[]): string | null {
         continue; // cue is part of a larger word — skip
       }
       const tail = query.slice(idx + cue.length).trim();
-      for (const [name, code] of Object.entries(CITY_TO_IATA)) {
-        // Use lookahead instead of \b — \b is ASCII-only and fails on Arabic text
-        const re = new RegExp(`^[\\s,،]*${name}(?=[\\s,،.!؟؛]|$)`, "i");
-        if (re.test(tail)) return code;
+      // Try both the raw tail and a prefix-stripped variant (C2)
+      const tails = [tail, stripArabicPrepositions(tail)];
+      for (const t of tails) {
+        for (const [name, code] of Object.entries(CITY_TO_IATA)) {
+          // Use lookahead instead of \b — \b is ASCII-only and fails on Arabic text
+          const re = new RegExp(`^[\\s,،]*${name}(?=[\\s,،.!؟؛]|$)`, "i");
+          if (re.test(t)) return code;
+        }
       }
       searchFrom = idx + 1;
     }
@@ -203,9 +235,13 @@ function parseFromTo(query: string): { origin: string | null; destination: strin
 }
 
 function lookupName(text: string): string | null {
-  const t = text.toLowerCase().trim();
-  for (const [name, code] of Object.entries(CITY_TO_IATA)) {
-    if (t === name.toLowerCase() || t.startsWith(name.toLowerCase())) return code;
+  const raw = text.toLowerCase().trim();
+  // Also try stripping an Arabic prepositional prefix (C2)
+  const stripped = stripArabicPrepositions(raw);
+  for (const t of raw === stripped ? [raw] : [raw, stripped]) {
+    for (const [name, code] of Object.entries(CITY_TO_IATA)) {
+      if (t === name.toLowerCase() || t.startsWith(name.toLowerCase())) return code;
+    }
   }
   return null;
 }
@@ -213,9 +249,12 @@ function lookupName(text: string): string | null {
 /** Find any city in query, optionally excluding a known IATA code. */
 export function findAnyCity(query: string, exclude?: string | null): string | null {
   const lower = query.toLowerCase();
+  // Split into words and also check prefix-stripped forms (C2)
+  const words = lower.split(/[\s,،.!؟؛]+/).filter(Boolean);
+  const normalised = [lower, ...words.map(stripArabicPrepositions)].join(" ");
   for (const [name, code] of Object.entries(CITY_TO_IATA)) {
     if (code === exclude) continue;
-    if (lower.includes(name.toLowerCase())) return code;
+    if (normalised.includes(name.toLowerCase())) return code;
   }
   return null;
 }
@@ -329,14 +368,26 @@ export function heuristicParse(query: string): TripIntent {
             ? "business"
             : "leisure";
 
+  // C4: Parse adult/passenger count — digit first, then Arabic number words
+  let adults = 2;
+  const digitMatch = query.match(/(\d+)\s*(?:شخص|أشخاص|اشخاص|بالغ|بالغين|نفر|افراد|أفراد|persons?|adults?|people|travelers?|passengers?)/i);
+  if (digitMatch) {
+    adults = Math.min(9, Math.max(1, parseInt(digitMatch[1], 10)));
+  } else {
+    for (const [word, num] of Object.entries(AR_NUMBERS)) {
+      if (query.includes(word)) { adults = num; break; }
+    }
+  }
+
   return {
     origin: origin === destination ? null : origin,
     destination,
     departure_date,
     return_date,
-    adults: 2,
+    adults,
     budget_usd: cheap ? 800 : moderate ? 1500 : luxury ? 4000 : null,
     trip_type,
+    cabin_class: null,
     notes: cheap ? "cheap" : moderate ? "moderate" : luxury ? "luxury" : null,
   };
 }

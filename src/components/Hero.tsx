@@ -10,7 +10,7 @@ export function Hero({ dict }: { dict: Dictionary }) {
     <section className="relative overflow-hidden">
       <HeroBackdrop />
 
-      <div className="mx-auto max-w-6xl px-6 pb-32 pt-12 sm:pt-16">
+      <div className="mx-auto max-w-6xl px-6 pb-16 pt-8 sm:pb-32 sm:pt-12 md:pt-16">
         <div className="text-center">
           <motion.div
             initial={{ opacity: 0, y: 12 }}
@@ -26,7 +26,7 @@ export function Hero({ dict }: { dict: Dictionary }) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.05 }}
-            className="mt-6 font-display text-4xl font-bold leading-[1.05] tracking-tight text-balance text-ink-950 sm:text-6xl md:text-7xl"
+            className="mt-4 font-display text-[2rem] font-bold leading-[1.05] tracking-tight text-balance text-ink-950 sm:mt-6 sm:text-4xl md:text-6xl lg:text-7xl"
           >
             <span>{dict.hero.title1}</span>
             <br />
@@ -37,12 +37,12 @@ export function Hero({ dict }: { dict: Dictionary }) {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.15 }}
-            className="mx-auto mt-5 max-w-2xl text-balance text-base text-ink-950/65 sm:text-lg"
+            className="mx-auto mt-3 max-w-2xl text-balance text-sm text-ink-950/65 sm:mt-5 sm:text-base md:text-lg"
           >
             {dict.hero.subtitle}
           </motion.p>
 
-          <div className="mx-auto mt-10 max-w-3xl">
+          <div className="mx-auto mt-6 max-w-3xl sm:mt-10">
             <AISearchBar dict={dict} theme="light" />
           </div>
 
@@ -50,7 +50,7 @@ export function Hero({ dict }: { dict: Dictionary }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="mt-14 text-[11px] tracking-[0.3em] text-brand-deep/70"
+            className="mt-8 text-[11px] tracking-[0.3em] text-brand-deep/70 sm:mt-14"
           >
             {dict.hero.tagline.toUpperCase()}
           </motion.div>

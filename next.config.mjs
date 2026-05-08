@@ -1,7 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: { webpackBuildWorker: false },
+
+  // Compress all responses for smaller payload sizes
+  compress: true,
+
   images: {
+    // Serve modern AVIF + WebP to supported browsers (smaller than JPEG)
+    formats: ["image/avif", "image/webp"],
+    // Cache optimized images for 24h on the CDN
+    minimumCacheTTL: 86400,
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "source.unsplash.com" },

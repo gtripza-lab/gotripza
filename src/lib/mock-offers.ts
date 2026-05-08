@@ -41,13 +41,13 @@ const HOTELS = [
 
 function affiliate(path: string) {
   const u = new URL(path, "https://www.aviasales.com");
-  if (MARKER) u.searchParams.set("marker", MARKER);
+  u.searchParams.set("marker", MARKER); // marker is always set — fallback 522867 guarantees it
   return u.toString();
 }
 
 function hotelLink(name: string, location: string) {
   const u = new URL("https://search.hotellook.com/hotels");
-  if (MARKER) u.searchParams.set("marker", MARKER);
+  u.searchParams.set("marker", MARKER); // marker is always set — fallback 522867 guarantees it
   u.searchParams.set("destination", location);
   u.searchParams.set("hotel", name);
   return u.toString();

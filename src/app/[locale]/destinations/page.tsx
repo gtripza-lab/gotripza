@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/i18n/config";
 import { DESTINATIONS } from "@/lib/seo-destinations";
+import { fetchPhotos, type UnsplashPhoto } from "@/lib/unsplash";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
@@ -24,6 +26,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       languages: {
         en: `${BASE}/en/destinations`,
         ar: `${BASE}/ar/destinations`,
+        "x-default": `${BASE}/en/destinations`,
       },
     },
   };
@@ -35,13 +38,26 @@ const REGIONS: Record<string, { en: string; ar: string }> = {
   asia: { en: "Asia & Pacific", ar: "آسيا والمحيط الهادئ" },
   africa: { en: "Africa", ar: "أفريقيا" },
   americas: { en: "Americas", ar: "الأمريكتان" },
-  oceania: { en: "أوقيانوسيا", ar: "أوقيانوسيا" },
+  oceania: { en: "Oceania", ar: "أوقيانوسيا" },
 };
+
+// Top destinations featured with photos — slugs must match DESTINATIONS slugs
+const FEATURED_SLUGS = [
+  "dubai", "istanbul", "london", "paris", "bali",
+  "tokyo", "bangkok", "singapore", "maldives", "antalya",
+  "rome", "barcelona",
+];
 
 export default async function DestinationsIndexPage({ params }: Props) {
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";
+
+  // Fetch photos only for featured destinations (cached 24h by Next.js data cache)
+  const featuredDests = DESTINATIONS.filter((d) => FEATURED_SLUGS.includes(d.slug));
+  const photos = await fetchPhotos(featuredDests.map((d) => d.heroKeyword));
+  const photoMap: Record<string, UnsplashPhoto> = {};
+  featuredDests.forEach((d, i) => { photoMap[d.slug] = photos[i]; });
 
   const grouped = DESTINATIONS.reduce<Record<string, typeof DESTINATIONS>>((acc, d) => {
     if (!acc[d.region]) acc[d.region] = [];
@@ -55,12 +71,57 @@ export default async function DestinationsIndexPage({ params }: Props) {
         <h1 className="font-display text-3xl font-bold md:text-4xl mb-3">
           {isAr ? "🌍 استكشف وجهات العالم" : "🌍 Explore World Destinations"}
         </h1>
-        <p className="text-white/60 mb-12 max-w-2xl">
+        <p className="text-white/60 mb-10 max-w-2xl">
           {isAr
             ? "أدلة سفر شاملة لأكثر من 50 وجهة: طيران، فنادق، ميزانية، تأشيرة وأكثر."
             : "Complete travel guides for 50+ destinations: flights, hotels, budget, visa requirements and more."}
         </p>
 
+        {/* ── Featured Destinations Photo Grid ─────────────────────── */}
+        <section className="mb-14">
+          <h2 className="mb-5 font-display text-xl font-semibold text-white/70">
+            {isAr ? "⭐ الوجهات الأكثر شعبية" : "⭐ Most Popular Destinations"}
+          </h2>
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-4">
+            {featuredDests.map((d) => {
+              const photo = photoMap[d.slug];
+              return (
+                <Link
+                  key={d.slug}
+                  href={`/${locale}/destinations/${d.slug}`}
+                  className="group relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/10"
+                >
+                  {photo?.url ? (
+                    <Image
+                      src={photo.url}
+                      alt={d.nameEn}
+                      fill
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
+                      className="object-cover transition duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/30 to-brand-deep/40" />
+                  )}
+                  {/* Dark overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
+                  <div className="absolute inset-x-3 bottom-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-lg leading-none">{d.flag}</span>
+                      <span className="font-semibold text-sm text-white leading-tight">
+                        {isAr ? d.nameAr : d.nameEn}
+                      </span>
+                    </div>
+                    <div className="mt-0.5 text-[11px] text-white/55">
+                      {isAr ? "من" : "from"} ${d.budgetPerDay.budget}/{isAr ? "يوم" : "day"}
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── Full Destinations List by Region ─────────────────────── */}
         {Object.entries(grouped).map(([region, dests]) => {
           const regionLabel = REGIONS[region];
           if (!regionLabel) return null;

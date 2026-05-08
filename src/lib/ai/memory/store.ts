@@ -100,8 +100,8 @@ export async function getOrCreateConversation(opts: {
   const sb = createSupabaseService() as AnyTable;
   const { userId, sessionId, locale } = opts;
 
-  // Try to find an open conversation for this user/session in the last hour
-  const cutoff = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  // N3: Widened window from 1h → 4h so multi-session users keep context
+  const cutoff = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
   let q = sb
     .from("conversations")
     .select("*")
@@ -167,13 +167,15 @@ export async function appendMessage(opts: {
   if (insertError)
     console.warn("[memory] appendMessage error:", insertError.message);
 
-  // Touch conversation last_at + bump message_count
-  await sb
-    .from("conversations")
-    .update({
-      last_at: new Date().toISOString(),
-    })
-    .eq("id", conversationId);
+  // N6: Touch last_at AND increment message_count in one update
+  await sb.rpc("increment_conversation", { conv_id: conversationId }).catch(
+    // Fallback: plain update if the RPC doesn't exist yet
+    () =>
+      sb
+        .from("conversations")
+        .update({ last_at: new Date().toISOString() })
+        .eq("id", conversationId),
+  );
 }
 
 export async function getRecentMessages(

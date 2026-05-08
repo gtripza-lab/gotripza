@@ -50,6 +50,7 @@ export const recommendPartnersTool: ToolDef<Input, unknown> = {
       adults: input.adults ?? 2,
       budget_usd: null,
       trip_type: input.trip_type ?? null,
+      cabin_class: null,
       notes: null,
     };
     const recs = getPartnerRecommendations(

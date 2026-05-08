@@ -42,7 +42,7 @@ function makeEntry(
         languages: {
           en: `${BASE_URL}/en${path}`,
           ar: `${BASE_URL}/ar${path}`,
-          "x-default": `${BASE_URL}/ar${path}`,
+          "x-default": `${BASE_URL}/en${path}`,
         },
       },
     });

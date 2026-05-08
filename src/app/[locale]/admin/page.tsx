@@ -1,11 +1,18 @@
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
+import { createHmac } from "crypto";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { AdminDashboard } from "@/components/AdminDashboard";
 import { AdminLoginForm } from "@/components/AdminLoginForm";
+
+function deriveSessionToken(adminKey: string): string {
+  return createHmac("sha256", adminKey)
+    .update("gotripza-admin-session-v1")
+    .digest("hex");
+}
 
 export const metadata = { title: "Admin", robots: "noindex,nofollow" };
 
@@ -34,9 +41,10 @@ export default async function AdminPage({
     );
   }
 
-  // Validate httpOnly session cookie (set by POST /api/admin-login)
+  // Validate httpOnly session cookie against DERIVED token (never raw key)
   const sessionCookie = cookies().get("admin_session");
-  const isAuthenticated = sessionCookie?.value === adminKey;
+  const expectedToken = deriveSessionToken(adminKey);
+  const isAuthenticated = sessionCookie?.value === expectedToken;
 
   if (!isAuthenticated) {
     return (

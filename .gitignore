@@ -25,8 +25,27 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
+# ── Environment / Secrets — NEVER commit real credentials ─────────────────────
 .env*.local
+.env.local
+.env.development
+.env.production
+.env.staging
+.env.test
+# Bare .env with real secrets
+.env
+# Safe to commit: template with empty values only
+!.env.example
+
+# Secret / certificate files
+*.key
+*.p12
+*.pfx
+*.crt
+*.cert
+*.secret
+secrets/
+credentials/
 
 # vercel
 .vercel

@@ -306,13 +306,16 @@ export async function POST(req: NextRequest) {
       `[parse] orch mode=${telemetry.finalMode} prefilter=${telemetry.preFilterExtracted.join(",") || "none"} ms=${telemetry.durationMs}`,
     );
 
-    // Live tips only worth fetching in confirmed search mode + with a destination.
-    const tips =
+    // Live tips: fire-and-forget with a 2s timeout so they never block the response (M1).
+    // Client will receive tips: null immediately; a future streaming endpoint can push them.
+    const tipsPromise =
       intel.mode === "search" && intel.intent.destination
-        ? await getLiveTips(intel.intent.destination, intel.locale).catch(
-            () => null,
-          )
-        : null;
+        ? Promise.race([
+            getLiveTips(intel.intent.destination, intel.locale).catch(() => null),
+            new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+          ])
+        : Promise.resolve(null);
+    const tips = await tipsPromise;
 
     const response = NextResponse.json({
       intent: intel.intent,
@@ -336,9 +339,9 @@ export async function POST(req: NextRequest) {
     if (mintedSid) {
       response.cookies.set("gtz_sid", mintedSid, {
         httpOnly: true,
-        sameSite: "lax",
+        sameSite: "strict",        // M6: was "lax" — strict prevents CSRF misuse
         secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 365, // 1 year
+        maxAge: 60 * 60 * 24 * 30, // M6: was 1 year — 30 days is sufficient for session continuity
         path: "/",
       });
     }

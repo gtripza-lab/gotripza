@@ -34,6 +34,10 @@ export const TripIntentSchema = z.object({
     .enum(["leisure", "business", "honeymoon", "family", "adventure", "weekend"])
     .nullable()
     .default(null),
+  cabin_class: z
+    .enum(["economy", "premium_economy", "business", "first"])
+    .nullable()
+    .default(null),
   notes: z.string().nullable().default(null),
 });
 export type TripIntent = z.infer<typeof TripIntentSchema>;

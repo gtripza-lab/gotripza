@@ -4,7 +4,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 const MARKER = process.env.TRAVELPAYOUTS_MARKER ?? "522867";
 const TP_TOKEN = process.env.TRAVELPAYOUTS_TOKEN ?? "";
 const GEMINI_KEY = process.env.GEMINI_API_KEY ?? "";
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+// APP_URL reserved for future absolute-URL checks
+const _APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com"; void _APP_URL;
 
 interface CheckResult {
   ok: boolean;
@@ -89,7 +90,7 @@ function checkAffiliateMarker(): CheckResult {
   };
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   const [tpCheck, supabaseCheck, geminiCheck] = await Promise.all([
     checkTravelpayouts(),
     checkSupabase(),
@@ -98,23 +99,36 @@ export async function GET() {
 
   const envCheck: CheckResult = {
     ok: !!(GEMINI_KEY && TP_TOKEN && MARKER),
-    detail: [
-      `GEMINI_API_KEY: ${GEMINI_KEY ? "✅" : "❌ missing"}`,
-      `TRAVELPAYOUTS_TOKEN: ${TP_TOKEN ? "✅" : "❌ missing"}`,
-      `TRAVELPAYOUTS_MARKER: ${MARKER || "❌ missing"}`,
-      `APP_URL: ${APP_URL}`,
-    ].join(" | "),
+    // No env var values or names exposed publicly
+    detail: GEMINI_KEY && TP_TOKEN && MARKER ? "all required vars present" : "one or more vars missing",
   };
 
   const affiliateCheck = checkAffiliateMarker();
 
   const allOk = envCheck.ok && tpCheck.ok && affiliateCheck.ok && geminiCheck.ok && supabaseCheck.ok;
 
-  const report = {
+  // ── Detailed report: only for internal callers with valid ADMIN_KEY header ─
+  const internalKey = req.headers.get("x-health-key");
+  const adminKey = process.env.ADMIN_KEY;
+  const isInternal = adminKey && internalKey === adminKey;
+
+  const publicReport = {
     status: allOk ? "healthy" : "degraded",
+    timestamp: new Date().toISOString(),
+    checks: {
+      environment: { ok: envCheck.ok },
+      ai: { ok: geminiCheck.ok },
+      flights_api: { ok: tpCheck.ok },
+      database: { ok: supabaseCheck.ok },
+      affiliate: { ok: affiliateCheck.ok },
+    },
+  };
+
+  // Full details only returned to authenticated internal calls
+  const internalReport = isInternal ? {
+    ...publicReport,
     version: process.env.npm_package_version ?? "1.0.0",
     uptime_seconds: Math.floor(process.uptime()),
-    timestamp: new Date().toISOString(),
     checks: {
       environment: envCheck,
       gemini_ai: geminiCheck,
@@ -122,16 +136,9 @@ export async function GET() {
       supabase: supabaseCheck,
       affiliate_marker: affiliateCheck,
     },
-    summary: {
-      marker: MARKER,
-      subid_chat: "ai_chat",
-      flights_partner: "https://www.aviasales.com",
-      hotels_partner: "https://www.hotellook.com",
-      app_url: APP_URL,
-    },
-  };
+  } : null;
 
-  return NextResponse.json(report, {
+  return NextResponse.json(internalReport ?? publicReport, {
     status: allOk ? 200 : 207,
     headers: { "Cache-Control": "no-store" },
   });

@@ -115,7 +115,11 @@ export default async function BlogPostPage({
           prose-p:leading-relaxed prose-p:text-white/75
           prose-strong:text-white prose-strong:font-semibold
           prose-a:text-brand-primary prose-a:no-underline hover:prose-a:underline
-          prose-table:text-sm prose-th:text-white prose-td:text-white/70
+          prose-table:w-full prose-table:text-sm prose-table:border-collapse
+          prose-thead:bg-white/[0.06]
+          prose-th:border prose-th:border-white/10 prose-th:px-4 prose-th:py-2.5 prose-th:text-white prose-th:font-semibold prose-th:text-left
+          prose-td:border prose-td:border-white/10 prose-td:px-4 prose-td:py-2 prose-td:text-white/70
+          prose-tr:even:bg-white/[0.03]
           prose-ul:text-white/75 prose-li:marker:text-brand-primary
           prose-blockquote:border-brand-primary prose-blockquote:text-white/60
           prose-hr:border-white/10">

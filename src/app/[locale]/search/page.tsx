@@ -28,7 +28,7 @@ export async function generateMetadata({
       languages: {
         ar: "https://gotripza.com/ar/search",
         en: "https://gotripza.com/en/search",
-        "x-default": "https://gotripza.com/ar/search",
+        "x-default": "https://gotripza.com/en/search",
       },
     },
   };

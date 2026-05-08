@@ -68,6 +68,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "destination_required" }, { status: 400 });
     }
     const { intent, currency: rawCurrency, source } = parsed.data;
+    // M5: Clamp adults to valid range — Travelpayouts API accepts 1–9
+    if (typeof intent.adults === "number") {
+      intent.adults = Math.min(9, Math.max(1, Math.round(intent.adults)));
+    } else {
+      intent.adults = 2;
+    }
     const currency = normCurrency(rawCurrency);
     const subid = source === "trip_page" ? "trip_page"
       : source === "whitelabel" ? "whitelabel"
