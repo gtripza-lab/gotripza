@@ -38,8 +38,6 @@ export {
 } from "./schemas/intent";
 
 export {
-  AI_PROVIDER,
   MODEL_PRIMARY,
   MODEL_LITE,
-  effectiveProvider,
 } from "./config";

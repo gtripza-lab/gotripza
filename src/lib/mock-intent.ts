@@ -1,5 +1,5 @@
 import "server-only";
-import type { TripIntent } from "./gemini";
+import type { TripIntent } from "./ai/schemas/intent";
 
 const CITY_TO_IATA: Record<string, string> = {
   // ── Saudi Arabia ──────────────────────────────────────────

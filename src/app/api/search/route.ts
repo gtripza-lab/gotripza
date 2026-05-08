@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { searchFlights, searchHotels } from "@/lib/travelpayouts";
-import { TripIntentSchema } from "@/lib/gemini";
+import { TripIntentSchema } from "@/lib/ai/schemas/intent";
 import type { Currency } from "@/lib/utils";
 import { resolveIata, iataToCity } from "@/lib/iata";
 import { buildHotelUrl } from "@/lib/partners";
@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       : "ai_chat";
 
     // Resolve Arabic/English city names → IATA codes (for flights)
-    const destination = resolveIata(intent.destination) ?? intent.destination;
+    const destination = resolveIata(intent.destination ?? "") ?? (intent.destination ?? "");
 
     // Smart origin fallback — when user doesn't specify a departure city,
     // infer from currency so Arabic-speaking users get relevant results.

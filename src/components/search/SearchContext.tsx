@@ -7,7 +7,8 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import type { TripIntent, BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
+import type { TripIntent } from "@/lib/ai/schemas/intent";
+import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/ai/schemas/intelligence";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { Locale } from "@/i18n/config";
 import { currencyForLocale, type Currency } from "@/lib/utils";

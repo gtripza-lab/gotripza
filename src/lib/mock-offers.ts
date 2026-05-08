@@ -1,6 +1,6 @@
 import "server-only";
 import type { FlightOffer, HotelOffer } from "./travelpayouts";
-import type { TripIntent } from "./gemini";
+import type { TripIntent } from "./ai/schemas/intent";
 import type { Currency } from "./utils";
 
 // Always fall back to 522867 — marker must NEVER be empty in any mode
@@ -73,12 +73,13 @@ export function mockFlights(
   currency: Currency = "USD",
 ): FlightOffer[] {
   const { dep } = defaultDates(intent);
-  const origin = intent.origin ?? intent.destination;
+  const dest = intent.destination ?? "";
+  const origin = intent.origin ?? dest;
   return AIRLINES.map((a, i) => {
     const usd = 280 + i * 65 + (intent.notes === "cheap" ? -40 : 0);
     return {
       origin,
-      destination: intent.destination,
+      destination: dest,
       departure_at: `${iso(dep)}T${10 + i}:30:00`,
       return_at: intent.return_date ?? undefined,
       price: fx(usd, currency),
@@ -86,7 +87,7 @@ export function mockFlights(
       flight_number: `${a.code}${100 + i * 7}`,
       duration: 230 + i * 25,
       link: affiliate(
-        `/search/${origin}${iso(dep).replace(/-/g, "").slice(2)}${intent.destination}1`,
+        `/search/${origin}${iso(dep).replace(/-/g, "").slice(2)}${dest}1`,
       ),
     };
   });
@@ -101,7 +102,7 @@ export function mockHotels(
     hotelName: h.name,
     stars: h.stars,
     priceFrom: fx(h.base + (intent.notes === "cheap" ? -40 : 0), currency),
-    location: { name: intent.destination, country: "" },
-    link: hotelLink(h.name, intent.destination),
+    location: { name: intent.destination ?? "", country: "" },
+    link: hotelLink(h.name, intent.destination ?? ""),
   }));
 }

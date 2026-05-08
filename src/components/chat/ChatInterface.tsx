@@ -34,7 +34,7 @@ import { trackClick } from "@/lib/trackClick";
 import { getPartnerRecommendations } from "@/lib/orchestration";
 import { formatPrice } from "@/lib/utils";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
-import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
+import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/ai/schemas/intelligence";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 // SpeechRecognition types

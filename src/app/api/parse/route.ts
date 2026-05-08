@@ -39,7 +39,7 @@ function isRateLimited(ip: string): boolean {
 const MAX_QUERY_LENGTH = 600;
 
 function isProviderError(message: string) {
-  return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid|openai|gemini/i.test(
+  return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid|openai/i.test(
     message,
   );
 }

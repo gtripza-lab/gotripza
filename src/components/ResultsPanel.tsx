@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import { Plane, Hotel as HotelIcon, ExternalLink, Star, Sparkles } from "lucide-react";
 import type { Dictionary } from "@/i18n/get-dictionary";
-import type { TripIntent } from "@/lib/gemini";
+import type { TripIntent } from "@/lib/ai/schemas/intent";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import { formatPrice, cn, type Currency } from "@/lib/utils";
 

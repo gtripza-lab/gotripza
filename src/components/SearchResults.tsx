@@ -35,7 +35,7 @@ import { formatPrice } from "@/lib/utils";
 import { getPartnerRecommendations } from "@/lib/orchestration";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
-import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/gemini";
+import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/ai/schemas/intelligence";
 
 export function SearchResults({ dict }: { dict: Dictionary }) {
   const { status, data, error } = useSearch();
@@ -76,7 +76,7 @@ function ReadyState({
 }: {
   dict: Dictionary;
   data: {
-    intent: import("@/lib/gemini").TripIntent;
+    intent: import("@/lib/ai/schemas/intent").TripIntent;
     flights: FlightOffer[];
     hotels: HotelOffer[];
     mock: boolean;
@@ -190,7 +190,7 @@ function ReadyState({
 
         {/* ── DESTINATION INTEL PANEL ─────────────────────────── */}
         {data.destination_intel && (
-          <DestinationIntelPanel intel={data.destination_intel} isAr={isAr} destination={data.intent.destination} />
+          <DestinationIntelPanel intel={data.destination_intel} isAr={isAr} destination={data.intent.destination ?? ""} />
         )}
 
         {/* ── FLIGHTS SECTION ─────────────────────────────────── */}
@@ -214,7 +214,7 @@ function ReadyState({
                   : `Click to search live prices to ${data.intent.destination} — we compare 180+ airlines instantly`}
                 url={flightSearchUrl}
                 btnLabel={isAr ? "عرض أسعار الطيران" : "View Flight Prices"}
-                destination={data.intent.destination}
+                destination={data.intent.destination ?? ""}
               />
             ) : (
               <ThreeOptionFlights
@@ -222,7 +222,7 @@ function ReadyState({
                 fmt={fmt}
                 dict={dict}
                 locale={data.locale}
-                destination={data.intent.destination}
+                destination={data.intent.destination ?? ""}
                 currency={data.currency}
                 searchUrl={flightSearchUrl}
               />
@@ -264,7 +264,7 @@ function ReadyState({
                 url={hotelSearchUrl}
                 btnLabel={isAr ? "عرض أسعار الفنادق" : "View Hotel Prices"}
                 accent="mint"
-                destination={data.intent.destination}
+                destination={data.intent.destination ?? ""}
               />
             ) : (
               <ThreeOptionHotels
@@ -273,7 +273,7 @@ function ReadyState({
                 fmt={fmt}
                 dict={dict}
                 locale={data.locale}
-                destination={data.intent.destination}
+                destination={data.intent.destination ?? ""}
                 currency={data.currency}
                 searchUrl={hotelSearchUrl}
               />
@@ -305,11 +305,11 @@ function SmartPartnerSection({
   intent,
   locale,
 }: {
-  intent: import("@/lib/gemini").TripIntent;
+  intent: import("@/lib/ai/schemas/intent").TripIntent;
   locale: "ar" | "en";
 }) {
   const recs = getPartnerRecommendations(intent, {
-    destination: intent.destination,
+    destination: intent.destination ?? undefined,
     origin: intent.origin ?? undefined,
     departure_date: intent.departure_date,
     return_date: intent.return_date,
@@ -323,7 +323,7 @@ function SmartPartnerSection({
     <PartnerRecommendations
       recs={recs}
       locale={locale}
-      destination={intent.destination}
+      destination={intent.destination ?? ""}
       variant="full"
     />
   );

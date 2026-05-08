@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { Plane, Hotel as HotelIcon, Star, ExternalLink, ArrowLeft } from "lucide-react";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { generateDestinationDescription } from "@/lib/gemini";
+import { generateDestinationDescription } from "@/lib/ai/providers/selector";
 import { searchFlights, searchHotels } from "@/lib/travelpayouts";
 import { fetchPhoto } from "@/lib/unsplash";
 import { resolveIata, iataToCity } from "@/lib/iata";
