@@ -27,8 +27,8 @@ export function AdminLoginForm({ locale }: { locale: Locale }) {
       });
 
       if (res.ok) {
-        // Cookie is now set — reload the page as Server Component to verify
-        router.refresh();
+        // Cookie set — navigate directly to the new admin console
+        router.push("/admin/dashboard");
       } else {
         setError(true);
         setKey("");
