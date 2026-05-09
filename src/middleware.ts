@@ -110,8 +110,9 @@ export function middleware(req: NextRequest) {
   );
   if (hasLocale) return NextResponse.next();
 
-  // Skip rewrites for /api/*
+  // Skip rewrites for /api/* and /admin/* (standalone routes, no locale prefix)
   if (pathname.startsWith("/api/")) return NextResponse.next();
+  if (pathname.startsWith("/admin")) return NextResponse.next();
 
   const locale = pickLocale(req);
   const url = req.nextUrl.clone();
