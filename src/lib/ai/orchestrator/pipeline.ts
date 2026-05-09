@@ -101,8 +101,8 @@ export async function runRayaOrchestrator(
     intelligence = r.intelligence;
     usage = r.usage;
   } catch (err) {
-    // M15: persist failure trace before bubbling up to heuristic fallback
-    void appendAiTrace({
+    // M15: persist failure trace — await so Vercel lambda doesn't exit before the write
+    await appendAiTrace({
       conversationId: conv?.id ?? null,
       userId,
       sessionId,
@@ -115,7 +115,7 @@ export async function runRayaOrchestrator(
       status: "error",
       errorKind: "llm",
       errorMessage: (err as Error).message.slice(0, 500),
-    });
+    }).catch(() => { /* trace failure must not swallow the real error */ });
     void captureError(err, { route: "orchestrator", phase: "llm" });
     throw err;
   }
@@ -180,8 +180,8 @@ export async function runRayaOrchestrator(
     }
   }
 
-  // M15: persist successful trace
-  void appendAiTrace({
+  // M15: persist successful trace — await so Vercel lambda doesn't exit before the write
+  await appendAiTrace({
     conversationId: conv?.id ?? null,
     userId,
     sessionId,
@@ -194,7 +194,7 @@ export async function runRayaOrchestrator(
     status: usage?.salvaged ? "salvaged" : "ok",
     errorKind: null,
     errorMessage: null,
-  });
+  }).catch(() => { /* never let trace errors affect the user response */ });
 
   // Mirror merged context back into the response intent so the client
   // has a single source of truth for what's known.
