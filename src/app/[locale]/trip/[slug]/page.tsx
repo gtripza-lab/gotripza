@@ -8,6 +8,7 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { generateDestinationDescription } from "@/lib/ai/providers/selector";
 import { searchFlights, searchHotels } from "@/lib/travelpayouts";
 import { fetchPhoto } from "@/lib/unsplash";
+import { UnsplashAttribution } from "@/components/UnsplashAttribution";
 import { resolveIata, iataToCity } from "@/lib/iata";
 import { formatPrice } from "@/lib/utils";
 import {
@@ -227,16 +228,7 @@ export default async function TripPage({ params }: PageProps) {
                 sizes="100vw"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-transparent via-ink-950/40 to-ink-950" />
-              {heroPhoto.photographer && (
-                <a
-                  href={heroPhoto.photographerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="absolute bottom-2 end-3 text-[10px] text-white/30 hover:text-white/60"
-                >
-                  Photo: {heroPhoto.photographer} / Unsplash
-                </a>
-              )}
+              <UnsplashAttribution photo={heroPhoto} triggerDownload />
             </div>
           ) : (
             <div className="h-32 bg-gradient-to-b from-brand-primary/20 to-ink-950" />

@@ -13,42 +13,71 @@ type Item = {
   gradient: string;
   icon: LucideIcon;
   /** Reliable fallback Unsplash photo — shown when the API key is absent */
-  fallbackUrl: string;
-  fallbackAlt: string;
+  fallback: UnsplashPhoto;
 };
+
+const UTM = "utm_source=gotripza&utm_medium=referral";
 
 const ITEMS: Item[] = [
   {
     key: "story",
     icon: Mountain,
     gradient: "from-slate-700 via-indigo-900 to-purple-900",
-    fallbackUrl:
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=85&fm=webp&fit=crop&crop=entropy",
-    fallbackAlt: "Mountain lake landscape",
+    fallback: {
+      id: "1506905925346-21bda4d32df4",
+      url: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=600&q=85&fm=webp&fit=crop&crop=entropy",
+      thumb: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=200&q=60&fm=webp&fit=crop",
+      alt: "Mountain lake landscape",
+      photographer: "Samuel Ferrara",
+      photographerUrl: `https://unsplash.com/@samferrar?${UTM}`,
+      link: `https://unsplash.com/photos/1506905925346-21bda4d32df4?${UTM}`,
+      downloadLocation: "https://api.unsplash.com/photos/1506905925346-21bda4d32df4/download",
+    },
   },
   {
     key: "fly",
     icon: Plane,
     gradient: "from-orange-700 via-rose-800 to-indigo-900",
-    fallbackUrl:
-      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=85&fm=webp&fit=crop&crop=entropy",
-    fallbackAlt: "Airplane wing at sunset",
+    fallback: {
+      id: "1436491865332-7a61a109cc05",
+      url: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=85&fm=webp&fit=crop&crop=entropy",
+      thumb: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=200&q=60&fm=webp&fit=crop",
+      alt: "Airplane wing at sunset",
+      photographer: "Thomas Kinto",
+      photographerUrl: `https://unsplash.com/@thomaskinto?${UTM}`,
+      link: `https://unsplash.com/photos/1436491865332-7a61a109cc05?${UTM}`,
+      downloadLocation: "https://api.unsplash.com/photos/1436491865332-7a61a109cc05/download",
+    },
   },
   {
     key: "stay",
     icon: Building2,
     gradient: "from-teal-800 via-emerald-900 to-slate-900",
-    fallbackUrl:
-      "https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=600&q=85&fm=webp&fit=crop&crop=entropy",
-    fallbackAlt: "Overwater villa Maldives luxury",
+    fallback: {
+      id: "1573843981267-be1999ff37cd",
+      url: "https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=600&q=85&fm=webp&fit=crop&crop=entropy",
+      thumb: "https://images.unsplash.com/photo-1573843981267-be1999ff37cd?w=200&q=60&fm=webp&fit=crop",
+      alt: "Overwater villa Maldives luxury",
+      photographer: "Ishan @seefromthesky",
+      photographerUrl: `https://unsplash.com/@seefromthesky?${UTM}`,
+      link: `https://unsplash.com/photos/1573843981267-be1999ff37cd?${UTM}`,
+      downloadLocation: "https://api.unsplash.com/photos/1573843981267-be1999ff37cd/download",
+    },
   },
   {
     key: "explore",
     icon: Compass,
     gradient: "from-cyan-700 via-teal-700 to-emerald-800",
-    fallbackUrl:
-      "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=600&q=85&fm=webp&fit=crop&crop=entropy",
-    fallbackAlt: "Tropical island aerial turquoise",
+    fallback: {
+      id: "1559494007-9f5847c49d94",
+      url: "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=600&q=85&fm=webp&fit=crop&crop=entropy",
+      thumb: "https://images.unsplash.com/photo-1559494007-9f5847c49d94?w=200&q=60&fm=webp&fit=crop",
+      alt: "Tropical island aerial turquoise",
+      photographer: "Ishan @seefromthesky",
+      photographerUrl: `https://unsplash.com/@seefromthesky?${UTM}`,
+      link: `https://unsplash.com/photos/1559494007-9f5847c49d94?${UTM}`,
+      downloadLocation: "https://api.unsplash.com/photos/1559494007-9f5847c49d94/download",
+    },
   },
 ];
 
@@ -69,11 +98,12 @@ export function DestinationsGridClient({
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {ITEMS.map(({ key, icon: Icon, fallbackUrl, fallbackAlt }, i) => {
+        {ITEMS.map(({ key, icon: Icon, fallback }, i) => {
           const photo = photos[key];
-          // Use API photo if available, otherwise use the hardcoded fallback
-          const imgUrl = photo?.url || fallbackUrl;
-          const imgAlt = photo?.alt || fallbackAlt || dict.destinations.items[key];
+          // Use API photo if available, otherwise use the fully-attributed fallback
+          const activePhoto: UnsplashPhoto = (photo?.url ? photo : fallback);
+          const imgUrl = activePhoto.url;
+          const imgAlt = activePhoto.alt || dict.destinations.items[key];
           return (
             <motion.div
               key={key}
@@ -107,10 +137,8 @@ export function DestinationsGridClient({
                 </h3>
               </div>
 
-              {/* Unsplash attribution — required by API guidelines */}
-              {photo?.url && (
-                <UnsplashAttribution photo={photo} triggerDownload />
-              )}
+              {/* Unsplash attribution — required for ALL Unsplash images */}
+              <UnsplashAttribution photo={activePhoto} triggerDownload={!!photo?.url} />
             </motion.div>
           );
         })}

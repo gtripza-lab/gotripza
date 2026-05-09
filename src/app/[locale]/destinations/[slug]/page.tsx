@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { isLocale, type Locale } from "@/i18n/config";
 import { fetchPhoto } from "@/lib/unsplash";
+import { UnsplashAttribution } from "@/components/UnsplashAttribution";
 import { searchHotels } from "@/lib/travelpayouts";
 import { formatPrice } from "@/lib/utils";
 import { iataToCity } from "@/lib/iata";
@@ -181,16 +182,7 @@ export default async function DestinationHubPage({ params }: Props) {
                 sizes="100vw"
               />
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-ink-950" />
-              {photo.photographer && (
-                <a
-                  href={photo.photographerUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="absolute bottom-2 end-3 text-[10px] text-white/30 hover:text-white/60"
-                >
-                  Photo: {photo.photographer} / Unsplash
-                </a>
-              )}
+              <UnsplashAttribution photo={photo} triggerDownload />
             </div>
           ) : (
             <div className="h-40 bg-gradient-to-b from-brand-primary/20 to-ink-950" />
