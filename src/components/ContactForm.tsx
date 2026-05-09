@@ -35,8 +35,12 @@ export function ContactForm({ locale }: { locale: Locale }) {
   const [error,    setError]    = useState<string | null>(null);
   const [ticketId, setTicketId] = useState<string | null>(null);
 
+  const messageTooShort = message.trim().length > 0 && message.trim().length < 8;
+  const canSubmit = !loading && name.trim().length >= 2 && email.trim() && message.trim().length >= 8;
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!canSubmit) return;
     setLoading(true);
     setError(null);
 
@@ -59,6 +63,10 @@ export function ContactForm({ locale }: { locale: Locale }) {
           setError(isAr
             ? "لقد أرسلت رسائل كثيرة. يرجى الانتظار دقيقة ثم المحاولة مجدداً."
             : "Too many requests. Please wait a moment and try again.");
+        } else if (res.status === 400 && json?.error === "validation") {
+          setError(isAr
+            ? "يرجى التحقق من البيانات المدخلة وإعادة المحاولة."
+            : "Please check your inputs and try again.");
         } else {
           setError(isAr
             ? "حدث خطأ. يرجى المحاولة مرة أخرى."
@@ -170,9 +178,16 @@ export function ContactForm({ locale }: { locale: Locale }) {
           rows={5}
           className={`${inputClass} resize-none`}
         />
-        <p className="mt-1 text-right text-[11px] text-white/20">
-          {message.length} / 4000
-        </p>
+        <div className="mt-1 flex items-center justify-between">
+          {messageTooShort ? (
+            <p className="text-[11px] text-amber-400">
+              {isAr ? "الرسالة قصيرة جداً (8 أحرف على الأقل)" : "Message too short (min 8 characters)"}
+            </p>
+          ) : (
+            <span />
+          )}
+          <p className="text-[11px] text-white/20">{message.length} / 4000</p>
+        </div>
       </div>
 
       {/* Error */}
@@ -185,7 +200,7 @@ export function ContactForm({ locale }: { locale: Locale }) {
       {/* Submit */}
       <button
         type="submit"
-        disabled={loading || !name.trim() || !email.trim() || !message.trim()}
+        disabled={!canSubmit}
         className="w-full rounded-xl bg-brand-primary py-3 text-sm font-semibold text-white
                    transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
       >
