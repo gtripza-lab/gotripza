@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
 import type { Locale } from "@/i18n/config";
 
 export function AdminLoginForm({ locale }: { locale: Locale }) {
@@ -10,7 +9,6 @@ export function AdminLoginForm({ locale }: { locale: Locale }) {
   const [error, setError]     = useState(false);
   const [loading, setLoading] = useState(false);
   const inputRef              = useRef<HTMLInputElement>(null);
-  const router                = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -27,8 +25,10 @@ export function AdminLoginForm({ locale }: { locale: Locale }) {
       });
 
       if (res.ok) {
-        // Cookie set — navigate directly to the new admin console
-        router.push("/admin/dashboard");
+        // Full page reload so the new cookie is included in the first
+        // server request — avoids RSC redirect errors from SPA navigation.
+        window.location.href = "/admin/dashboard";
+        return;
       } else {
         setError(true);
         setKey("");
