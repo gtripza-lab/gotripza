@@ -1,0 +1,194 @@
+import type { Metadata } from "next";
+import { Activity, Clock, Cpu, DollarSign, AlertTriangle } from "lucide-react";
+import { getAiStats } from "@/lib/admin/data";
+import { MetricCard } from "@/components/admin/MetricCard";
+import { BarChartCard, DonutChart } from "@/components/admin/AdminCharts";
+
+export const metadata: Metadata = {
+  title: "AI Control Center",
+};
+
+export const dynamic = "force-dynamic";
+
+export default async function AiControlCenterPage() {
+  const stats = await getAiStats();
+
+  if (!stats) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <p className="text-sm text-white/30">Failed to load AI stats. Check server logs.</p>
+      </div>
+    );
+  }
+
+  const totalCost = stats.byModel.reduce((sum, m) => sum + m.cost_usd, 0);
+  const errorCount = stats.byStatus.find((s) => s.status === "error")?.count ?? 0;
+
+  return (
+    <div className="space-y-8 p-6">
+      {/* Page header */}
+      <div>
+        <h1 className="font-display text-xl font-semibold text-white">AI Control Center</h1>
+        <p className="mt-1 text-xs text-white/35">Last 7 days · all models · all modes</p>
+      </div>
+
+      {/* Metric cards */}
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <MetricCard
+          label="Total Traces (7d)"
+          value={stats.totalTraces.toLocaleString()}
+          icon={Activity}
+          color="blue"
+        />
+        <MetricCard
+          label="Avg Latency"
+          value={`${stats.avgLatency.toLocaleString()} ms`}
+          icon={Clock}
+          color="default"
+        />
+        <MetricCard
+          label="P95 Latency"
+          value={`${stats.p95Latency.toLocaleString()} ms`}
+          icon={Cpu}
+          color={stats.p95Latency > 5000 ? "red" : stats.p95Latency > 2000 ? "yellow" : "default"}
+        />
+        <MetricCard
+          label="Total Cost"
+          value={`$${totalCost.toFixed(4)}`}
+          icon={DollarSign}
+          color="green"
+        />
+        <MetricCard
+          label="Error Count (7d)"
+          value={errorCount.toLocaleString()}
+          icon={AlertTriangle}
+          color={errorCount > 0 ? "red" : "default"}
+        />
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <DonutChart
+          data={stats.byMode as unknown as Record<string, unknown>[]}
+          nameKey="mode"
+          valueKey="count"
+          label="Mode Distribution"
+        />
+        <BarChartCard
+          data={stats.hourlyVolume as unknown as Record<string, unknown>[]}
+          dataKey="count"
+          nameKey="hour"
+          label="Hourly Volume (24h)"
+        />
+      </div>
+
+      {/* Model breakdown table */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+        <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
+          Model Breakdown
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="border-b border-white/[0.06]">
+                <th className="pb-2 text-left font-medium text-white/35">Model</th>
+                <th className="pb-2 text-right font-medium text-white/35">Calls</th>
+                <th className="pb-2 text-right font-medium text-white/35">Tokens In</th>
+                <th className="pb-2 text-right font-medium text-white/35">Tokens Out</th>
+                <th className="pb-2 text-right font-medium text-white/35">Cost (USD)</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.04]">
+              {stats.byModel.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-4 text-center text-white/20">
+                    No data
+                  </td>
+                </tr>
+              ) : (
+                stats.byModel.map((row) => (
+                  <tr key={row.model} className="transition-colors hover:bg-white/[0.02]">
+                    <td className="py-2.5 pr-4 font-mono text-white/70">{row.model}</td>
+                    <td className="py-2.5 text-right tabular-nums text-white/60">
+                      {row.count.toLocaleString()}
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums text-white/60">
+                      {row.tokens_in.toLocaleString()}
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums text-white/60">
+                      {row.tokens_out.toLocaleString()}
+                    </td>
+                    <td className="py-2.5 text-right tabular-nums text-emerald-400">
+                      ${row.cost_usd.toFixed(4)}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Recent errors table */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+        <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
+          Recent Errors
+        </p>
+        {stats.recentErrors.length === 0 ? (
+          <p className="py-6 text-center text-xs text-white/20">No errors in the last 7 days</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="border-b border-white/[0.06]">
+                  <th className="pb-2 text-left font-medium text-white/35">Time</th>
+                  <th className="pb-2 text-left font-medium text-white/35">Model</th>
+                  <th className="pb-2 text-left font-medium text-white/35">Error Kind</th>
+                  <th className="pb-2 text-left font-medium text-white/35">Message</th>
+                  <th className="pb-2 text-left font-medium text-white/35">Conv ID</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/[0.04]">
+                {stats.recentErrors.map((err) => {
+                  const msg = err.error_message ?? "—";
+                  const truncatedMsg = msg.length > 80 ? msg.slice(0, 80) + "…" : msg;
+                  const convIdSuffix = err.conversation_id
+                    ? err.conversation_id.slice(-8)
+                    : "—";
+                  const time = new Date(err.created_at).toLocaleString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+
+                  return (
+                    <tr key={err.id} className="transition-colors hover:bg-white/[0.02]">
+                      <td className="py-2.5 pr-4 tabular-nums text-white/40 whitespace-nowrap">
+                        {time}
+                      </td>
+                      <td className="py-2.5 pr-4 font-mono text-white/60">
+                        {err.model ?? "—"}
+                      </td>
+                      <td className="py-2.5 pr-4">
+                        <span className="rounded-md bg-red-500/10 px-1.5 py-0.5 text-red-400">
+                          {err.error_kind ?? "unknown"}
+                        </span>
+                      </td>
+                      <td className="py-2.5 pr-4 max-w-xs text-white/50" title={err.error_message ?? undefined}>
+                        {truncatedMsg}
+                      </td>
+                      <td className="py-2.5 font-mono text-white/30">
+                        {convIdSuffix}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
