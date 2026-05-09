@@ -566,12 +566,10 @@ export async function getAnalyticsStats(): Promise<AnalyticsStats | null> {
     const d30 = daysAgo(30);
     const d56 = daysAgo(56); // 8 weeks
 
-    const [convRes, searchRes, clicksRes, localeRes] = await Promise.all([
+    const [convRes, searchRes, clicksRes] = await Promise.all([
       db.from("conversations").select("id", { count: "exact", head: true }).gte("started_at", d30),
       db.from("ai_traces").select("id", { count: "exact", head: true }).eq("mode", "search").gte("created_at", d30),
       db.from("booking_clicks").select("id,result_type,destination,price,currency,created_at").gte("created_at", d30),
-      // Approximate locale split from conversations (summary field or session locale)
-      db.from("conversations").select("id,started_at").gte("started_at", d56),
     ]);
 
     const clickRows: { result_type: string; destination: string | null; price: number | null; created_at: string }[] =
