@@ -78,6 +78,7 @@ export async function getTravelIntelligence(
       adults: 2,
       budget_usd: null,
       trip_type: null,
+      cabin_class: null,
     },
   );
 }

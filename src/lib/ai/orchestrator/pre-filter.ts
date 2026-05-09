@@ -121,6 +121,7 @@ function mergeIntoContext(
     adults: add.adults ?? base.adults,
     budget_usd: add.budget_usd ?? base.budget_usd,
     trip_type: add.trip_type ?? base.trip_type,
+    cabin_class: add.cabin_class ?? base.cabin_class,
   };
 }
 
@@ -130,16 +131,30 @@ export function runPreFilter(
   context: TravelContext,
 ): PreFilterResult {
   const transcript = buildTranscript(query, history);
-  const locale = detectLocale(transcript);
+  // M5: Locale follows the CURRENT user turn so mixed-language flows
+  // respond in the language the user just typed.
+  const locale = detectLocale(query) || detectLocale(transcript);
   const wants = detectWants(transcript);
 
-  // 1. Run regex parser over the full transcript
-  const parsed = heuristicParse(transcript);
+  // 1. M5: Parse current query FIRST so contradictions ("from Riyadh"
+  //    then "actually from Jeddah") are honoured. Only fall back to
+  //    transcript-wide parsing for slots the current turn left blank.
+  const fromCurrent = heuristicParse(query);
+  const fromTranscript = heuristicParse(transcript);
+  const parsed: Partial<TripIntent> = {
+    ...fromTranscript,
+    // Current-turn values override transcript-wide values when present
+    ...Object.fromEntries(
+      Object.entries(fromCurrent).filter(([, v]) => v !== null && v !== "" && v !== undefined),
+    ),
+  };
 
   // 2. Extract any standalone fragment answer to Raya's last question
   const fragment = extractFragmentAnswer(query, history, context);
 
-  // 3. Merge: context (already-known) ← parsed ← fragment
+  // 3. Merge: context (already-known) ← parsed ← fragment.
+  //    Current-turn extractions outrank stored context for contradictable
+  //    slots (origin/destination) so corrections propagate.
   const newlyExtracted: Partial<TripIntent> = { ...parsed, ...fragment };
   const merged = mergeIntoContext(context, newlyExtracted);
 

@@ -35,25 +35,100 @@ function client(): OpenAI {
 }
 
 /**
+ * M14: usage telemetry returned alongside the parsed intelligence so the
+ * caller (orchestrator) can persist tokens_in/out/model to messages table.
+ */
+export type IntelligenceWithUsage = {
+  intelligence: TravelIntelligence;
+  usage: {
+    model: string;
+    tokens_in: number | null;
+    tokens_out: number | null;
+    latency_ms: number;
+    salvaged: boolean;
+  };
+};
+
+/**
+ * M3: Salvage path for partial Zod failures — keep the chat alive when the
+ * LLM returns a slightly malformed response (one missing enum, etc).
+ * Extracts only the fields we strictly need (mode, message, locale).
+ */
+function salvageIntelligence(
+  raw: unknown,
+  fallbackLocale: "ar" | "en",
+): TravelIntelligence | null {
+  if (typeof raw !== "object" || raw === null) return null;
+  const r = raw as Record<string, unknown>;
+  const message = typeof r.message === "string" ? r.message : null;
+  if (!message || message.length < 1) return null;
+  const mode = ["clarify", "search", "advice"].includes(r.mode as string)
+    ? (r.mode as "clarify" | "search" | "advice")
+    : "clarify";
+  const locale = r.locale === "ar" || r.locale === "en" ? r.locale : fallbackLocale;
+  return {
+    locale,
+    mode,
+    message,
+    wants: ["flights", "hotels"],
+    followup: null,
+    clarification_needed: mode === "clarify",
+    clarification_question: null,
+    intent: {
+      origin: null,
+      destination: null,
+      departure_date: null,
+      return_date: null,
+      adults: 2,
+      budget_usd: null,
+      trip_type: null,
+      cabin_class: null,
+      notes: null,
+    },
+    budget_verdict: null,
+    confidence: null,
+    destination_intel: null,
+  };
+}
+
+/**
  * Run Raya intelligence on a user query.
  *
- * Uses chat completions with JSON-object response mode. Structured outputs
- * (response_format with JSON schema) is also supported on gpt-4o models —
- * we validate with Zod regardless to stay robust across model versions.
+ * Uses chat completions with JSON-object response mode + Zod validation.
+ * On schema drift, attempts a salvage path (M3).
+ * Returns usage telemetry for cost tracking (M14).
+ *
+ * M4: User content is wrapped in <user_message> delimiters so the model
+ * cannot be hijacked by injected "ignore previous instructions"-style text.
  */
 export async function getTravelIntelligenceOpenAI(
   query: string,
   history: ChatTurn[] = [],
   context: TravelContext,
-  options: { userId?: string | null; summary?: string | null } = {},
+  options: { userId?: string | null; sessionId?: string | null; summary?: string | null } = {},
 ): Promise<TravelIntelligence> {
+  const r = await getTravelIntelligenceWithUsage(query, history, context, options);
+  return r.intelligence;
+}
+
+export async function getTravelIntelligenceWithUsage(
+  query: string,
+  history: ChatTurn[] = [],
+  context: TravelContext,
+  options: { userId?: string | null; sessionId?: string | null; summary?: string | null } = {},
+): Promise<IntelligenceWithUsage> {
+  const t0 = Date.now();
   const system = buildSystemPrompt();
-  const memoryBlock = await buildMemoryBlock(options.userId);
+  const memoryBlock = await buildMemoryBlock(options.userId, options.sessionId);
   const summaryBlock = buildSummaryBlock(options.summary ?? null);
   const ctxBlock = buildContextBlock(context);
   const historyBlock = buildHistoryBlock(history);
 
-  const userPrompt = `${memoryBlock}${summaryBlock}${ctxBlock}${historyBlock}\n\nNew user message:\n${query}`;
+  // M4: Wrap user content in tagged delimiters. The system prompt instructs
+  // the model to treat anything inside as untrusted data.
+  const userPrompt = `${memoryBlock}${summaryBlock}${ctxBlock}${historyBlock}\n\n<user_message>\n${query}\n</user_message>`;
+
+  const fallbackLocale: "ar" | "en" = /[؀-ۿ]/.test(query) ? "ar" : "en";
 
   const res = await client().chat.completions.create({
     model: MODEL_PRIMARY,
@@ -66,6 +141,13 @@ export async function getTravelIntelligenceOpenAI(
   });
 
   const text = res.choices[0]?.message?.content?.trim() ?? "";
+  const usage = {
+    model: res.model ?? MODEL_PRIMARY,
+    tokens_in: res.usage?.prompt_tokens ?? null,
+    tokens_out: res.usage?.completion_tokens ?? null,
+    latency_ms: Date.now() - t0,
+    salvaged: false,
+  };
   if (!text) throw new Error("[openai] empty response");
 
   let parsed: unknown;
@@ -77,16 +159,22 @@ export async function getTravelIntelligenceOpenAI(
     );
   }
 
-  return TravelIntelligenceSchema.parse(parsed);
+  // M3: safeParse + salvage path. Schema drift no longer kills the turn.
+  const result = TravelIntelligenceSchema.safeParse(parsed);
+  if (result.success) {
+    return { intelligence: result.data, usage };
+  }
+  console.warn("[openai] schema drift — salvaging:", result.error.issues.slice(0, 3));
+  const salvaged = salvageIntelligence(parsed, fallbackLocale);
+  if (salvaged) {
+    return { intelligence: salvaged, usage: { ...usage, salvaged: true } };
+  }
+  // Salvage failed — surface so heuristic fallback runs
+  throw new Error(`[openai] schema mismatch unrecoverable: ${result.error.issues[0]?.message}`);
 }
 
 /**
  * Lightweight tip line — used in search-mode results panel.
- *
- * NOTE: OpenAI doesn't ship a Gemini-style googleSearch grounding tool by
- * default. We use the lite model with cached destination knowledge baked
- * into the prompt. Real-time web grounding can be added via the
- * `web_search` tool on the Responses API later.
  */
 export async function getLiveTipsOpenAI(
   destination: string,

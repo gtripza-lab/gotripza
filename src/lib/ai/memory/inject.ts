@@ -5,7 +5,7 @@ import "server-only";
  *
  * Goal: Raya knows her user. ~50-150 tokens, never floods context.
  */
-import { getPreferences, getProfile } from "./store";
+import { getPreferences, getProfile, getAnonPreferences } from "./store";
 import type { TravelerPreferences, Profile } from "./types";
 
 function buildBlock(profile: Profile | null, prefs: TravelerPreferences): string {
@@ -42,21 +42,45 @@ function buildBlock(profile: Profile | null, prefs: TravelerPreferences): string
 }
 
 /**
- * Compose a memory block for the prompt. Returns "" when no userId is
- * given (anonymous users) or when the user has no stored preferences yet.
+ * Compose a memory block for the prompt.
+ *
+ * • Authenticated user → load profile + traveler_preferences (rich)
+ * • Anonymous session  → load session_preferences (M6 — lightweight)
+ * • Neither            → return "" (cold start)
  *
  * Wrap with try/catch — memory should never break the chat.
  */
 export async function buildMemoryBlock(
   userId: string | null | undefined,
+  sessionId: string | null | undefined = null,
 ): Promise<string> {
-  if (!userId) return "";
   try {
-    const [profile, prefs] = await Promise.all([
-      getProfile(userId),
-      getPreferences(userId),
-    ]);
-    return buildBlock(profile, prefs);
+    if (userId) {
+      const [profile, prefs] = await Promise.all([
+        getProfile(userId),
+        getPreferences(userId),
+      ]);
+      return buildBlock(profile, prefs);
+    }
+    if (sessionId) {
+      // M6: anonymous memory
+      const anon = await getAnonPreferences(sessionId);
+      const prefsAdapter: TravelerPreferences = {
+        user_id: "",
+        travel_style: anon.travel_style as TravelerPreferences["travel_style"],
+        budget_tier: anon.budget_tier as TravelerPreferences["budget_tier"],
+        travels_with: anon.travels_with,
+        trip_pace: anon.trip_pace as TravelerPreferences["trip_pace"],
+        interests: anon.interests,
+        dietary: [],
+        accessibility_needs: [],
+        preferred_airlines: anon.preferred_airlines,
+        past_destinations: anon.past_destinations,
+        notes: {},
+      };
+      return buildBlock(null, prefsAdapter);
+    }
+    return "";
   } catch (err) {
     console.warn("[memory] buildMemoryBlock failed:", (err as Error).message);
     return "";

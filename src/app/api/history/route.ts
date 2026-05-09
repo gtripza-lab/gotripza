@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseService } from "@/lib/supabase/service";
+import { rateLimit } from "@/lib/security/rate-limit";
 import { z } from "zod";
 
 export const runtime = "nodejs";
@@ -13,25 +14,12 @@ const HistoryPayloadSchema = z.object({
   locale: z.enum(["ar", "en"]).optional(),
 });
 
-// Simple in-memory rate limiter (best-effort; resets per serverless cold start)
-const ipCounters = new Map<string, { count: number; resetAt: number }>();
-function isRateLimited(ip: string, limit = 30, windowMs = 60_000): boolean {
-  const now = Date.now();
-  const rec = ipCounters.get(ip);
-  if (!rec || now > rec.resetAt) {
-    ipCounters.set(ip, { count: 1, resetAt: now + windowMs });
-    return false;
-  }
-  rec.count++;
-  return rec.count > limit;
-}
-
 export async function POST(request: NextRequest) {
   try {
-    // Rate limiting — 30 saves per minute per IP
-    const ip = request.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-    if (isRateLimited(ip)) {
-      return NextResponse.json({ ok: true }); // Silent — don't reveal rate limit details
+    // B1: production rate limit (30/min)
+    const rl = await rateLimit(request, "history", { limit: 30, windowSec: 60 });
+    if (!rl.allowed) {
+      return NextResponse.json({ ok: true });
     }
 
     let rawBody: unknown;

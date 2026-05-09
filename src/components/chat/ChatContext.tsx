@@ -35,6 +35,7 @@ const EMPTY_CONTEXT: TravelContext = {
   adults: 2,
   budget_usd: null,
   trip_type: null,
+  cabin_class: null,
 };
 
 // Merge: new non-null values override old values; nulls don't erase known values
@@ -47,6 +48,7 @@ function mergeContext(current: TravelContext, intent: TripIntent): TravelContext
     adults: intent.adults ?? current.adults,
     budget_usd: intent.budget_usd ?? current.budget_usd,
     trip_type: intent.trip_type ?? current.trip_type,
+    cabin_class: intent.cabin_class ?? current.cabin_class,
   };
 }
 
@@ -302,8 +304,8 @@ export function ChatProvider({
         hotels: searchJson.hotels ?? [],
         wants,
         currency: searchJson.currency ?? currency,
-        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=${TP_MARKER}`,
-        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://tp.media/click?shmarker=${TP_MARKER}&promo_id=4338`,
+        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=${TP_MARKER}&subid=ai_chat_fallback`,
+        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://tp.media/click?shmarker=${TP_MARKER}&promo_id=4338&subid=ai_chat_fallback`,
         budget_verdict: parsedJson.budget_verdict ?? null,
         confidence: parsedJson.confidence ?? null,
         destination_intel: parsedJson.destination_intel ?? null,

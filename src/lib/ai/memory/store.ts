@@ -100,12 +100,15 @@ export async function getOrCreateConversation(opts: {
   const sb = createSupabaseService() as AnyTable;
   const { userId, sessionId, locale } = opts;
 
-  // N3: Widened window from 1h → 4h so multi-session users keep context
+  // N3 + M10: Window = last_at within 4h AND started_at within 8h.
+  // Prevents resurrecting morning-Bali planning when user opens lunch-Tokyo chat.
   const cutoff = new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString();
+  const startedCap = new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString();
   let q = sb
     .from("conversations")
     .select("*")
     .gte("last_at", cutoff)
+    .gte("started_at", startedCap)
     .is("closed_at", null)
     .order("last_at", { ascending: false })
     .limit(1);
@@ -141,6 +144,8 @@ export async function appendMessage(opts: {
   tokensIn?: number | null;
   tokensOut?: number | null;
   model?: string | null;
+  latencyMs?: number | null;
+  provider?: string | null;
 }): Promise<void> {
   const sb = createSupabaseService() as AnyTable;
   const {
@@ -152,6 +157,8 @@ export async function appendMessage(opts: {
     tokensIn = null,
     tokensOut = null,
     model = null,
+    latencyMs = null,
+    provider = null,
   } = opts;
 
   const { error: insertError } = await sb.from("messages").insert({
@@ -163,18 +170,124 @@ export async function appendMessage(opts: {
     tokens_in: tokensIn,
     tokens_out: tokensOut,
     model,
+    latency_ms: latencyMs,
+    provider,
   });
   if (insertError)
     console.warn("[memory] appendMessage error:", insertError.message);
 
-  // N6: Touch last_at AND increment message_count in one update
-  await sb.rpc("increment_conversation", { conv_id: conversationId }).catch(
-    // Fallback: plain update if the RPC doesn't exist yet
-    () =>
-      sb
-        .from("conversations")
-        .update({ last_at: new Date().toISOString() })
-        .eq("id", conversationId),
+  // B3 + N6: Touch last_at AND increment message_count atomically via RPC.
+  const { error: rpcError } = await sb.rpc("increment_conversation", {
+    conv_id: conversationId,
+  });
+  if (rpcError) {
+    // Soft fallback if migration isn't deployed yet.
+    await sb
+      .from("conversations")
+      .update({ last_at: new Date().toISOString() })
+      .eq("id", conversationId);
+  }
+}
+
+// ── M7: Conversation summary persistence ────────────────────────────
+export async function getConversationSummary(
+  conversationId: string,
+): Promise<string | null> {
+  const sb = createSupabaseService() as AnyTable;
+  const { data } = await sb
+    .from("conversations")
+    .select("summary")
+    .eq("id", conversationId)
+    .maybeSingle();
+  return (data as { summary: string | null } | null)?.summary ?? null;
+}
+
+export async function setConversationSummary(
+  conversationId: string,
+  summary: string,
+): Promise<void> {
+  const sb = createSupabaseService() as AnyTable;
+  // Cap at 1500 chars to prevent unbounded growth across resummarizations
+  const capped = summary.slice(0, 1500);
+  await sb
+    .from("conversations")
+    .update({ summary: capped })
+    .eq("id", conversationId);
+}
+
+// ── M15: AI trace persistence ───────────────────────────────────────
+export async function appendAiTrace(t: {
+  conversationId: string | null;
+  userId: string | null;
+  sessionId: string | null;
+  mode: "clarify" | "search" | "advice" | null;
+  preFilter: string[];
+  durationMs: number;
+  model: string | null;
+  tokensIn: number | null;
+  tokensOut: number | null;
+  status: "ok" | "salvaged" | "error";
+  errorKind: string | null;
+  errorMessage: string | null;
+}): Promise<void> {
+  const sb = createSupabaseService() as AnyTable;
+  await sb.from("ai_traces").insert({
+    conversation_id: t.conversationId,
+    user_id: t.userId,
+    session_id: t.sessionId,
+    mode: t.mode,
+    pre_filter: t.preFilter,
+    duration_ms: t.durationMs,
+    model: t.model,
+    tokens_in: t.tokensIn,
+    tokens_out: t.tokensOut,
+    status: t.status,
+    error_kind: t.errorKind,
+    error_message: t.errorMessage,
+  });
+}
+
+// ── M6: Anonymous session preferences ──────────────────────────────
+export type AnonPreferences = {
+  travel_style: string | null;
+  budget_tier: string | null;
+  trip_pace: string | null;
+  travels_with: string[];
+  interests: string[];
+  preferred_airlines: string[];
+  past_destinations: string[];
+};
+
+export async function getAnonPreferences(
+  sessionId: string,
+): Promise<AnonPreferences> {
+  const sb = createSupabaseService() as AnyTable;
+  const { data } = await sb
+    .from("session_preferences")
+    .select("*")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+  return (
+    (data as AnonPreferences | null) ?? {
+      travel_style: null,
+      budget_tier: null,
+      trip_pace: null,
+      travels_with: [],
+      interests: [],
+      preferred_airlines: [],
+      past_destinations: [],
+    }
+  );
+}
+
+export async function updateAnonPreferences(
+  sessionId: string,
+  patch: Partial<AnonPreferences>,
+): Promise<void> {
+  const sb = createSupabaseService() as AnyTable;
+  await sb.from("session_preferences").upsert(
+    { session_id: sessionId, ...patch, updated_at: new Date().toISOString() },
+    { onConflict: "session_id" },
   );
 }
 

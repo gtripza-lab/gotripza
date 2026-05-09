@@ -3,7 +3,9 @@ import { searchFlights, searchHotels } from "@/lib/travelpayouts";
 import { TripIntentSchema } from "@/lib/ai/schemas/intent";
 import type { Currency } from "@/lib/utils";
 import { resolveIata, iataToCity } from "@/lib/iata";
-import { buildHotelUrl } from "@/lib/partners";
+import { buildHotelUrl, buildAviasalesUrl } from "@/lib/partners";
+import { rateLimit } from "@/lib/security/rate-limit";
+import { captureError } from "@/lib/observability/sentry";
 import { z } from "zod";
 
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
@@ -14,35 +16,16 @@ const SearchRequestSchema = z.object({
   source: z.enum(["chat", "trip_page", "whitelabel"]).optional(),
 });
 
-// Rate limiting: 20 searches/min per IP
-const _searchCounters = new Map<string, { count: number; resetAt: number }>();
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const rec = _searchCounters.get(ip);
-  if (!rec || now > rec.resetAt) {
-    _searchCounters.set(ip, { count: 1, resetAt: now + 60_000 });
-    return false;
-  }
-  rec.count++;
-  return rec.count > 20;
-}
-
 export const runtime = "nodejs";
 
-/**
- * Infer the most likely departure airport from the user's currency.
- * This is used only when the user doesn't specify an origin city.
- * Gives Arabic-speaking users real flight results out of the box.
- */
 function inferOriginFromCurrency(currency: string): string {
-  if (currency === "SAR") return "RUH"; // Saudi Riyal → Riyadh
-  if (currency === "AED") return "DXB"; // Dirham     → Dubai
-  if (currency === "KWD") return "KWI"; // Kuwaiti D  → Kuwait City
-  if (currency === "QAR") return "DOH"; // Qatari R   → Doha
-  if (currency === "BHD") return "BAH"; // Bahraini D → Manama
-  if (currency === "OMR") return "MCT"; // Omani R    → Muscat
-  if (currency === "EGP") return "CAI"; // Egyptian P → Cairo
-  // Default — Dubai is the best-connected Middle-East hub for English users
+  if (currency === "SAR") return "RUH";
+  if (currency === "AED") return "DXB";
+  if (currency === "KWD") return "KWI";
+  if (currency === "QAR") return "DOH";
+  if (currency === "BHD") return "BAH";
+  if (currency === "OMR") return "MCT";
+  if (currency === "EGP") return "CAI";
   return "DXB";
 }
 
@@ -51,15 +34,20 @@ function normCurrency(input: string | undefined): Currency {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limiting
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  if (isRateLimited(ip)) {
-    return NextResponse.json({ error: "rate_limited" }, { status: 429, headers: { "Retry-After": "60" } });
+  // B1: Production rate limit
+  const rl = await rateLimit(req, "search", { limit: 30, windowSec: 60 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 60) } },
+    );
   }
 
   try {
     let rawBody: unknown;
-    try { rawBody = await req.json(); } catch {
+    try {
+      rawBody = await req.json();
+    } catch {
       return NextResponse.json({ error: "Bad request" }, { status: 400 });
     }
 
@@ -68,29 +56,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "destination_required" }, { status: 400 });
     }
     const { intent, currency: rawCurrency, source } = parsed.data;
-    // M5: Clamp adults to valid range — Travelpayouts API accepts 1–9
+    // M5: clamp adults
     if (typeof intent.adults === "number") {
       intent.adults = Math.min(9, Math.max(1, Math.round(intent.adults)));
     } else {
       intent.adults = 2;
     }
     const currency = normCurrency(rawCurrency);
-    const subid = source === "trip_page" ? "trip_page"
-      : source === "whitelabel" ? "whitelabel"
-      : "ai_chat";
+    const subid =
+      source === "trip_page"
+        ? "trip_page"
+        : source === "whitelabel"
+          ? "whitelabel"
+          : "ai_chat";
 
-    // Resolve Arabic/English city names → IATA codes (for flights)
     const destination = resolveIata(intent.destination ?? "") ?? (intent.destination ?? "");
-
-    // Smart origin fallback — when user doesn't specify a departure city,
-    // infer from currency so Arabic-speaking users get relevant results.
-    // Without origin the flights API returns nothing.
     const rawOrigin = resolveIata(intent.origin);
-    // Pass the raw currency string (not the normalised Currency type) so the
-    // multi-currency inference (AED, KWD, etc.) works correctly.
     const rawCurrencyStr = (rawCurrency ?? "USD") as string;
     const origin = rawOrigin ?? inferOriginFromCurrency(rawCurrencyStr);
-    // Hotellook API needs readable English city name, NOT IATA code
     const hotelCity = iataToCity(destination);
 
     const [flightsRes, hotelsRes] = await Promise.allSettled([
@@ -101,6 +84,7 @@ export async function POST(req: NextRequest) {
         return_date: intent.return_date,
         currency: currency.toLowerCase(),
         subid,
+        cabin_class: intent.cabin_class, // B4: thread cabin_class through
       }),
       searchHotels({
         location: hotelCity,
@@ -115,18 +99,19 @@ export async function POST(req: NextRequest) {
     const flights = flightsRes.status === "fulfilled" ? flightsRes.value : [];
     const hotels = hotelsRes.status === "fulfilled" ? hotelsRes.value : [];
 
-    // Build Aviasales deep-link search URLs.
-    // Format: /search/{ORIGIN}{DAYS_OUT}{DEST}1  → pre-fills the form
-    // e.g.  /search/RUH1001DPS1 = Riyadh → Bali, depart in 100 days, 1 adult
-    const daysOut = intent.departure_date
-      ? Math.max(1, Math.round((new Date(intent.departure_date).getTime() - Date.now()) / 86_400_000))
-      : 30;
-
+    // M11 + B4: use buildAviasalesUrl which preserves cabin_class, return_date, adults.
     const flightSearchUrl = origin
-      ? `https://www.aviasales.com/search/${origin}${daysOut}${destination}${intent.adults ?? 1}?marker=${MARKER}&subid=${subid}`
+      ? buildAviasalesUrl({
+          origin,
+          destination,
+          departure_date: intent.departure_date,
+          return_date: intent.return_date,
+          adults: intent.adults,
+          cabin_class: intent.cabin_class,
+          subid,
+        })
       : `https://www.aviasales.com/?marker=${MARKER}&subid=${subid}&destination=${destination}`;
 
-    // Hotel search URL: Booking.com (direct or via TP media) → Trip.com → Hotellook fallback
     const hotelSearchUrl = buildHotelUrl({
       destination: hotelCity,
       departure_date: intent.departure_date,
@@ -146,6 +131,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "search_failed";
+    void captureError(err, { route: "search" });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

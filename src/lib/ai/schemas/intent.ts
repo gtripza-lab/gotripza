@@ -49,6 +49,7 @@ export type TravelContext = {
   adults: number;
   budget_usd: number | null;
   trip_type: TripIntent["trip_type"];
+  cabin_class: TripIntent["cabin_class"];
 };
 
 export const EMPTY_TRAVEL_CONTEXT: TravelContext = {
@@ -59,4 +60,5 @@ export const EMPTY_TRAVEL_CONTEXT: TravelContext = {
   adults: 2,
   budget_usd: null,
   trip_type: null,
+  cabin_class: null,
 };

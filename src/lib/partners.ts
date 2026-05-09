@@ -455,6 +455,20 @@ export function buildHotelUrl(params: PartnerUrlParams & { fallbackHotellookUrl?
  * Aviasales deep-link — always tracked via TP marker.
  * (Aviasales IS Travelpayouts; ?marker= is the standard attribution method.)
  */
+export type CabinClass = "economy" | "premium_economy" | "business" | "first";
+
+/**
+ * B4: Map our schema's cabin_class to Aviasales `trip_class` values.
+ *   Y = economy, W = premium economy, C = business, F = first
+ */
+export function aviasalesTripClass(cabin?: CabinClass | null): "Y" | "W" | "C" | "F" | null {
+  if (!cabin) return null;
+  if (cabin === "premium_economy") return "W";
+  if (cabin === "business") return "C";
+  if (cabin === "first") return "F";
+  return "Y"; // economy
+}
+
 export function buildAviasalesUrl(params: {
   origin?: string | null;
   destination?: string | null;
@@ -462,6 +476,8 @@ export function buildAviasalesUrl(params: {
   return_date?: string | null;
   locale?: string;
   subid?: string;
+  adults?: number;
+  cabin_class?: CabinClass | null;
 }): string {
   const u = new URL("https://www.aviasales.com/");
   u.searchParams.set("marker", TP_MARKER);
@@ -470,6 +486,11 @@ export function buildAviasalesUrl(params: {
   if (params.destination)   u.searchParams.set("destination", params.destination);
   if (params.departure_date) u.searchParams.set("departure_date", params.departure_date);
   if (params.return_date)   u.searchParams.set("return_date",   params.return_date);
+  if (typeof params.adults === "number" && params.adults > 0) {
+    u.searchParams.set("adults", String(Math.min(9, Math.max(1, Math.round(params.adults)))));
+  }
+  const tc = aviasalesTripClass(params.cabin_class);
+  if (tc) u.searchParams.set("trip_class", tc);
   if (params.subid)         u.searchParams.set("subid",         params.subid);
   return u.toString();
 }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
+import { rateLimit } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,15 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
+  // B1: brute-force protection — 5 attempts per 15 minutes per IP+sid
+  const rl = await rateLimit(req, "admin-login", { limit: 5, windowSec: 900 });
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: "rate_limited" },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 900) } },
+    );
+  }
+
   let key = "";
   try {
     const body = (await req.json()) as { key?: string };
@@ -40,15 +50,11 @@ export async function POST(req: NextRequest) {
   }
 
   const adminKey = process.env.ADMIN_KEY;
-
-  // Refuse all access if ADMIN_KEY env var is not configured
-  if (!adminKey) {
-    console.error("[admin] ADMIN_KEY env var is not set — denying all access");
-    return NextResponse.json({ error: "not_configured" }, { status: 503 });
-  }
-
-  // Constant-time comparison — prevents timing side-channel attacks
-  if (!key || !safeEqual(key, adminKey)) {
+  // Always run safeEqual against a fixed-length string so failed-because-unset
+  // and failed-because-wrong are timing-indistinguishable.
+  const target = adminKey ?? "x".repeat(64);
+  const matches = !!key && safeEqual(key, target);
+  if (!adminKey || !matches) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

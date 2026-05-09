@@ -153,12 +153,53 @@ const EN_MONTHS: Record<string, number> = {
 };
 
 /**
- * C2: Strip Arabic prepositional prefixes that attach directly to city names.
- * Covers: ل (to), ب (in/by), ف (so/in), لل (to the), فال/بال/وال (in/by the).
- * e.g. "لإسطنبول" → "إسطنبول", "فالمالديف" → "المالديف", "بدبي" → "دبي"
+ * Set of canonical Arabic city names — used to validate prefix stripping.
+ * Built lazily from CITY_TO_IATA on first use.
+ */
+let _ARABIC_CITY_SET: Set<string> | null = null;
+function arabicCitySet(): Set<string> {
+  if (_ARABIC_CITY_SET) return _ARABIC_CITY_SET;
+  const s = new Set<string>();
+  for (const name of Object.keys(CITY_TO_IATA)) {
+    if (/[؀-ۿ]/.test(name)) s.add(name);
+  }
+  _ARABIC_CITY_SET = s;
+  return s;
+}
+
+/**
+ * C2 + M1: Strip Arabic prepositional prefixes that attach directly to city names.
+ * Covers: ل (to), ب (in/by), ف (so/in), و (and), لل (to the), فال/بال/وال (in/by the).
+ *
+ * Safety guards (M1):
+ *   • Only strip if the result is itself a known Arabic city name.
+ *   • Try longer prefixes first (لل > ل) to avoid greedy under-stripping.
+ *   • Never alter input that is already a known city ("لندن", "بانكوك" stay intact).
+ *
+ * Examples:
+ *   "لإسطنبول" → "إسطنبول"  (إسطنبول is a city → strip)
+ *   "فالمالديف" → "المالديف"  (المالديف is a city → strip)
+ *   "بدبي"     → "دبي"        (دبي is a city → strip)
+ *   "لندن"     → "لندن"       (لندن itself is a city → DO NOT strip)
+ *   "بانكوك"   → "بانكوك"     (بانكوك itself is a city → DO NOT strip)
  */
 function stripArabicPrepositions(text: string): string {
-  return text.replace(/^(لل|فال|بال|وال|لـ|ل|ب|ف|و)(?=[ء-ي])/, "");
+  const t = text.trim();
+  if (!t) return text;
+  const cities = arabicCitySet();
+
+  // Already a known city — leave it alone (prevents لندن→ندن, بانكوك→انكوك)
+  if (cities.has(t)) return text;
+
+  // Longest-first to avoid stripping only one of "لل"
+  const prefixes = ["لل", "فال", "بال", "وال", "لـ", "ل", "ب", "ف", "و"];
+  for (const p of prefixes) {
+    if (t.startsWith(p) && t.length > p.length) {
+      const rest = t.slice(p.length);
+      if (cities.has(rest)) return rest;
+    }
+  }
+  return text;
 }
 
 /**

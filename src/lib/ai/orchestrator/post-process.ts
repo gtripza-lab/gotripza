@@ -34,6 +34,7 @@ function mergeContextWithIntent(
     adults: i.adults ?? ctx.adults,
     budget_usd: i.budget_usd ?? ctx.budget_usd,
     trip_type: i.trip_type ?? ctx.trip_type,
+    cabin_class: i.cabin_class ?? ctx.cabin_class,
   };
 }
 
@@ -84,22 +85,30 @@ export function postProcess(
       return_date: intel.intent.return_date ?? mergedContext.return_date,
     };
 
-    // Anti-repetition guard: if Raya is asking again about a slot we
-    // already have, force progression to the next missing slot.
+    // M2: Anti-repetition guard for ALL slots.
+    // If Raya is asking again about a slot we already have, force progression.
     const wantsFlights = intel.wants.includes("flights");
     const hasDest = !!mergedContext.destination;
     const hasDate = !!mergedContext.departure_date;
     const hasOrigin = !!mergedContext.origin;
+    const allSatisfied = hasDest && hasDate && (!wantsFlights || hasOrigin);
 
-    if (hasDest && lastAskWasAbout("destination", history)) {
-      // We already asked. Don't ask again. Promote to next missing slot
-      // if any, or to search.
-      if (!hasDate) {
-        // Keep mode clarify; let the LLM message stand if it pivoted.
-      } else if (wantsFlights && !hasOrigin) {
-        // Keep mode clarify.
-      } else {
+    const repeats = {
+      destination: hasDest && lastAskWasAbout("destination", history),
+      date: hasDate && lastAskWasAbout("date", history),
+      origin: hasOrigin && lastAskWasAbout("origin", history),
+    };
+
+    if (repeats.destination || repeats.date || repeats.origin) {
+      if (allSatisfied) {
+        // Everything is already filled — promote to search.
         intel.mode = "search";
+      } else if (!hasDest) {
+        // Need destination — let the LLM's pivot stand (or generic question).
+      } else if (!hasDate) {
+        // Need date — keep clarify but at least the question must be about date.
+      } else if (wantsFlights && !hasOrigin) {
+        // Need origin — keep clarify.
       }
     }
 

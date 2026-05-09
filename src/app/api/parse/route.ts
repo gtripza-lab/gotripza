@@ -12,6 +12,8 @@ import {
   detectWants,
   findAnyCity,
 } from "@/lib/mock-intent";
+import { rateLimit } from "@/lib/security/rate-limit";
+import { captureError } from "@/lib/observability/sentry";
 
 function genAnonSid(): string {
   // 22-char URL-safe random id
@@ -23,20 +25,11 @@ function genAnonSid(): string {
 
 export const runtime = "nodejs";
 
-// ── In-memory rate limiter: 15 AI requests/min per IP ─────────────────────
-const _parseCounters = new Map<string, { count: number; resetAt: number }>();
-function isRateLimited(ip: string): boolean {
-  const now = Date.now();
-  const rec = _parseCounters.get(ip);
-  if (!rec || now > rec.resetAt) {
-    _parseCounters.set(ip, { count: 1, resetAt: now + 60_000 });
-    return false;
-  }
-  rec.count++;
-  return rec.count > 15;
-}
-
 const MAX_QUERY_LENGTH = 600;
+// B2: Per-message history cap. Stops 50KB×12 token bombs at the door.
+const MAX_HISTORY_MSG_LEN = 1000;
+// B2: Reject oversized bodies before req.json() pays the parsing cost.
+const MAX_BODY_BYTES = 64 * 1024;
 
 function isProviderError(message: string) {
   return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid|openai/i.test(
@@ -116,7 +109,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   // Advice questions (visa, safety, weather, tips) → answer briefly and offer to plan
   if (isAdviceQuery(query)) {
     return NextResponse.json({
-      intent: { origin: null, destination: "", departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, notes: null },
+      intent: { origin: null, destination: "", departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
       locale,
       mode: "advice",
       message: isAr
@@ -227,12 +220,18 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limiting
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0] ?? "unknown";
-  if (isRateLimited(ip)) {
+  // B2: Reject oversized payloads before parsing.
+  const cl = Number(req.headers.get("content-length") ?? "0");
+  if (cl > MAX_BODY_BYTES) {
+    return NextResponse.json({ error: "payload_too_large" }, { status: 413 });
+  }
+
+  // B1: Production rate limit — Supabase-backed sliding window, composite key
+  const rl = await rateLimit(req, "parse", { limit: 20, windowSec: 60 });
+  if (!rl.allowed) {
     return NextResponse.json(
       { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": "60" } },
+      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 60) } },
     );
   }
 
@@ -240,7 +239,6 @@ export async function POST(req: NextRequest) {
   let history: ChatTurn[] = [];
   let context: TravelContext | undefined;
   try {
-    // Accept legacy { role: "model" } from older clients; normalize to "assistant".
     type IncomingTurn = { role?: string; text?: string; mode?: string };
     const body = (await req.json()) as {
       query?: string;
@@ -257,7 +255,8 @@ export async function POST(req: NextRequest) {
             t.mode === "clarify" || t.mode === "search" || t.mode === "advice"
               ? (t.mode as ChatTurn["mode"])
               : undefined;
-          return [{ role, text: t.text, mode }];
+          // B2: clamp every history message length
+          return [{ role, text: t.text.slice(0, MAX_HISTORY_MSG_LEN), mode }];
         })
       : [];
     context = body.context;
@@ -267,6 +266,8 @@ export async function POST(req: NextRequest) {
     if (query.length > MAX_QUERY_LENGTH) {
       query = query.slice(0, MAX_QUERY_LENGTH);
     }
+    // B2: strip control / zero-width / direction-override chars
+    query = query.replace(/[​-‏‪-‮ -]/g, "");
   } catch {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
@@ -281,6 +282,7 @@ export async function POST(req: NextRequest) {
       adults: 2,
       budget_usd: null,
       trip_type: null,
+      cabin_class: null,
     };
 
     // Identity: signed-in user (for memory) + anon session id (for cross-turn
@@ -337,11 +339,13 @@ export async function POST(req: NextRequest) {
     });
 
     if (mintedSid) {
+      // M8: sameSite=lax preserves SEO cross-site landings (Google → gotripza.com),
+      // and our middleware-level Origin allowlist provides CSRF defence (B7).
       response.cookies.set("gtz_sid", mintedSid, {
         httpOnly: true,
-        sameSite: "strict",        // M6: was "lax" — strict prevents CSRF misuse
+        sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 30, // M6: was 1 year — 30 days is sufficient for session continuity
+        maxAge: 60 * 60 * 24 * 30, // 30 days
         path: "/",
       });
     }
@@ -353,6 +357,7 @@ export async function POST(req: NextRequest) {
       "[parse] AI engine error, falling back to heuristic:",
       message,
     );
+    void captureError(err, { route: "parse", phase: "orchestrator" });
     return heuristicFallback(
       query,
       isProviderError(message)

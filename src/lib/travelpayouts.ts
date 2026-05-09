@@ -1,5 +1,5 @@
 import "server-only";
-import { buildHotelUrl } from "./partners";
+import { buildHotelUrl, aviasalesTripClass, type CabinClass } from "./partners";
 
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 const TOKEN  = process.env.TRAVELPAYOUTS_TOKEN ?? "";
@@ -57,6 +57,7 @@ async function fetchFlightPage(
   returnAt: string | null,
   currency: string,
   subid?: string,
+  tripClass?: "Y" | "W" | "C" | "F" | null,
 ): Promise<FlightOffer[]> {
   const u = new URL(`${BASE}/aviasales/v3/prices_for_dates`);
   u.searchParams.set("origin", origin);
@@ -73,6 +74,8 @@ async function fetchFlightPage(
   u.searchParams.set("currency", currency);
   u.searchParams.set("sorting", "price");
   u.searchParams.set("limit", "10");
+  // B4: cabin_class threading
+  if (tripClass) u.searchParams.set("trip_class", tripClass);
   u.searchParams.set("token", TOKEN);
 
   const res = await fetch(u.toString(), {
@@ -110,10 +113,12 @@ export async function searchFlights(params: {
   return_date?: string | null;
   currency?: string;
   subid?: string;
+  cabin_class?: CabinClass | null;
 }): Promise<FlightOffer[]> {
   const currency = (params.currency ?? "usd").toLowerCase();
-  // If no origin specified, skip flight search (can't query without origin)
   if (!params.origin) return [];
+
+  const tripClass = aviasalesTripClass(params.cabin_class);
 
   // First attempt: with dates (if provided and in range)
   const results = await fetchFlightPage(
@@ -123,6 +128,7 @@ export async function searchFlights(params: {
     params.return_date ?? null,
     currency,
     params.subid,
+    tripClass,
   );
   if (results.length > 0) return results;
 
@@ -134,6 +140,7 @@ export async function searchFlights(params: {
     null,
     currency,
     params.subid,
+    tripClass,
   );
   return fallback;
 }

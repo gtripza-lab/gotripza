@@ -13,14 +13,22 @@ export async function POST(request: NextRequest) {
     const rawBody = await request.text();
 
     const signature = request.headers.get("x-tp-signature") ?? "";
-    const secret = process.env.TP_WEBHOOK_SECRET ?? "changeme";
+    const secret = process.env.TP_WEBHOOK_SECRET;
+    // B5: Fail-closed — refuse all requests when secret is unset (no fallback)
+    if (!secret) {
+      console.error("[webhook/tp] TP_WEBHOOK_SECRET unset — refusing");
+      return NextResponse.json(
+        { ok: false, error: "service_unavailable" },
+        { status: 503 }
+      );
+    }
     const expected = computeSignature(rawBody, secret);
-
+    const sigBuf = Buffer.from(signature, "utf8");
+    const expBuf = Buffer.from(expected, "utf8");
+    // Length check before timingSafeEqual (which throws on length mismatch)
     if (
-      !crypto.timingSafeEqual(
-        Buffer.from(signature, "utf8"),
-        Buffer.from(expected, "utf8")
-      )
+      sigBuf.length !== expBuf.length ||
+      !crypto.timingSafeEqual(sigBuf, expBuf)
     ) {
       return NextResponse.json(
         { ok: false, error: "Invalid signature" },

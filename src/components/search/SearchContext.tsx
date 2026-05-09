@@ -175,8 +175,8 @@ export function SearchProvider({
         wants,
         followup,
         currency: searchJson.currency ?? uiCurrency,
-        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=${process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867"}`,
-        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://www.hotellook.com/search?marker=${process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867"}`,
+        flightSearchUrl: searchJson.flightSearchUrl ?? `https://www.aviasales.com/?marker=${process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867"}&subid=search_page_fallback`,
+        hotelSearchUrl: searchJson.hotelSearchUrl ?? `https://www.hotellook.com/search?marker=${process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867"}&subid=search_page_fallback`,
         // Intelligence
         budget_verdict: parsedJson.budget_verdict ?? null,
         confidence: parsedJson.confidence ?? null,
