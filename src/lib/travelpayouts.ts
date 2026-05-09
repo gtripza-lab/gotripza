@@ -15,6 +15,9 @@ if (!TOKEN && process.env.NODE_ENV !== "test") {
   );
 }
 
+/** Returns true when the Travelpayouts token is configured and API calls can proceed. */
+const HAS_TOKEN = Boolean(TOKEN);
+
 export type FlightOffer = {
   origin: string;
   destination: string;
@@ -59,6 +62,7 @@ async function fetchFlightPage(
   subid?: string,
   tripClass?: "Y" | "W" | "C" | "F" | null,
 ): Promise<FlightOffer[]> {
+  if (!HAS_TOKEN) return []; // skip API call when token not configured
   const u = new URL(`${BASE}/aviasales/v3/prices_for_dates`);
   u.searchParams.set("origin", origin);
   u.searchParams.set("destination", destination);
@@ -155,6 +159,7 @@ async function fetchHotelPage(
   _checkInOrig?: string | null,
   _checkOutOrig?: string | null,
 ): Promise<HotelOffer[]> {
+  if (!HAS_TOKEN) return []; // skip API call when token not configured
   const u = new URL("https://engine.hotellook.com/api/v2/cache.json");
   u.searchParams.set("location", location);
   if (checkIn) {

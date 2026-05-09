@@ -1,6 +1,7 @@
 import dynamic from "next/dynamic";
 import { getDashboardStats } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
+import { AdminAutoRefresh } from "@/components/admin/AdminAutoRefresh";
 
 const AreaChartCard = dynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.AreaChartCard })),
@@ -59,10 +60,13 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-[#08080d] px-6 py-8 space-y-8">
+      {/* Auto-refresh every 60s without a page reload */}
+      <AdminAutoRefresh intervalMs={60_000} />
+
       {/* Header */}
       <div>
         <h1 className="text-white text-2xl font-semibold tracking-tight">Operations Dashboard</h1>
-        <p className="text-white/40 text-sm mt-1">Real-time metrics and activity</p>
+        <p className="text-white/40 text-sm mt-1">Real-time metrics and activity · auto-refreshes every 60s</p>
       </div>
 
       {/* Metric Cards */}

@@ -49,15 +49,19 @@ export default async function SearchPage({
   const initialMessage = searchParams?.q?.trim() || undefined;
 
   return (
-    <>
+    // Outer wrapper fills exactly the dynamic viewport — no overflow, no scroll
+    <div className="flex h-[100dvh] flex-col overflow-hidden bg-[#06111e]">
       <Navbar dict={dict} locale={locale as Locale} />
-      <main
-        className="overflow-hidden bg-[#06111e] h-[calc(100dvh-128px)] md:h-[calc(100dvh-64px)]"
-      >
+      {/*
+        flex-1 + min-h-0 → fills remaining height after Navbar (works on all devices).
+        pb-16 md:pb-0    → reserves 64px at the bottom on mobile to clear the fixed BottomNav;
+                           on md+ there is no BottomNav so no padding needed.
+      */}
+      <main className="flex-1 min-h-0 overflow-hidden pb-16 md:pb-0">
         <ChatProvider locale={locale as Locale} initialCurrency={currency} initialMessage={initialMessage}>
           <ChatInterface dict={dict} />
         </ChatProvider>
       </main>
-    </>
+    </div>
   );
 }

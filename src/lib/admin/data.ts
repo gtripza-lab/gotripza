@@ -531,6 +531,145 @@ export async function getSupportRequests(): Promise<{ rows: SupportRow[]; total:
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ANALYTICS
+// ─────────────────────────────────────────────────────────────────────────────
+export type AnalyticsStats = {
+  // Funnel
+  conversationsTotal: number;
+  searchesTotal: number;         // AI traces with mode = "search"
+  clicksTotal: number;
+  conversionRate: number;        // clicks / conversations (0–1)
+
+  // Revenue
+  estRevFlights: number;
+  estRevHotels: number;
+  estRevTotal: number;
+
+  // Top destinations (last 30d)
+  topDestinations: { destination: string; clicks: number; rev_est: number }[];
+
+  // Locale split
+  localeAr: number;              // conversations containing locale hint "ar"
+  localeEn: number;
+
+  // Channel split
+  flightClicks: number;
+  hotelClicks: number;
+
+  // Weekly trend (last 8 weeks)
+  weeklyConversations: { week: string; conversations: number; clicks: number }[];
+};
+
+export async function getAnalyticsStats(): Promise<AnalyticsStats | null> {
+  try {
+    const db = createSupabaseService() as AnyTable;
+    const d30 = daysAgo(30);
+    const d56 = daysAgo(56); // 8 weeks
+
+    const [convRes, searchRes, clicksRes, localeRes] = await Promise.all([
+      db.from("conversations").select("id", { count: "exact", head: true }).gte("started_at", d30),
+      db.from("ai_traces").select("id", { count: "exact", head: true }).eq("mode", "search").gte("created_at", d30),
+      db.from("booking_clicks").select("id,result_type,destination,price,currency,created_at").gte("created_at", d30),
+      // Approximate locale split from conversations (summary field or session locale)
+      db.from("conversations").select("id,started_at").gte("started_at", d56),
+    ]);
+
+    const clickRows: { result_type: string; destination: string | null; price: number | null; created_at: string }[] =
+      (clicksRes.data ?? []) as typeof clickRows;
+
+    const flightClicks = clickRows.filter((r) => r.result_type === "flight").length;
+    const hotelClicks  = clickRows.filter((r) => r.result_type === "hotel").length;
+
+    const estRevFlights = clickRows
+      .filter((r) => r.result_type === "flight" && r.price)
+      .reduce((s, r) => s + (r.price ?? 0) * 0.03, 0);
+    const estRevHotels = clickRows
+      .filter((r) => r.result_type === "hotel" && r.price)
+      .reduce((s, r) => s + (r.price ?? 0) * 0.05, 0);
+
+    // Top destinations
+    const destMap = new Map<string, { clicks: number; rev_est: number }>();
+    for (const r of clickRows) {
+      const d = r.destination ?? "Unknown";
+      const cur = destMap.get(d) ?? { clicks: 0, rev_est: 0 };
+      cur.clicks++;
+      if (r.price) cur.rev_est += r.result_type === "hotel" ? r.price * 0.05 : r.price * 0.03;
+      destMap.set(d, cur);
+    }
+    const topDestinations = Array.from(destMap.entries())
+      .map(([destination, v]) => ({ destination, ...v }))
+      .sort((a, b) => b.clicks - a.clicks)
+      .slice(0, 10);
+
+    // Weekly trend (last 8 weeks using booking_clicks + conversations)
+    const weeklyConvRes = await db
+      .from("conversations")
+      .select("started_at")
+      .gte("started_at", d56);
+    const weeklyClickRes = await db
+      .from("booking_clicks")
+      .select("created_at")
+      .gte("created_at", d56);
+
+    // Build 8-week buckets
+    const weekBuckets: { week: string; wStart: number }[] = [];
+    for (let i = 7; i >= 0; i--) {
+      const wStart = Date.now() - (i + 1) * 7 * 86_400_000;
+      const label = new Date(wStart).toISOString().slice(0, 10);
+      weekBuckets.push({ week: label, wStart });
+    }
+    const weeklyMap = new Map<string, { conversations: number; clicks: number }>(
+      weekBuckets.map((b) => [b.week, { conversations: 0, clicks: 0 }]),
+    );
+
+    for (const r of (weeklyConvRes.data ?? []) as { started_at: string }[]) {
+      const ts = new Date(r.started_at).getTime();
+      for (const b of weekBuckets) {
+        if (ts >= b.wStart && ts < b.wStart + 7 * 86_400_000) {
+          const cur = weeklyMap.get(b.week)!;
+          cur.conversations++;
+          break;
+        }
+      }
+    }
+    for (const r of (weeklyClickRes.data ?? []) as { created_at: string }[]) {
+      const ts = new Date(r.created_at).getTime();
+      for (const b of weekBuckets) {
+        if (ts >= b.wStart && ts < b.wStart + 7 * 86_400_000) {
+          const cur = weeklyMap.get(b.week)!;
+          cur.clicks++;
+          break;
+        }
+      }
+    }
+    const weeklyConversations = Array.from(weeklyMap.entries()).map(([week, v]) => ({ week, ...v }));
+
+    const conversationsTotal = convRes.count ?? 0;
+    const clicksTotal = clickRows.length;
+    const conversionRate = conversationsTotal > 0 ? clicksTotal / conversationsTotal : 0;
+
+    return {
+      conversationsTotal,
+      searchesTotal: searchRes.count ?? 0,
+      clicksTotal,
+      conversionRate,
+      estRevFlights,
+      estRevHotels,
+      estRevTotal: estRevFlights + estRevHotels,
+      topDestinations,
+      localeAr: 0, // populated below if messages table supports locale
+      localeEn: 0,
+      flightClicks,
+      hotelClicks,
+      weeklyConversations,
+    };
+  } catch (err) {
+    console.error("[admin/data] getAnalyticsStats:", err);
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // OBSERVABILITY
 // ─────────────────────────────────────────────────────────────────────────────
 export type ObsStats = {

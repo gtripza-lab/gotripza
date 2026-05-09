@@ -7,7 +7,6 @@ import { defaultLocale, locales } from "@/i18n/config";
 const CSRF_ALLOWED_HOSTS = new Set([
   "gotripza.com",
   "www.gotripza.com",
-  "search.gotripza.com",
   // Vercel production alias
   "gotripza-nu.vercel.app",
 ]);
@@ -88,21 +87,6 @@ export function middleware(req: NextRequest) {
   if (csrfRes) return csrfRes;
 
   const { pathname } = req.nextUrl;
-  const host = req.headers.get("host") ?? "";
-
-  // ── Subdomain routing ──────────────────────────────────────────────────────
-  // search.gotripza.com → always serve the /[locale]/search page
-  if (host.startsWith("search.")) {
-    const locale = pickLocale(req);
-    const isLocalised = locales.some(
-      (l) => pathname === `/${l}/search` || pathname.startsWith(`/${l}/search`),
-    );
-    if (isLocalised) return NextResponse.next();
-
-    const url = req.nextUrl.clone();
-    url.pathname = `/${locale}/search`;
-    return NextResponse.redirect(url);
-  }
 
   // ── Main domain locale redirect ────────────────────────────────────────────
   const hasLocale = locales.some(

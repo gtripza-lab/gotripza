@@ -183,7 +183,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto px-3 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
+        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
         style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}
       >
         <AnimatePresence initial={false}>
@@ -346,7 +346,12 @@ function MessageBubble({
         </div>
       )}
 
-      <div className={`max-w-[88%] sm:max-w-[80%] space-y-3 ${isUser ? "items-end" : "items-start"} flex flex-col`}>
+      {/* Search result messages get full width; regular bubbles stay capped at 88% */}
+      <div className={`${
+        !isUser && message.searchData && message.mode === "search"
+          ? "w-full min-w-0"
+          : "max-w-[88%] sm:max-w-[80%]"
+      } space-y-3 ${isUser ? "items-end" : "items-start"} flex flex-col`}>
         {/* Text bubble */}
         {message.text && (
           <div
@@ -726,15 +731,17 @@ function FlightCards({
       {options.map(({ type, flight }) => {
         const l = labelMap[type];
         return (
+          /* Mobile: stack info on top, price+button below.  sm+: single row */
           <div key={`${type}-${flight.flight_number}`}
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.10] bg-white/[0.06] p-3 backdrop-blur-sm transition hover:border-white/[0.18] hover:bg-white/[0.09]"
+            className="flex flex-col gap-2 rounded-xl border border-white/[0.10] bg-white/[0.06] p-3 backdrop-blur-sm transition hover:border-white/[0.18] hover:bg-white/[0.09] sm:flex-row sm:items-center sm:justify-between"
           >
-            <div className="flex items-center gap-3 min-w-0">
+            {/* Top row: badge + route info */}
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${l.cls}`}>
                 {l.icon} {l.badge}
               </span>
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-white/90">
+                <div className="flex flex-wrap items-center gap-1 text-xs font-semibold text-white/90">
                   <span className="font-mono">{flight.origin}</span>
                   <ArrowRight className="h-3 w-3 text-white/35 rtl:rotate-180" />
                   <span className="font-mono">{flight.destination}</span>
@@ -742,13 +749,14 @@ function FlightCards({
                     <span className="text-white/35">· {durationLabel(flight.duration)}</span>
                   )}
                 </div>
-                <p className="text-[10px] text-white/40">
+                <p className="truncate text-[10px] text-white/40">
                   {flight.airline} {flight.flight_number}
                   {flight.departure_at && ` · ${flight.departure_at.slice(0, 10)}`}
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            {/* Bottom row on mobile: price + book button, full width */}
+            <div className="flex items-center justify-between gap-2 sm:shrink-0 sm:justify-end">
               <span className="font-display text-sm font-bold text-white">{fmt(flight.price)}</span>
               <a
                 href={flight.link}
@@ -805,15 +813,17 @@ function HotelCards({
       {options.map(({ type, hotel }) => {
         const l = labelMap[type];
         return (
+          /* Mobile: stack info on top, price+button below.  sm+: single row */
           <div key={`${type}-${hotel.hotelId}`}
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.10] bg-white/[0.06] p-3 backdrop-blur-sm transition hover:border-white/[0.18] hover:bg-white/[0.09]"
+            className="flex flex-col gap-2 rounded-xl border border-white/[0.10] bg-white/[0.06] p-3 backdrop-blur-sm transition hover:border-white/[0.18] hover:bg-white/[0.09] sm:flex-row sm:items-center sm:justify-between"
           >
-            <div className="flex items-center gap-3 min-w-0">
+            {/* Top row: badge + hotel name */}
+            <div className="flex items-center gap-2.5 min-w-0">
               <span className={`shrink-0 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${l.cls}`}>
                 {l.icon} {l.badge}
               </span>
               <div className="min-w-0">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <p className="truncate text-xs font-semibold text-white/90">{hotel.hotelName}</p>
                   {hotel.stars && (
                     <span className="flex shrink-0 items-center gap-0.5 text-[10px] text-amber-400">
@@ -821,12 +831,13 @@ function HotelCards({
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-white/40">
+                <p className="truncate text-[10px] text-white/40">
                   {hotel.location.name} · {nights} {isAr ? "ليالٍ" : "nights"}
                 </p>
               </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            {/* Bottom row on mobile: price + book button, full width */}
+            <div className="flex items-center justify-between gap-2 sm:shrink-0 sm:justify-end">
               <span className="font-display text-sm font-bold text-white">{fmt(hotel.priceFrom)}</span>
               <a
                 href={hotel.link}
