@@ -1,7 +1,16 @@
 import { getBookingStats } from "@/lib/admin/data";
 import type { BookingStats, ClickRow } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
-import { AreaChartCard, BarChartCard } from "@/components/admin/AdminCharts";
+import dynamic from "next/dynamic";
+
+const AreaChartCard = dynamic(
+  () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.AreaChartCard })),
+  { ssr: false },
+);
+const BarChartCard = dynamic(
+  () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.BarChartCard })),
+  { ssr: false },
+);
 import { MousePointerClick, Plane, Hotel, LayoutGrid, DollarSign } from "lucide-react";
 
 export const metadata = { title: "Search & Clicks" };

@@ -1,6 +1,11 @@
 import { getCostStats } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
-import { AreaChartCard } from "@/components/admin/AdminCharts";
+import dynamic from "next/dynamic";
+
+const AreaChartCard = dynamic(
+  () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.AreaChartCard })),
+  { ssr: false },
+);
 
 export const metadata = { title: "Cost Center" };
 

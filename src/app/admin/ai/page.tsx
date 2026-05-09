@@ -2,7 +2,16 @@ import type { Metadata } from "next";
 import { Activity, Clock, Cpu, DollarSign, AlertTriangle } from "lucide-react";
 import { getAiStats } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
-import { BarChartCard, DonutChart } from "@/components/admin/AdminCharts";
+import nextDynamic from "next/dynamic";
+
+const BarChartCard = nextDynamic(
+  () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.BarChartCard })),
+  { ssr: false },
+);
+const DonutChart = nextDynamic(
+  () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.DonutChart })),
+  { ssr: false },
+);
 
 export const metadata: Metadata = {
   title: "AI Control Center",
