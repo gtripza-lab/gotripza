@@ -8,6 +8,8 @@ const CSRF_ALLOWED_HOSTS = new Set([
   "gotripza.com",
   "www.gotripza.com",
   "search.gotripza.com",
+  // Vercel production alias
+  "gotripza-nu.vercel.app",
 ]);
 
 function envCsrfHosts(): Set<string> {
@@ -16,8 +18,9 @@ function envCsrfHosts(): Set<string> {
   set.add("localhost:3000");
   set.add("localhost:3001");
   set.add("127.0.0.1:3000");
-  // Vercel preview deployments
+  // Vercel deployment URLs (auto-injected per build)
   if (process.env.VERCEL_URL) set.add(process.env.VERCEL_URL);
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) set.add(process.env.VERCEL_PROJECT_PRODUCTION_URL);
   if (process.env.NEXT_PUBLIC_APP_URL) {
     try {
       set.add(new URL(process.env.NEXT_PUBLIC_APP_URL).host);
