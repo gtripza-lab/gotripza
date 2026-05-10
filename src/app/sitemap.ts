@@ -13,6 +13,7 @@ const locales = ["en", "ar"] as const;
 const staticRoutes = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
   { path: "/search", priority: 1.0, changeFrequency: "daily" as const },
+  { path: "/plan", priority: 0.95, changeFrequency: "weekly" as const },
   { path: "/ai-travel-assistant", priority: 0.95, changeFrequency: "monthly" as const },
   { path: "/destinations", priority: 0.9, changeFrequency: "weekly" as const },
   { path: "/services", priority: 0.85, changeFrequency: "monthly" as const },

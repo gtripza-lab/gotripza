@@ -1,3 +1,6 @@
+import { BUDGET_PAGES, COMPARISON_PAGES, DESTINATION_SLUGS } from "@/lib/seo-destinations";
+import { ROUTE_SLUGS } from "@/lib/route-pairs";
+
 export const metadata = { title: "Content" };
 
 const contentFiles = [
@@ -23,6 +26,16 @@ const contentFiles = [
   },
 ] as const;
 
+const seoInventory = [
+  { label: "Destination hubs", count: DESTINATION_SLUGS.length * 2, note: "Arabic + English destination guides" },
+  { label: "Hotel readiness pages", count: DESTINATION_SLUGS.length * 2, note: "Temporary stay guides until hotel API is connected" },
+  { label: "Season pages", count: DESTINATION_SLUGS.length * 2, note: "Best time to visit pages" },
+  { label: "Visa pages", count: DESTINATION_SLUGS.length * 2, note: "Visa intent pages" },
+  { label: "Budget pages", count: BUDGET_PAGES.length * 2, note: "Trip cost and budget intent pages" },
+  { label: "Comparison pages", count: COMPARISON_PAGES.length * 2, note: "Destination-vs-destination pages" },
+  { label: "Flight route pages", count: ROUTE_SLUGS.length * 2, note: "High-intent route pages" },
+];
+
 export default function ContentPage() {
   return (
     <div className="min-h-screen bg-[#08080d] px-6 py-8 space-y-8">
@@ -30,6 +43,16 @@ export default function ContentPage() {
       <div>
         <h1 className="text-white text-2xl font-semibold tracking-tight">Content &amp; Destinations</h1>
         <p className="text-white/40 text-sm mt-1">Content sources, file locations, and configuration</p>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {seoInventory.slice(0, 4).map((item) => (
+          <div key={item.label} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+            <p className="text-xs text-white/35">{item.label}</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{item.count.toLocaleString()}</p>
+            <p className="mt-1 text-xs leading-5 text-white/35">{item.note}</p>
+          </div>
+        ))}
       </div>
 
       {/* Content Sources Card */}
@@ -85,6 +108,34 @@ export default function ContentPage() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
+        <div className="px-6 py-4 border-b border-white/[0.06]">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">
+            SEO Page Inventory
+          </h2>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-white/[0.06]">
+                <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">Cluster</th>
+                <th className="px-6 py-3 text-right text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">Pages</th>
+                <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">Purpose</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/[0.04]">
+              {seoInventory.map((item) => (
+                <tr key={item.label} className="hover:bg-white/[0.02] transition-colors">
+                  <td className="px-6 py-3.5 text-white/70 font-medium">{item.label}</td>
+                  <td className="px-6 py-3.5 text-right tabular-nums text-white/60">{item.count.toLocaleString()}</td>
+                  <td className="px-6 py-3.5 text-white/40 text-xs">{item.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

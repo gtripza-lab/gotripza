@@ -119,6 +119,10 @@
     @apply inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 text-xs font-medium text-white/80 backdrop-blur-md transition hover:bg-white/10;
   }
 
+  .planner-input {
+    @apply h-11 w-full rounded-xl border border-white/[0.10] bg-black/25 px-3 text-sm text-white/90 outline-none transition placeholder:text-white/25 focus:border-brand-primary/50 focus:bg-white/[0.06] focus:ring-2 focus:ring-brand-primary/15;
+  }
+
   .grid-noise {
     background-image:
       linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),

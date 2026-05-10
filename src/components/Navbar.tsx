@@ -18,6 +18,7 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const items = [
     { label: dict.nav.flights,  href: `/${locale}/search#flights`  },
     { label: dict.nav.hotels,   href: `/${locale}/search#hotels`   },
+    { label: isAr ? "خطط رحلتي" : "Trip Planner", href: `/${locale}/plan` },
     { label: isAr ? "الوجهات" : "Destinations", href: `/${locale}/destinations` },
     { label: isAr ? "احتياجات المسافر" : "Traveler Services", href: `/${locale}/services` },
     { label: dict.nav.blog,     href: `/${locale}/blog`            },

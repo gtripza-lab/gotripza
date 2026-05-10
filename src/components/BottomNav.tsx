@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, BookOpen, Phone } from "lucide-react";
+import { Home, Search, CalendarDays, Phone } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
@@ -22,9 +22,9 @@ export function BottomNav({ locale }: { locale: Locale }) {
       label: isAr ? "بحث" : "Search",
     },
     {
-      href: `/${locale}/blog`,
-      icon: BookOpen,
-      label: isAr ? "دليل" : "Guide",
+      href: `/${locale}/plan`,
+      icon: CalendarDays,
+      label: isAr ? "خطتي" : "Plan",
     },
     {
       href: `/${locale}/contact`,
