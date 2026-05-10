@@ -1,4 +1,5 @@
 import { ExternalLink } from "lucide-react";
+import { getAgentWorkflowStatuses } from "@/lib/openai/agent-workflows";
 
 export const metadata = { title: "Settings" };
 
@@ -61,6 +62,7 @@ export default function SettingsPage() {
   const tpWebhookSecret = process.env.TP_WEBHOOK_SECRET ?? "";
   const sentryDsn = process.env.SENTRY_DSN ?? "";
   const openaiApiKey = process.env.OPENAI_API_KEY ?? "";
+  const agentWorkflows = getAgentWorkflowStatuses();
 
   return (
     <div className="space-y-8 p-6">
@@ -119,7 +121,23 @@ export default function SettingsPage() {
         />
       </div>
 
-      {/* Section 3: Affiliate Configuration */}
+      {/* Section 3: OpenAI Agent Builder Workflows */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+        <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
+          OpenAI Agent Builder
+        </p>
+        <p className="mb-4 text-xs text-white/20">Workflow ID presence checks. Values are hidden.</p>
+        {agentWorkflows.map((workflow) => (
+          <FlagRow
+            key={workflow.key}
+            label={workflow.envVar}
+            status={workflow.configured ? "Set ✓" : "⚠ Not set"}
+            variant={workflow.configured ? "ok" : "warn"}
+          />
+        ))}
+      </div>
+
+      {/* Section 4: Affiliate Configuration */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           Affiliate Configuration
@@ -136,7 +154,7 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Section 4: Quick Links */}
+      {/* Section 5: Quick Links */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           Quick Links

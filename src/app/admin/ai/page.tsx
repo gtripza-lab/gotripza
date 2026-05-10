@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Activity, Clock, Cpu, DollarSign, AlertTriangle } from "lucide-react";
 import { getAiStats } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
+import { AgentWorkflowPanel } from "@/components/admin/AgentWorkflowPanel";
+import { getAgentWorkflowStatuses } from "@/lib/openai/agent-workflows";
 import nextDynamic from "next/dynamic";
 
 const BarChartCard = nextDynamic(
@@ -21,6 +23,7 @@ export const dynamic = "force-dynamic";
 
 export default async function AiControlCenterPage() {
   const stats = await getAiStats();
+  const agentWorkflows = getAgentWorkflowStatuses();
 
   if (!stats) {
     return (
@@ -40,6 +43,8 @@ export default async function AiControlCenterPage() {
         <h1 className="font-display text-xl font-semibold text-white">AI Control Center</h1>
         <p className="mt-1 text-xs text-white/35">Last 7 days · all models · all modes</p>
       </div>
+
+      <AgentWorkflowPanel workflows={agentWorkflows} />
 
       {/* Metric cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
