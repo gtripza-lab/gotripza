@@ -140,7 +140,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
   return (
     <div
-      className="flex h-full min-w-0 max-w-full flex-col overflow-hidden"
+      className="chat-viewport-lock flex h-full min-w-0 flex-col"
       style={{
         background: "linear-gradient(160deg, #06111e 0%, #0a1a30 50%, #071524 100%)",
         borderRadius: "inherit",
@@ -183,8 +183,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
-        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden px-2.5 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
-        style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}
+        className="chat-viewport-lock flex-1 min-h-0 min-w-0 overflow-y-auto px-2.5 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
+        style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain", overscrollBehaviorX: "none" }}
       >
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
@@ -206,7 +206,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
-            className="min-w-0 border-t border-white/[0.06] px-3 pb-3 sm:px-4"
+            className="chat-viewport-lock min-w-0 border-t border-white/[0.06] px-3 pb-3 sm:px-4"
             style={{ background: "rgba(0,0,0,0.20)" }}
           >
             <p className="mb-2.5 mt-2.5 text-[11px] font-medium text-white/35">
@@ -230,7 +230,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="shrink-0 w-full max-w-full border-t border-white/[0.08] px-2 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl overflow-hidden"
+        className="chat-viewport-lock shrink-0 border-t border-white/[0.08] px-2 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl"
         style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
         <div className="grid w-full max-w-full min-w-0 grid-cols-[minmax(0,1fr)_2.5rem] items-end gap-1.5 min-[390px]:grid-cols-[minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[minmax(0,1fr)_2.75rem_2.75rem] sm:gap-2.5">

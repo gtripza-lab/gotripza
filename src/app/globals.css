@@ -13,6 +13,8 @@
   html {
     color-scheme: dark;
     overflow-x: hidden;
+    width: 100%;
+    max-width: 100%;
   }
 
   html[dir="rtl"] {
@@ -24,6 +26,7 @@
     color: var(--foreground);
     min-height: 100vh;
     overflow-x: hidden;
+    width: 100%;
     max-width: 100vw;
     touch-action: pan-y;
     background-image:
@@ -127,6 +130,14 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .chat-viewport-lock {
+    inline-size: 100%;
+    max-inline-size: 100%;
+    overflow-x: hidden;
+    overflow-x: clip;
+    overscroll-behavior-x: none;
   }
 
   .scroll-hide::-webkit-scrollbar {

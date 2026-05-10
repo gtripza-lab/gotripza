@@ -50,14 +50,14 @@ export default async function SearchPage({
 
   return (
     // Outer wrapper fills the mobile viewport and never grows wider than it.
-    <div className="flex h-[100dvh] min-h-[100svh] w-full max-w-[100vw] flex-col overflow-hidden bg-[#06111e]">
+    <div className="chat-viewport-lock flex h-[100dvh] min-h-[100svh] w-[100dvw] max-w-[100dvw] flex-col bg-[#06111e]">
       <Navbar dict={dict} locale={locale as Locale} />
       {/*
         flex-1 + min-h-0 → fills remaining height after Navbar (works on all devices).
-        pb-16 md:pb-0    → reserves 64px at the bottom on mobile to clear the fixed BottomNav;
-                           on md+ there is no BottomNav so no padding needed.
+        The mobile BottomNav is intentionally hidden on /search so Raya has the
+        full visual viewport, especially when the iOS keyboard is open.
       */}
-      <main className="min-h-0 min-w-0 flex-1 overflow-hidden pb-16 md:pb-0">
+      <main className="chat-viewport-lock min-h-0 min-w-0 flex-1">
         <ChatProvider locale={locale as Locale} initialCurrency={currency} initialMessage={initialMessage}>
           <ChatInterface dict={dict} />
         </ChatProvider>
