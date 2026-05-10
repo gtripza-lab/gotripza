@@ -1,17 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ExternalLink, Star, BedDouble } from "lucide-react";
+import { Bell, BedDouble, CheckCircle2, MapPin, MessageCircle, Sparkles } from "lucide-react";
 import { isLocale, type Locale } from "@/i18n/config";
 import { DESTINATION_SLUGS, getDestination, BUDGET_PAGES, COMPARISON_PAGES } from "@/lib/seo-destinations";
-import { searchHotels } from "@/lib/travelpayouts";
 import { iataToCity } from "@/lib/iata";
-import { formatPrice } from "@/lib/utils";
-import { BreadcrumbJsonLd, HotelRichSnippet } from "@/components/JsonLd";
+import { BreadcrumbJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
-const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
 interface Props { params: { locale: string; slug: string } }
 
@@ -30,11 +27,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const name = isAr ? dest.nameAr : dest.nameEn;
 
   const title = isAr
-    ? `أفضل فنادق ${name} 2025 — مقارنة أسعار وحجز فوري`
-    : `Best Hotels in ${dest.nameEn} 2025 — Price Comparison & Instant Booking`;
+    ? `أفضل مناطق السكن في ${name} — فنادق GoTripza قريباً`
+    : `Where to Stay in ${dest.nameEn} — GoTripza Hotels Coming Soon`;
   const description = isAr
-    ? `اكتشف أفضل فنادق ${name} لكل الميزانيات: فنادق فاخرة، متوسطة، واقتصادية. مقارنة فورية وأسعار مضمونة.`
-    : `Discover the best hotels in ${dest.nameEn} for every budget — luxury, mid-range, and budget. Instant price comparison and guaranteed best rates.`;
+    ? `دليل مؤقت لأفضل مناطق السكن في ${name} ونصائح اختيار الفندق إلى أن يكتمل ربط عروض الفنادق المباشرة في GoTripza.`
+    : `A temporary guide to the best areas to stay in ${dest.nameEn}, with hotel selection tips while GoTripza live hotel inventory is being connected.`;
 
   return {
     title,
@@ -64,13 +61,6 @@ export default async function HotelsPage({ params }: Props) {
 
   const name = isAr ? dest.nameAr : dest.nameEn;
   const cityName = iataToCity(dest.iata);
-  const currency = "USD";
-
-  const hotelsResult = await searchHotels({ location: cityName, currency }).catch(() => []);
-  const hotels = hotelsResult.slice(0, 12);
-  const minPrice = hotels.length ? Math.min(...hotels.map((h) => h.priceFrom)) : undefined;
-
-  const hotelSearchUrl = `https://www.hotellook.com/search?destination=${encodeURIComponent(cityName)}&lang=${isAr ? "ar" : "en"}&marker=${MARKER}&subid=hotels_page`;
 
   const budgetPages = BUDGET_PAGES.filter((b) => b.destination === params.slug);
   const comparisons = COMPARISON_PAGES.filter(
@@ -111,9 +101,6 @@ export default async function HotelsPage({ params }: Props) {
   return (
     <>
       <BreadcrumbJsonLd items={breadcrumbs} />
-      {hotels.length > 0 && (
-        <HotelRichSnippet hotels={hotels.slice(0, 5)} currency={currency} destination={dest.nameEn} />
-      )}
 
       <main className="min-h-screen bg-ink-950 text-white pb-20 md:pb-0" dir={isAr ? "rtl" : "ltr"}>
         <div className="container mx-auto max-w-4xl px-4 py-12">
@@ -129,13 +116,13 @@ export default async function HotelsPage({ params }: Props) {
             <span className="text-4xl">{dest.flag}</span>
             <div>
               <h1 className="font-display text-2xl font-bold md:text-3xl">
-                {isAr ? `أفضل فنادق ${name}` : `Best Hotels in ${dest.nameEn}`}
+                {isAr ? `فنادق ${name} قريباً على GoTripza` : `${dest.nameEn} Hotels Are Coming Soon`}
               </h1>
-              {minPrice && (
-                <p className="mt-1 text-sm text-white/50">
-                  {isAr ? `الأسعار تبدأ من $${minPrice}/ليلة` : `Prices from $${minPrice}/night`}
-                </p>
-              )}
+              <p className="mt-1 text-sm text-white/50">
+                {isAr
+                  ? "نجهز ربط عروض الفنادق المباشرة. إلى ذلك الوقت، هذا دليل عملي لاختيار منطقة السكن الصحيحة."
+                  : "Live hotel inventory is being connected. Until then, use this practical guide to choose the right area."}
+              </p>
             </div>
           </div>
 
@@ -151,84 +138,62 @@ export default async function HotelsPage({ params }: Props) {
             ))}
           </div>
 
-          {/* Hotels list */}
-          <section className="mt-6">
-            {hotels.length > 0 ? (
-              <div className="space-y-3">
-                {hotels.map((h, i) => (
-                  <div
-                    key={h.hotelId}
-                    className="flex items-center gap-4 rounded-2xl border border-white/5 bg-white/[0.03] p-4 transition hover:border-brand-mint/20 hover:bg-brand-mint/5"
-                  >
-                    {/* Rank badge */}
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/5 text-xs font-bold text-white/40">
-                      {i + 1}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate font-semibold">{h.hotelName}</div>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-white/50">
-                        {h.stars ? (
-                          <span className="inline-flex items-center gap-0.5 text-amber-400">
-                            {Array.from({ length: h.stars }).map((_, j) => (
-                              <Star key={j} className="h-3 w-3 fill-current" />
-                            ))}
-                          </span>
-                        ) : null}
-                        <span>{h.location.name}</span>
-                      </div>
-                    </div>
-                    <div className="shrink-0 text-end">
-                      <div className="text-xs text-white/40">
-                        {isAr ? "من" : "from"}
-                      </div>
-                      <div className="font-bold text-white">{formatPrice(h.priceFrom, currency)}</div>
-                      <div className="text-xs text-white/40">
-                        {isAr ? "/ليلة" : "/night"}
-                      </div>
-                    </div>
-                    <a
-                      href={h.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-r from-brand-mint to-brand-deep text-white shadow transition hover:opacity-90"
-                      aria-label="Book hotel"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </a>
-                  </div>
-                ))}
+          <section className="mt-6 overflow-hidden rounded-2xl border border-brand-mint/20 bg-brand-mint/5">
+            <div className="grid gap-0 md:grid-cols-[1.1fr_0.9fr]">
+              <div className="p-6 md:p-8">
+                <div className="inline-flex items-center gap-2 rounded-full border border-brand-mint/20 bg-brand-mint/10 px-3 py-1 text-xs font-semibold text-brand-mint">
+                  <Bell className="h-3.5 w-3.5" />
+                  {isAr ? "قريباً: عروض الفنادق المباشرة" : "Coming soon: live hotel offers"}
+                </div>
+                <h2 className="mt-4 font-display text-xl font-semibold text-white">
+                  {isAr ? "لن نعرض أسعاراً ناقصة قبل اكتمال الربط" : "We will not show incomplete prices before the connection is ready"}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-white/55">
+                  {isAr
+                    ? "مزود الفنادق لم يفعّل الربط معنا بعد، لذلك جعلنا الصفحة واضحة ومفيدة: دليل مناطق السكن، نصائح اختيار الفندق، ورابط مباشر لريا كي تساعدك بخطة الإقامة."
+                    : "Our hotel provider has not activated the integration yet, so this page stays honest and useful: area guidance, hotel-picking tips, and a direct path to Raya for stay planning."}
+                </p>
               </div>
-            ) : (
-              <div className="flex flex-col items-center gap-4 rounded-2xl border border-brand-mint/20 bg-brand-mint/5 p-10 text-center">
-                <BedDouble className="h-10 w-10 text-brand-mint/60" />
-                <div>
-                  <p className="font-medium text-white/80">
-                    {isAr ? `ابحث عن فنادق ${name}` : `Search ${dest.nameEn} hotels`}
-                  </p>
-                  <p className="mt-1 text-sm text-white/45">
-                    {isAr ? "آلاف الخيارات بأسعار مضمونة" : "Thousands of options with guaranteed rates"}
-                  </p>
+              <div className="border-t border-white/[0.06] p-6 md:border-l md:border-t-0 md:p-8">
+                <div className="flex items-center gap-3">
+                  <BedDouble className="h-9 w-9 text-brand-mint" />
+                  <div>
+                    <p className="text-sm font-semibold text-white/80">
+                      {isAr ? "ما المتوفر الآن؟" : "What is available now?"}
+                    </p>
+                    <p className="text-xs text-white/40">{cityName}</p>
+                  </div>
+                </div>
+                <div className="mt-5 space-y-3">
+                  {[
+                    isAr ? "أفضل مناطق السكن حسب نوع الرحلة" : "Best stay areas by trip type",
+                    isAr ? "نصائح اختيار الفندق قبل الحجز" : "Hotel selection tips before booking",
+                    isAr ? "مساعدة ريا في بناء خطة الإقامة" : "Raya can help shape your stay plan",
+                  ].map((text) => (
+                    <div key={text} className="flex items-center gap-2 text-sm text-white/60">
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-mint" />
+                      {text}
+                    </div>
+                  ))}
                 </div>
               </div>
-            )}
+            </div>
           </section>
 
-          {/* Search all hotels CTA */}
           <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href={hotelSearchUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href={`/${locale}/search?q=${encodeURIComponent(isAr ? `ساعديني أختار منطقة سكن في ${dest.nameAr}` : `Help me choose where to stay in ${dest.nameEn}`)}`}
               className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-mint to-brand-deep px-5 py-2.5 text-sm font-semibold text-white shadow-glow transition hover:scale-[1.02]"
             >
-              {isAr ? `ابحث عن كل فنادق ${name}` : `Search all ${dest.nameEn} hotels`}
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
+              <MessageCircle className="h-4 w-4" />
+              {isAr ? "اسأل ريا عن السكن" : "Ask Raya about stays"}
+            </Link>
             <Link
-              href={`/${locale}/search?q=${encodeURIComponent(isAr ? `فنادق ${dest.nameAr}` : `hotels in ${dest.nameEn}`)}`}
+              href={`/${locale}/contact`}
               className="inline-flex items-center gap-2 rounded-full border border-white/20 px-5 py-2.5 text-sm text-white/70 transition hover:border-white/40 hover:text-white"
             >
-              {isAr ? "استخدم الذكاء الاصطناعي" : "Use AI Search"}
+              <Bell className="h-4 w-4" />
+              {isAr ? "تواصل معنا للتحديثات" : "Contact us for updates"}
             </Link>
           </div>
 
@@ -240,8 +205,36 @@ export default async function HotelsPage({ params }: Props) {
             <div className="grid gap-3 sm:grid-cols-2">
               {dest.neighborhoods.map((n) => (
                 <div key={n.name} className="rounded-xl border border-white/5 bg-white/[0.03] p-3">
-                  <div className="font-semibold text-sm">{isAr ? n.nameAr : n.name}</div>
+                  <div className="flex items-center gap-2 font-semibold text-sm">
+                    <MapPin className="h-3.5 w-3.5 text-brand-mint" />
+                    {isAr ? n.nameAr : n.name}
+                  </div>
                   <div className="mt-1 text-xs text-white/45 capitalize">{n.type}</div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-8 rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6">
+            <h2 className="font-display text-lg font-bold">
+              {isAr ? "نصائح ريا لاختيار الفندق" : "Raya's Hotel-Picking Tips"}
+            </h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {(isAr
+                ? [
+                    "اختر منطقة قريبة من نشاطك الأساسي، وليس الأرخص فقط.",
+                    "راجع سياسة الإلغاء قبل الدفع، خصوصاً في المواسم.",
+                    "للعوائل: تحقق من مساحة الغرفة والمواصلات قبل التقييم.",
+                  ]
+                : [
+                    "Choose the area closest to your main activities, not only the cheapest.",
+                    "Check cancellation rules before paying, especially in peak seasons.",
+                    "For families, verify room size and transport before trusting ratings.",
+                  ]
+              ).map((tip) => (
+                <div key={tip} className="rounded-xl border border-white/[0.06] bg-black/20 p-3 text-sm leading-6 text-white/55">
+                  <Sparkles className="mb-2 h-4 w-4 text-brand-mint" />
+                  {tip}
                 </div>
               ))}
             </div>

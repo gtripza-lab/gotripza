@@ -1,4 +1,5 @@
-import { getSupportRequests } from "@/lib/admin/data";
+import { revalidatePath } from "next/cache";
+import { updateSupportRequest, getSupportRequests } from "@/lib/admin/data";
 import type { SupportRow } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
 
@@ -28,12 +29,46 @@ function isThisWeek(dateStr: string): boolean {
   return d >= weekAgo;
 }
 
+function countBy(rows: SupportRow[], key: keyof SupportRow) {
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    const value = String(row[key] ?? "unknown");
+    map.set(value, (map.get(value) ?? 0) + 1);
+  }
+  return Array.from(map.entries())
+    .map(([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+async function updateTicketAction(formData: FormData) {
+  "use server";
+  const id = Number(formData.get("id"));
+  const status = String(formData.get("status") ?? "");
+  const priority = String(formData.get("priority") ?? "");
+  const aiSummary = String(formData.get("ai_summary") ?? "").trim();
+
+  if (!Number.isFinite(id) || id <= 0) return;
+  await updateSupportRequest(id, {
+    status: ["open", "in_progress", "resolved", "closed"].includes(status)
+      ? (status as "open" | "in_progress" | "resolved" | "closed")
+      : undefined,
+    priority: ["low", "normal", "high", "urgent"].includes(priority)
+      ? (priority as "low" | "normal" | "high" | "urgent")
+      : undefined,
+    ai_summary: aiSummary || null,
+  });
+  revalidatePath("/admin/support");
+}
+
 export default async function SupportPage() {
   const { rows, total } = await getSupportRequests();
 
   const open = rows.filter((r) => r.status === "open" || r.status == null).length;
+  const inProgress = rows.filter((r) => r.status === "in_progress").length;
   const closed = rows.filter((r) => r.status === "closed" || r.status === "resolved").length;
   const thisWeek = rows.filter((r) => isThisWeek(r.created_at)).length;
+  const byCategory = countBy(rows, "category").slice(0, 5);
+  const byPriority = countBy(rows, "priority").slice(0, 4);
 
   return (
     <div className="min-h-screen bg-[#08080d] px-6 py-8 space-y-8">
@@ -47,8 +82,38 @@ export default async function SupportPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <MetricCard label="Total" value={total.toLocaleString()} />
         <MetricCard label="Open" value={open.toLocaleString()} color="yellow" />
-        <MetricCard label="Closed" value={closed.toLocaleString()} color="green" />
+        <MetricCard label="In Progress" value={inProgress.toLocaleString()} color="blue" />
+        <MetricCard label="Resolved" value={closed.toLocaleString()} color="green" />
         <MetricCard label="This Week" value={thisWeek.toLocaleString()} color="blue" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">
+            Top Support Topics
+          </h2>
+          <div className="mt-4 space-y-3">
+            {byCategory.length ? byCategory.map((item) => (
+              <div key={item.label} className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2">
+                <span className="text-sm capitalize text-white/65">{item.label}</span>
+                <span className="text-xs text-white/35">{item.count}</span>
+              </div>
+            )) : <p className="text-sm text-white/30">No categories yet</p>}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">
+            Priority Mix
+          </h2>
+          <div className="mt-4 space-y-3">
+            {byPriority.length ? byPriority.map((item) => (
+              <div key={item.label} className="flex items-center justify-between rounded-xl bg-white/[0.03] px-3 py-2">
+                <span className="text-sm capitalize text-white/65">{item.label}</span>
+                <span className="text-xs text-white/35">{item.count}</span>
+              </div>
+            )) : <p className="text-sm text-white/30">No priorities yet</p>}
+          </div>
+        </div>
       </div>
 
       {/* Table */}
@@ -86,6 +151,9 @@ export default async function SupportPage() {
                   <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
                     Created
                   </th>
+                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">
@@ -113,6 +181,11 @@ export default async function SupportPage() {
                           ? `${(row.body ?? "").slice(0, 180)}…`
                           : row.body ?? <span className="text-white/25 italic">No message body</span>}
                       </p>
+                      {row.ai_summary && (
+                        <p className="mt-2 rounded-lg bg-sky-500/[0.08] px-2 py-1 text-xs text-sky-200/70">
+                          {row.ai_summary}
+                        </p>
+                      )}
                     </td>
                     <td className="px-6 py-3.5">
                       {priorityBadge(row.priority)}
@@ -126,6 +199,43 @@ export default async function SupportPage() {
                         day: "numeric",
                         year: "numeric",
                       })}
+                    </td>
+                    <td className="px-6 py-3.5">
+                      <form action={updateTicketAction} className="flex min-w-[360px] items-center gap-2">
+                        <input type="hidden" name="id" value={row.id} />
+                        <select
+                          name="status"
+                          defaultValue={row.status ?? "open"}
+                          className="h-9 rounded-lg border border-white/[0.10] bg-black/30 px-2 text-xs text-white/70 outline-none"
+                        >
+                          <option value="open">Open</option>
+                          <option value="in_progress">In Progress</option>
+                          <option value="resolved">Resolved</option>
+                          <option value="closed">Closed</option>
+                        </select>
+                        <select
+                          name="priority"
+                          defaultValue={row.priority ?? "normal"}
+                          className="h-9 rounded-lg border border-white/[0.10] bg-black/30 px-2 text-xs text-white/70 outline-none"
+                        >
+                          <option value="low">Low</option>
+                          <option value="normal">Normal</option>
+                          <option value="high">High</option>
+                          <option value="urgent">Urgent</option>
+                        </select>
+                        <input
+                          name="ai_summary"
+                          defaultValue={row.ai_summary ?? ""}
+                          placeholder="Internal note"
+                          className="h-9 w-32 rounded-lg border border-white/[0.10] bg-black/30 px-2 text-xs text-white/70 outline-none placeholder:text-white/25"
+                        />
+                        <button
+                          type="submit"
+                          className="h-9 rounded-lg bg-white px-3 text-xs font-semibold text-black transition hover:bg-white/90"
+                        >
+                          Save
+                        </button>
+                      </form>
                     </td>
                   </tr>
                 ))}

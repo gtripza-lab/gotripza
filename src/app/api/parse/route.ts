@@ -15,6 +15,11 @@ import {
 import { resolveIata } from "@/lib/iata";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/observability/sentry";
+import { createSupabaseService } from "@/lib/supabase/service";
+
+// Supabase generated types do not include the newer support/memory tables yet.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyTable = any;
 
 function genAnonSid(): string {
   // 22-char URL-safe random id
@@ -143,6 +148,106 @@ function maybeDistanceAdvice(query: string) {
     clarification_question: null,
     mock: false,
   });
+}
+
+function detectSupportIntent(query: string) {
+  const q = query.toLowerCase();
+  const isSupport =
+    /دعم|مشكلة|خطأ|خلل|لا يعمل|ما يشتغل|لم تصل|ما وصلت|شكوى|استرجاع|استرداد|support|ticket|issue|bug|not working|complaint|refund/i.test(
+      q,
+    );
+  if (!isSupport) return null;
+
+  const category =
+    /استرجاع|استرداد|refund|cancel|إلغاء|الغاء/i.test(q)
+      ? "refund"
+      : /حجز|booking|reservation/i.test(q)
+        ? "booking"
+        : /خطأ|خلل|لا يعمل|ما يشتغل|bug|not working|technical/i.test(q)
+          ? "technical"
+          : /شكوى|complaint/i.test(q)
+            ? "complaint"
+            : "question";
+
+  const priority =
+    /عاجل|ضروري|urgent|emergency|مهم جدا|مهم جداً/i.test(q)
+      ? "urgent"
+      : /لا يعمل|ما يشتغل|not working|خطأ|خلل|bug/i.test(q)
+        ? "high"
+        : "normal";
+
+  return { category, priority };
+}
+
+async function maybeCreateSupportTicket(req: NextRequest, query: string) {
+  const support = detectSupportIntent(query);
+  if (!support) return null;
+
+  const locale = detectLocale(query);
+  const isAr = locale === "ar";
+  try {
+    const user = await getCurrentUser();
+    const sessionId = req.cookies.get("gtz_sid")?.value ?? null;
+    const db = createSupabaseService() as AnyTable;
+    const { data, error } = await db
+      .from("support_requests")
+      .insert({
+        user_id: user?.id ?? null,
+        category: support.category,
+        priority: support.priority,
+        subject: isAr ? "طلب دعم من محادثة ريا" : "Support request from Raya chat",
+        body: query,
+        ai_summary: isAr
+          ? "تم إنشاء التذكرة تلقائياً من محادثة ريا."
+          : "Automatically created from Raya chat.",
+        metadata: { source: "ria_chat", session_id: sessionId },
+      })
+      .select("id")
+      .single();
+
+    if (error) throw error;
+    const ticketId = (data as { id?: number } | null)?.id;
+    return NextResponse.json({
+      intent: {
+        origin: null,
+        destination: null,
+        departure_date: null,
+        return_date: null,
+        adults: 2,
+        budget_usd: null,
+        trip_type: null,
+        cabin_class: null,
+        notes: null,
+      },
+      context: {
+        origin: null,
+        destination: null,
+        departure_date: null,
+        return_date: null,
+        adults: 2,
+        budget_usd: null,
+        trip_type: null,
+        cabin_class: null,
+      },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? `وصلتني المشكلة وفتحت لك تذكرة دعم${ticketId ? ` رقم #${ticketId}` : ""}. فريق GoTripza يقدر يشوفها الآن من لوحة الدعم. لو تبغى نتابع معك بدقة، أرسل بريدك أو رقم الحجز في رسالة منفصلة.`
+        : `I created a support ticket${ticketId ? ` #${ticketId}` : ""}. The GoTripza team can now see it in the support dashboard. Send your email or booking reference in a separate message if you want precise follow-up.`,
+      wants: ["flights", "hotels"],
+      followup: null,
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: false,
+    });
+  } catch (err) {
+    void captureError(err, { route: "parse", phase: "support_escalation" });
+    return null;
+  }
 }
 
 // NOTE: The legacy enforceConversationalMode override has been replaced by
@@ -381,6 +486,9 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    const supportTicket = await maybeCreateSupportTicket(req, query);
+    if (supportTicket) return supportTicket;
+
     const distanceAdvice = maybeDistanceAdvice(query);
     if (distanceAdvice) return distanceAdvice;
 

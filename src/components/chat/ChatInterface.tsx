@@ -504,6 +504,7 @@ function ChatSearchResults({
               url={data.hotelSearchUrl}
               btnLabel={isAr ? "بحث مباشر" : "Live Search"}
               accent="mint"
+              live={false}
             />
           ) : (
             <HotelCards hotels={data.hotels} nights={nights} fmt={fmt} locale={locale} destination={data.intent.destination ?? ""} currency={currency} searchUrl={data.hotelSearchUrl} dict={dict} />
@@ -1036,11 +1037,12 @@ function UpsellCard({
 // ── Search CTA Card ───────────────────────────────────────────────────────
 
 function SearchCTACard({
-  isAr, icon, title, note, url, btnLabel, accent,
+  isAr, icon, title, note, url, btnLabel, accent, live = true,
 }: {
   isAr: boolean; icon: React.ReactNode; title: string;
   note?: string;
   url: string; btnLabel: string; accent: "primary" | "mint";
+  live?: boolean;
 }) {
   const isPrimary = accent === "primary";
   return (
@@ -1052,7 +1054,7 @@ function SearchCTACard({
             <span>{title}</span>
             <span className="flex items-center gap-1 text-[10px] text-white/30">
               <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${isPrimary ? "bg-violet-400" : "bg-emerald-400"}`} />
-              {isAr ? "مباشر" : "Live"}
+              {live ? (isAr ? "مباشر" : "Live") : (isAr ? "قريباً" : "Soon")}
             </span>
           </div>
           {note && <p className="mt-1 text-[11px] leading-relaxed text-white/40">{note}</p>}

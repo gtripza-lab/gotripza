@@ -44,6 +44,20 @@ function travelsWithFromTripType(
   return null;
 }
 
+function travelStyleFromText(text: string): TravelerPreferences["travel_style"] | null {
+  if (/فخم|رفاهية|luxury|5\s*star|five star|vip/i.test(text)) return "luxury";
+  if (/مريح|راحة|comfort|comfortable/i.test(text)) return "comfort";
+  if (/اقتصادي|رخيص|أوفر|budget|cheap|low cost/i.test(text)) return "budget";
+  if (/شنطة|باك باك|backpack|hostel/i.test(text)) return "backpacker";
+  return null;
+}
+
+function tripPaceFromText(text: string): TravelerPreferences["trip_pace"] | null {
+  if (/هادئ|راحة|استرخاء|relaxed|slow/i.test(text)) return "relaxed";
+  if (/مليان|كل يوم|نشاطات كثيرة|packed|busy/i.test(text)) return "packed";
+  return null;
+}
+
 /**
  * Update preferences after a successful turn.
  *
@@ -79,6 +93,11 @@ export async function extractAndUpdate(
 
     // Interest signals from message text (cheap regex scan)
     const text = userMessage.toLowerCase();
+    const style = travelStyleFromText(text);
+    if (style && style !== current.travel_style) patch.travel_style = style;
+    const pace = tripPaceFromText(text);
+    if (pace && pace !== current.trip_pace) patch.trip_pace = pace;
+
     const interestMap: Array<[RegExp, string]> = [
       [/beach|شاطئ|بحر/, "beach"],
       [/culture|متاحف|تاريخ/, "culture"],
@@ -138,6 +157,11 @@ export async function extractAndUpdateAnon(
     }
 
     const text = userMessage.toLowerCase();
+    const style = travelStyleFromText(text);
+    if (style && style !== current.travel_style) patch.travel_style = style;
+    const pace = tripPaceFromText(text);
+    if (pace && pace !== current.trip_pace) patch.trip_pace = pace;
+
     const interestMap: Array<[RegExp, string]> = [
       [/beach|شاطئ|بحر/, "beach"],
       [/culture|متاحف|تاريخ/, "culture"],

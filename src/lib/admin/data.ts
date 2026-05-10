@@ -1,7 +1,9 @@
 import "server-only";
 import { createSupabaseService } from "@/lib/supabase/service";
 
-type AnyTable = ReturnType<typeof createSupabaseService>;
+// Supabase generated types do not include all production tables yet.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AnyTable = any;
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function daysAgo(n: number): string {
@@ -512,6 +514,7 @@ export type SupportRow = {
   contact_email: string | null;
   subject: string | null;
   body: string | null;
+  ai_summary: string | null;
   category: string;
   priority: string;
   status: string | null;
@@ -526,7 +529,7 @@ export async function getSupportRequests(): Promise<{ rows: SupportRow[]; total:
     const { data, count } = await db
       .from("support_requests")
       .select(
-        "id,user_id,category,status,priority,subject,body,contact_email,created_at,updated_at",
+        "id,user_id,category,status,priority,subject,body,ai_summary,contact_email,created_at,updated_at",
         { count: "exact" },
       )
       .order("created_at", { ascending: false })
@@ -534,6 +537,30 @@ export async function getSupportRequests(): Promise<{ rows: SupportRow[]; total:
     return { rows: (data ?? []) as SupportRow[], total: count ?? 0 };
   } catch {
     return { rows: [], total: 0 };
+  }
+}
+
+export async function updateSupportRequest(
+  id: number,
+  patch: {
+    status?: "open" | "in_progress" | "resolved" | "closed";
+    priority?: "low" | "normal" | "high" | "urgent";
+    ai_summary?: string | null;
+  },
+): Promise<boolean> {
+  try {
+    const db = createSupabaseService() as AnyTable;
+    const cleanPatch = Object.fromEntries(
+      Object.entries(patch).filter(([, value]) => value !== undefined),
+    );
+    if (!Object.keys(cleanPatch).length) return true;
+    const { error } = await db
+      .from("support_requests")
+      .update(cleanPatch)
+      .eq("id", id);
+    return !error;
+  } catch {
+    return false;
   }
 }
 
