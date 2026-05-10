@@ -122,6 +122,22 @@ export type AiStats = {
   p95Latency: number;
   hourlyVolume: { hour: string; count: number }[];
   recentErrors: AiTraceRow[];
+  feedback: RiaFeedbackStats;
+};
+
+export type RiaFeedbackStats = {
+  total: number;
+  helpful: number;
+  unhelpful: number;
+  helpfulRate: number;
+  byMode: { mode: string; helpful: number; unhelpful: number; total: number }[];
+  recent: {
+    id: string | number;
+    value: "up" | "down";
+    mode: string;
+    path: string | null;
+    created_at: string;
+  }[];
 };
 
 // GPT-4o pricing (per 1K tokens, as of 2025)
@@ -141,7 +157,7 @@ export async function getAiStats(): Promise<AiStats | null> {
     const db = createSupabaseService() as AnyTable;
     const d7 = daysAgo(7);
 
-    const [tracesRes, errorsRes] = await Promise.all([
+    const [tracesRes, errorsRes, feedback] = await Promise.all([
       db.from("ai_traces")
         .select("id,mode,status,duration_ms,model,tokens_in,tokens_out,created_at")
         .gte("created_at", d7)
@@ -152,6 +168,7 @@ export async function getAiStats(): Promise<AiStats | null> {
         .gte("created_at", d7)
         .order("created_at", { ascending: false })
         .limit(50),
+      getRiaFeedbackStats(),
     ]);
 
     const traces: AiTraceRow[] = (tracesRes.data ?? []) as AiTraceRow[];
@@ -216,10 +233,61 @@ export async function getAiStats(): Promise<AiStats | null> {
       p95Latency,
       hourlyVolume,
       recentErrors: (errorsRes.data ?? []) as AiTraceRow[],
+      feedback,
     };
   } catch (err) {
     console.error("[admin/data] getAiStats:", err);
     return null;
+  }
+}
+
+export async function getRiaFeedbackStats(): Promise<RiaFeedbackStats> {
+  try {
+    const db = createSupabaseService() as AnyTable;
+    const d30 = daysAgo(30);
+    const { data } = await db
+      .from("events")
+      .select("id,payload,path,created_at")
+      .eq("name", "ria_response_feedback")
+      .gte("created_at", d30)
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    const rows = ((data ?? []) as {
+      id: string | number;
+      payload: { value?: string; mode?: string } | null;
+      path: string | null;
+      created_at: string;
+    }[]).filter((row) => row.payload?.value === "up" || row.payload?.value === "down");
+
+    const helpful = rows.filter((row) => row.payload?.value === "up").length;
+    const unhelpful = rows.length - helpful;
+    const modeMap = new Map<string, { helpful: number; unhelpful: number; total: number }>();
+    for (const row of rows) {
+      const mode = row.payload?.mode || "unknown";
+      const cur = modeMap.get(mode) ?? { helpful: 0, unhelpful: 0, total: 0 };
+      if (row.payload?.value === "up") cur.helpful++;
+      else cur.unhelpful++;
+      cur.total++;
+      modeMap.set(mode, cur);
+    }
+
+    return {
+      total: rows.length,
+      helpful,
+      unhelpful,
+      helpfulRate: rows.length ? helpful / rows.length : 0,
+      byMode: Array.from(modeMap.entries()).map(([mode, value]) => ({ mode, ...value })),
+      recent: rows.slice(0, 25).map((row) => ({
+        id: row.id,
+        value: row.payload?.value as "up" | "down",
+        mode: row.payload?.mode || "unknown",
+        path: row.path,
+        created_at: row.created_at,
+      })),
+    };
+  } catch {
+    return { total: 0, helpful: 0, unhelpful: 0, helpfulRate: 0, byMode: [], recent: [] };
   }
 }
 

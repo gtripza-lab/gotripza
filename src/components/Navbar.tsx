@@ -21,6 +21,7 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
     { label: isAr ? "خطط رحلتي" : "Trip Planner", href: `/${locale}/plan` },
     { label: isAr ? "الوجهات" : "Destinations", href: `/${locale}/destinations` },
     { label: isAr ? "احتياجات المسافر" : "Traveler Services", href: `/${locale}/services` },
+    { label: isAr ? "ريا المستشارة" : "Raya Advisor", href: `/${locale}/plus` },
     { label: dict.nav.blog,     href: `/${locale}/blog`            },
   ];
 

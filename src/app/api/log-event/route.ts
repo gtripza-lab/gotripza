@@ -14,6 +14,7 @@ const ALLOWED_EVENTS = new Set([
   "chat_message_sent",
   "chat_results_ready",
   "chat_followup_revealed",
+  "ria_response_feedback",
 ]);
 
 export async function POST(req: NextRequest) {

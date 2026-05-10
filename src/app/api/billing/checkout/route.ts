@@ -1,10 +1,11 @@
 /**
- * /api/billing/checkout — Create a Stripe Checkout Session for Ria Plus.
+ * /api/billing/checkout — Create a Checkout Session for Raya Travel Advisor.
  *
- * NOT WIRED into the UI yet. Activate when ready to start charging by:
+ * Activate paid plans by:
  *   1. Setting STRIPE_SECRET_KEY + STRIPE_PRICE_RIA_PLUS_MONTHLY in env
  *   2. Setting RIA_PLUS_GATING_ENABLED=true (in entitlements check)
- *   3. Wiring a "Upgrade" button that POSTs to this endpoint
+ *
+ * Launch offer: 90-day free trial for Raya Travel Advisor.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe, STRIPE_CONFIGURED, RIA_PLUS_PRICES } from "@/lib/billing/stripe";
@@ -49,11 +50,15 @@ export async function POST(req: NextRequest) {
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
+      subscription_data: {
+        trial_period_days: 90,
+        metadata: { user_id: user.id, plan: "plus", interval, trial_days: "90" },
+      },
       customer_email: user.email ?? undefined,
       client_reference_id: user.id,
-      success_url: `${origin}/${locale}?upgrade=success`,
-      cancel_url: `${origin}/${locale}?upgrade=cancel`,
-      metadata: { user_id: user.id, plan: "plus", interval },
+      success_url: `${origin}/${locale}/plus?trial=success`,
+      cancel_url: `${origin}/${locale}/plus?trial=cancel`,
+      metadata: { user_id: user.id, plan: "plus", interval, trial_days: "90" },
       allow_promotion_codes: true,
     });
     return NextResponse.json({ url: session.url });
