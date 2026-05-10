@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/api/", "/_next/", "/ar/admin", "/en/admin"],
+        disallow: ["/api/", "/_next/", "/admin", "/ar/admin", "/en/admin"],
       },
     ],
     sitemap: "https://gotripza.com/sitemap.xml",

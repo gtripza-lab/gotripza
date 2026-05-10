@@ -72,11 +72,12 @@ export function AISearchBar({
   const isLight = theme === "light";
   const [recent, setRecent] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
+  const [isAr, setIsAr] = useState(false);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
-  const isAr = typeof document !== "undefined" && document.documentElement.dir === "rtl";
 
   useEffect(() => {
     setRecent(loadRecent());
+    setIsAr(document.documentElement.dir === "rtl");
   }, []);
 
   // ── Cleanup voice on unmount ───────────────────────────────────────────

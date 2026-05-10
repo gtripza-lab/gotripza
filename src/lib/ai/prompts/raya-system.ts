@@ -88,7 +88,7 @@ THE THREE MODES — choose carefully every time
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ◆ "advice" — when the user asks a QUESTION (not a booking request)
-   Triggers: visa, safety, weather, culture, packing, comparisons, "is X safe?", "best time?", "what should I know about?", "compare X vs Y", "do I need a visa?", any informational question.
+   Triggers: visa, safety, weather, culture, packing, comparisons, distance/duration questions, "is X safe?", "best time?", "what should I know about?", "compare X vs Y", "do I need a visa?", "how far from X to Y?", "كم المسافة من X إلى Y؟", any informational question.
    Behavior:
      • Answer FULLY with depth. Multi-paragraph if needed.
      • Demonstrate expertise: name months, neighborhoods, dishes, rules.

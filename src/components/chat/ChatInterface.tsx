@@ -140,7 +140,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
   return (
     <div
-      className="flex h-full w-full flex-col overflow-hidden"
+      className="flex h-full min-w-0 max-w-full flex-col overflow-hidden"
       style={{
         background: "linear-gradient(160deg, #06111e 0%, #0a1a30 50%, #071524 100%)",
         borderRadius: "inherit",
@@ -149,21 +149,21 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     >
       {/* ── Chat header ─────────────────────────────────────────── */}
       <div
-        className="flex shrink-0 items-center justify-between border-b border-white/[0.08] px-4 py-3 backdrop-blur-xl sm:px-5 sm:py-3.5"
+        className="flex min-w-0 shrink-0 items-center justify-between gap-3 border-b border-white/[0.08] px-3 py-3 backdrop-blur-xl sm:px-5 sm:py-3.5"
         style={{ background: "rgba(0,0,0,0.35)", borderRadius: "inherit inherit 0 0" }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <div className="relative flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-brand-primary to-violet-600 shadow-lg shadow-violet-900/40">
             <Sparkles className="h-4.5 w-4.5 text-white" />
             <span className="absolute -bottom-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-[#071524] ring-2 ring-[#071524]">
               <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
             </span>
           </div>
-          <div>
-            <p className="text-sm font-semibold text-white/90">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-white/90">
               {isAr ? "ريا — مستشارة السفر الذكية" : "Raya — AI Travel Advisor"}
             </p>
-            <p className="text-[11px] text-white/40">
+            <p className="truncate text-[11px] text-white/40">
               {isAr ? "متاحة الآن · GoTripza" : "Online now · GoTripza"}
             </p>
           </div>
@@ -183,7 +183,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
-        className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-3 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
+        className="flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden px-2.5 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
         style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}
       >
         <AnimatePresence initial={false}>
@@ -206,13 +206,13 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 4 }}
-            className="border-t border-white/[0.06] px-4 pb-3"
+            className="min-w-0 border-t border-white/[0.06] px-3 pb-3 sm:px-4"
             style={{ background: "rgba(0,0,0,0.20)" }}
           >
             <p className="mb-2.5 mt-2.5 text-[11px] font-medium text-white/35">
               {isAr ? "ابدأ المحادثة:" : "Start a conversation:"}
             </p>
-            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+            <div className="flex max-w-full gap-2 overflow-x-auto pb-1 scroll-hide">
               {suggestions.map((s) => (
                 <button
                   key={s}
@@ -295,12 +295,12 @@ function TypingIndicator({ isAr }: { isAr: boolean }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-end gap-2.5"
+      className="flex w-full min-w-0 items-end gap-2"
     >
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-violet-600 shadow-md shadow-violet-900/30">
         <Sparkles className="h-3.5 w-3.5 text-white" />
       </div>
-      <div className="rounded-2xl rounded-bl-sm border border-white/[0.12] bg-white/[0.07] px-4 py-3 backdrop-blur-sm">
+      <div className="max-w-[calc(100%-2.5rem)] rounded-2xl rounded-bl-sm border border-white/[0.12] bg-white/[0.07] px-4 py-3 backdrop-blur-sm">
         <div className="flex items-center gap-1.5">
           <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300/70" style={{ animationDelay: "0ms" }} />
           <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300/70" style={{ animationDelay: "150ms" }} />
@@ -337,7 +337,7 @@ function MessageBubble({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
-      className={`flex items-end gap-2.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+      className={`flex w-full min-w-0 items-end gap-2 overflow-hidden ${isUser ? "justify-end" : "justify-start"}`}
     >
       {/* AI Avatar */}
       {!isUser && (
@@ -346,16 +346,16 @@ function MessageBubble({
         </div>
       )}
 
-      {/* Search result messages get full width; regular bubbles stay capped at 88% */}
+      {/* Leave room for the avatar so RTL rows can never exceed the viewport. */}
       <div className={`${
-        !isUser && message.searchData && message.mode === "search"
-          ? "w-[calc(100%-2.625rem)] min-w-0 max-w-full"
-          : "max-w-[88%] sm:max-w-[80%]"
+        isUser
+          ? "max-w-[82%] sm:max-w-[78%]"
+          : "w-[calc(100%-2.5rem)] max-w-[calc(100%-2.5rem)]"
       } space-y-3 ${isUser ? "items-end" : "items-start"} flex flex-col`}>
         {/* Text bubble */}
         {message.text && (
           <div
-            className={`rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-line ${
+            className={`max-w-full break-words rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap [overflow-wrap:anywhere] ${
               isUser
                 ? "rounded-br-sm bg-gradient-to-br from-brand-primary to-violet-600 text-white shadow-md shadow-violet-900/30"
                 : message.error

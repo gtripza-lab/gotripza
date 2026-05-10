@@ -12,6 +12,7 @@ import {
   detectWants,
   findAnyCity,
 } from "@/lib/mock-intent";
+import { resolveIata } from "@/lib/iata";
 import { rateLimit } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/observability/sentry";
 
@@ -31,10 +32,117 @@ const MAX_HISTORY_MSG_LEN = 1000;
 // B2: Reject oversized bodies before req.json() pays the parsing cost.
 const MAX_BODY_BYTES = 64 * 1024;
 
+const CITY_COORDS: Record<string, { ar: string; en: string; lat: number; lon: number }> = {
+  JED: { ar: "جدة", en: "Jeddah", lat: 21.5433, lon: 39.1728 },
+  RUH: { ar: "الرياض", en: "Riyadh", lat: 24.7136, lon: 46.6753 },
+  DMM: { ar: "الدمام", en: "Dammam", lat: 26.4207, lon: 50.0888 },
+  MED: { ar: "المدينة", en: "Medina", lat: 24.5247, lon: 39.5692 },
+  TIF: { ar: "الطائف", en: "Taif", lat: 21.4373, lon: 40.5127 },
+  AHB: { ar: "أبها", en: "Abha", lat: 18.2465, lon: 42.5117 },
+  TUU: { ar: "تبوك", en: "Tabuk", lat: 28.3838, lon: 36.5662 },
+  ELQ: { ar: "القصيم", en: "Qassim", lat: 26.2078, lon: 43.4837 },
+  GIZ: { ar: "جازان", en: "Jazan", lat: 16.8892, lon: 42.5511 },
+  DXB: { ar: "دبي", en: "Dubai", lat: 25.2048, lon: 55.2708 },
+  AUH: { ar: "أبوظبي", en: "Abu Dhabi", lat: 24.4539, lon: 54.3773 },
+  DOH: { ar: "الدوحة", en: "Doha", lat: 25.2854, lon: 51.5310 },
+  KWI: { ar: "الكويت", en: "Kuwait City", lat: 29.3759, lon: 47.9774 },
+  BAH: { ar: "البحرين", en: "Bahrain", lat: 26.0667, lon: 50.5577 },
+  MCT: { ar: "مسقط", en: "Muscat", lat: 23.5880, lon: 58.3829 },
+  AMM: { ar: "عمّان", en: "Amman", lat: 31.9539, lon: 35.9106 },
+  CAI: { ar: "القاهرة", en: "Cairo", lat: 30.0444, lon: 31.2357 },
+};
+
 function isProviderError(message: string) {
   return /API_KEY_INVALID|API key not valid|PERMISSION_DENIED|UNAUTHENTICATED|RESOURCE_EXHAUSTED|quota|rate.?limit|429|404|fetch|network|json|zod|parse|invalid|openai/i.test(
     message,
   );
+}
+
+function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }) {
+  const toRad = (v: number) => (v * Math.PI) / 180;
+  const earthKm = 6371;
+  const dLat = toRad(b.lat - a.lat);
+  const dLon = toRad(b.lon - a.lon);
+  const lat1 = toRad(a.lat);
+  const lat2 = toRad(b.lat);
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) ** 2;
+  return Math.round(earthKm * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h)));
+}
+
+function extractRouteQuestion(query: string): { origin: string; destination: string } | null {
+  const cleaned = query.trim();
+  const routeMatch =
+    cleaned.match(/(?:من|from)\s+(.+?)\s+(?:إلى|الى|لـ|ل|to)\s+(.+?)(?:[؟?!.]|$)/i) ??
+    cleaned.match(/between\s+(.+?)\s+and\s+(.+?)(?:[؟?!.]|$)/i) ??
+    cleaned.match(/بين\s+(.+?)\s+و\s*(.+?)(?:[؟?!.]|$)/i);
+  if (!routeMatch) return null;
+  const origin = resolveIata(routeMatch[1]);
+  const destination = resolveIata(routeMatch[2]);
+  if (!origin || !destination || origin === destination) return null;
+  if (!CITY_COORDS[origin] || !CITY_COORDS[destination]) return null;
+  return { origin, destination };
+}
+
+function maybeDistanceAdvice(query: string) {
+  const asksDistance =
+    /كم\s+(?:تبعد|يبعد|المسافة)|المسافة\s+(?:بين|من)|كم\s+ساعة|كم\s+ساعه|how\s+far|distance\s+(?:between|from)|how\s+long/i.test(
+      query,
+    );
+  if (!asksDistance) return null;
+  const route = extractRouteQuestion(query);
+  if (!route) return null;
+  const locale = detectLocale(query);
+  const isAr = locale === "ar";
+  const from = CITY_COORDS[route.origin];
+  const to = CITY_COORDS[route.destination];
+  const airKm = distanceKm(from, to);
+  const roadKm = Math.round(airKm * 1.12);
+  const driveMin = Math.round((roadKm / 100) * 60);
+  const driveHours = Math.max(1, Math.round(driveMin / 60));
+  const driveRangeAr = `${driveHours.toLocaleString("ar-SA")}-${(driveHours + 1).toLocaleString("ar-SA")}`;
+  const driveRangeEn = `${driveHours.toLocaleString("en-US")}-${(driveHours + 1).toLocaleString("en-US")}`;
+  const flightMinutes = airKm > 700 ? "ساعة و40 دقيقة إلى ساعتين" : "ساعة تقريباً";
+  const message = isAr
+    ? `المسافة بين ${from.ar} و${to.ar} تقريباً ${roadKm.toLocaleString("ar-SA")} كم بالسيارة، وغالباً تستغرق حوالي ${driveRangeAr} ساعات حسب الطريق والتوقفات. بالطيران المسافة الجوية حوالي ${airKm.toLocaleString("ar-SA")} كم، والرحلة عادة ${flightMinutes}. 🚗✈️`
+    : `The road distance from ${from.en} to ${to.en} is roughly ${roadKm.toLocaleString("en-US")} km, usually about ${driveRangeEn} hours by car depending on stops and traffic. The direct air distance is about ${airKm.toLocaleString("en-US")} km. 🚗✈️`;
+
+  return NextResponse.json({
+    intent: {
+      origin: route.origin,
+      destination: route.destination,
+      departure_date: null,
+      return_date: null,
+      adults: 2,
+      budget_usd: null,
+      trip_type: null,
+      cabin_class: null,
+      notes: null,
+    },
+    context: {
+      origin: route.origin,
+      destination: route.destination,
+      departure_date: null,
+      return_date: null,
+      adults: 2,
+      budget_usd: null,
+      trip_type: null,
+      cabin_class: null,
+    },
+    locale,
+    mode: "advice",
+    message,
+    wants: ["flights", "hotels"],
+    followup: null,
+    tips: null,
+    budget_verdict: null,
+    confidence: null,
+    destination_intel: null,
+    clarification_needed: false,
+    clarification_question: null,
+    mock: false,
+  });
 }
 
 // NOTE: The legacy enforceConversationalMode override has been replaced by
@@ -267,12 +375,15 @@ export async function POST(req: NextRequest) {
       query = query.slice(0, MAX_QUERY_LENGTH);
     }
     // B2: strip control / zero-width / direction-override chars
-    query = query.replace(/[​-‏‪-‮ -]/g, "");
+    query = query.replace(/[​-‏‪-‮\x00-\x1f]/g, "");
   } catch {
     return NextResponse.json({ error: "Bad request" }, { status: 400 });
   }
 
   try {
+    const distanceAdvice = maybeDistanceAdvice(query);
+    if (distanceAdvice) return distanceAdvice;
+
     // Default to empty context if client didn't send one (older client builds).
     const ctx: TravelContext = context ?? {
       destination: null,

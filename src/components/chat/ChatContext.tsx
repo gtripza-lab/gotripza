@@ -137,7 +137,7 @@ export function ChatProvider({
     text: locale === "ar"
       ? "مرحباً! 👋 أنا ريا، مستشارتك الذكية في GoTripza.\n\nأخبرني عن رحلتك — إلى أين تفكر تسافر؟ أو اسألني أي سؤال عن السفر وأنا هنا أساعدك 🌍"
       : "Hi there! 👋 I'm Raya, your AI travel advisor at GoTripza.\n\nTell me about your trip — where are you thinking of going? Or ask me anything about travel and I'll guide you 🌍",
-    timestamp: Date.now(),
+    timestamp: 0,
   }), [locale]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMsg]);
