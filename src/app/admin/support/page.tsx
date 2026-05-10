@@ -7,8 +7,18 @@ export const metadata = { title: "Support" };
 function statusBadge(status: string | null) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium";
   if (status === "open") return <span className={`${base} bg-amber-500/20 text-amber-400`}>Open</span>;
+  if (status === "in_progress") return <span className={`${base} bg-sky-500/20 text-sky-400`}>In Progress</span>;
+  if (status === "resolved") return <span className={`${base} bg-emerald-500/20 text-emerald-400`}>Resolved</span>;
   if (status === "closed") return <span className={`${base} bg-emerald-500/20 text-emerald-400`}>Closed</span>;
   return <span className={`${base} bg-white/30 text-white/60`}>New</span>;
+}
+
+function priorityBadge(priority: string | null) {
+  const base = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium";
+  if (priority === "urgent") return <span className={`${base} bg-red-500/20 text-red-400`}>Urgent</span>;
+  if (priority === "high") return <span className={`${base} bg-orange-500/20 text-orange-400`}>High</span>;
+  if (priority === "low") return <span className={`${base} bg-white/[0.06] text-white/40`}>Low</span>;
+  return <span className={`${base} bg-white/[0.08] text-white/55`}>Normal</span>;
 }
 
 function isThisWeek(dateStr: string): boolean {
@@ -22,7 +32,7 @@ export default async function SupportPage() {
   const { rows, total } = await getSupportRequests();
 
   const open = rows.filter((r) => r.status === "open" || r.status == null).length;
-  const closed = rows.filter((r) => r.status === "closed").length;
+  const closed = rows.filter((r) => r.status === "closed" || r.status === "resolved").length;
   const thisWeek = rows.filter((r) => isThisWeek(r.created_at)).length;
 
   return (
@@ -62,10 +72,13 @@ export default async function SupportPage() {
                     ID
                   </th>
                   <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
-                    Email
+                    Contact
                   </th>
                   <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
-                    Message
+                    Request
+                  </th>
+                  <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
+                    Priority
                   </th>
                   <th className="px-6 py-3 text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
                     Status
@@ -80,16 +93,29 @@ export default async function SupportPage() {
                   <tr key={row.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="px-6 py-3.5">
                       <code className="text-white/40 text-xs font-mono">
-                        …{row.id.slice(-8)}
+                        #{row.id}
                       </code>
                     </td>
                     <td className="px-6 py-3.5 text-white/70 whitespace-nowrap">
-                      {row.email ?? <span className="text-white/30 italic">Anonymous</span>}
+                      {row.contact_email ?? <span className="text-white/30 italic">Anonymous</span>}
                     </td>
-                    <td className="px-6 py-3.5 text-white/50 max-w-xs">
-                      {row.message.length > 80
-                        ? `${row.message.slice(0, 80)}…`
-                        : row.message}
+                    <td className="px-6 py-3.5 max-w-xl">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white/35">
+                          {row.category}
+                        </span>
+                        {row.subject && (
+                          <span className="text-xs font-medium text-white/70">{row.subject}</span>
+                        )}
+                      </div>
+                      <p className="mt-1 whitespace-pre-wrap break-words text-white/50">
+                        {(row.body ?? "").length > 180
+                          ? `${(row.body ?? "").slice(0, 180)}…`
+                          : row.body ?? <span className="text-white/25 italic">No message body</span>}
+                      </p>
+                    </td>
+                    <td className="px-6 py-3.5">
+                      {priorityBadge(row.priority)}
                     </td>
                     <td className="px-6 py-3.5">
                       {statusBadge(row.status)}

@@ -508,11 +508,15 @@ export async function getCostStats(): Promise<CostStats | null> {
 // SUPPORT
 // ─────────────────────────────────────────────────────────────────────────────
 export type SupportRow = {
-  id: string;
-  email: string | null;
-  message: string;
+  id: number;
+  contact_email: string | null;
+  subject: string | null;
+  body: string | null;
+  category: string;
+  priority: string;
   status: string | null;
   created_at: string;
+  updated_at: string | null;
   user_id?: string | null;
 };
 
@@ -521,7 +525,10 @@ export async function getSupportRequests(): Promise<{ rows: SupportRow[]; total:
     const db = createSupabaseService() as AnyTable;
     const { data, count } = await db
       .from("support_requests")
-      .select("*", { count: "exact" })
+      .select(
+        "id,user_id,category,status,priority,subject,body,contact_email,created_at,updated_at",
+        { count: "exact" },
+      )
       .order("created_at", { ascending: false })
       .limit(100);
     return { rows: (data ?? []) as SupportRow[], total: count ?? 0 };
