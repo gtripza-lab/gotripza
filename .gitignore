@@ -20,6 +20,16 @@
 .DS_Store
 *.pem
 
+# Local business/marketing planning files — keep out of the public repo.
+Gotripza_Content/
+
+# Local proof/screenshot assets that are not used by the app.
+public/gotripza-attribution-proof.png
+
+# Local/agent tooling and internal migration notes.
+.claude/
+docs/AI_MIGRATION.md
+
 # debug
 npm-debug.log*
 yarn-debug.log*
