@@ -26,6 +26,8 @@ import {
   ChevronDown,
   ChevronUp,
   MessageCircleQuestion,
+  ThumbsDown,
+  ThumbsUp,
 } from "lucide-react";
 import { useChat } from "./ChatContext";
 import type { ChatMessage, ChatSearchData } from "./ChatContext";
@@ -328,8 +330,19 @@ function MessageBubble({
   locale: import("@/i18n/config").Locale;
 }) {
   const isUser = message.role === "user";
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
 
   if (message.isLoading) return null; // handled by TypingIndicator
+
+  function submitFeedback(value: "up" | "down") {
+    setFeedback(value);
+    logEvent("ria_response_feedback", {
+      value,
+      mode: message.mode ?? "unknown",
+      hasSearchData: Boolean(message.searchData),
+      messageId: message.id,
+    });
+  }
 
   return (
     <motion.div
@@ -376,6 +389,35 @@ function MessageBubble({
             currency={currency}
             locale={locale}
           />
+        )}
+
+        {!isUser && message.id !== "welcome" && !message.error && (
+          <div className="flex items-center gap-1 self-start rounded-full border border-white/[0.06] bg-white/[0.03] p-1">
+            <button
+              type="button"
+              onClick={() => submitFeedback("up")}
+              aria-label={locale === "ar" ? "رد مفيد" : "Helpful response"}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+                feedback === "up"
+                  ? "bg-emerald-500/20 text-emerald-300"
+                  : "text-white/25 hover:bg-white/[0.06] hover:text-white/60"
+              }`}
+            >
+              <ThumbsUp className="h-3.5 w-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => submitFeedback("down")}
+              aria-label={locale === "ar" ? "رد غير مفيد" : "Unhelpful response"}
+              className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+                feedback === "down"
+                  ? "bg-rose-500/20 text-rose-300"
+                  : "text-white/25 hover:bg-white/[0.06] hover:text-white/60"
+              }`}
+            >
+              <ThumbsDown className="h-3.5 w-3.5" />
+            </button>
+          </div>
         )}
       </div>
     </motion.div>

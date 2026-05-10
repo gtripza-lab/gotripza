@@ -9,7 +9,8 @@ export type EventName =
   | "affiliate_upsell_clicked"
   | "chat_message_sent"
   | "chat_results_ready"
-  | "chat_followup_revealed";
+  | "chat_followup_revealed"
+  | "ria_response_feedback";
 
 export type EventPayload = Record<string, unknown>;
 
