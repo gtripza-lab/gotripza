@@ -230,10 +230,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="shrink-0 w-full border-t border-white/[0.08] px-2 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl overflow-hidden"
+        className="shrink-0 w-full max-w-full border-t border-white/[0.08] px-2 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl overflow-hidden"
         style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
-        <div className="flex w-full items-end gap-1.5 sm:gap-2.5 min-w-0">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-[minmax(0,1fr)_2.5rem] items-end gap-1.5 min-[390px]:grid-cols-[minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[minmax(0,1fr)_2.75rem_2.75rem] sm:gap-2.5">
           {/* Textarea */}
           <textarea
             ref={inputRef}
@@ -262,7 +262,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleVoice}
             disabled={isThinking}
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
-            className={`hidden xs:flex sm:flex h-10 sm:h-11 w-10 sm:w-11 shrink-0 items-center justify-center rounded-lg sm:rounded-xl transition disabled:opacity-40 ${
+            className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg transition disabled:opacity-40 min-[390px]:flex sm:h-11 sm:w-11 sm:rounded-xl ${
               isListening
                 ? "animate-pulse bg-rose-500/20 text-rose-400"
                 : "border border-white/[0.12] bg-white/[0.05] text-white/35 hover:bg-white/[0.10] hover:text-white/65"
@@ -277,7 +277,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleSend}
             disabled={isThinking || !input.trim()}
             aria-label={isAr ? "إرسال" : "Send"}
-            className="flex h-10 sm:h-11 w-10 sm:w-11 shrink-0 items-center justify-center rounded-lg sm:rounded-xl bg-gradient-to-br from-brand-primary to-violet-600 text-white shadow-md shadow-violet-900/40 transition hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-primary to-violet-600 text-white shadow-md shadow-violet-900/40 transition hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 sm:h-11 sm:w-11 sm:rounded-xl"
           >
             <Send className="h-3.5 sm:h-4 w-3.5 sm:w-4 rtl:rotate-180" />
           </button>
@@ -349,7 +349,7 @@ function MessageBubble({
       {/* Search result messages get full width; regular bubbles stay capped at 88% */}
       <div className={`${
         !isUser && message.searchData && message.mode === "search"
-          ? "w-full min-w-0"
+          ? "w-[calc(100%-2.625rem)] min-w-0 max-w-full"
           : "max-w-[88%] sm:max-w-[80%]"
       } space-y-3 ${isUser ? "items-end" : "items-start"} flex flex-col`}>
         {/* Text bubble */}
@@ -409,7 +409,7 @@ function ChatSearchResults({
     ? "hotels" : !showFlights ? "flights" : null;
 
   return (
-    <div className="w-full max-w-2xl space-y-4">
+    <div className="w-full max-w-full space-y-4 sm:max-w-2xl">
 
       {/* Clarification */}
       {data.clarification_needed && data.clarification_question && (
@@ -495,7 +495,12 @@ function ChatSearchResults({
             <SearchCTACard
               isAr={isAr}
               icon={<HotelIcon className="h-4 w-4" />}
-              title={isAr ? "عرض أسعار الفنادق" : "View Live Hotel Prices"}
+              title={isAr ? "أسعار الفنادق المباشرة قريباً" : "Live hotel prices coming soon"}
+              note={
+                isAr
+                  ? "نعمل على تفعيل الربط مع شريك الفنادق. يمكنك فتح البحث المباشر الآن."
+                  : "Hotel inventory is being connected. You can still open partner search now."
+              }
               url={data.hotelSearchUrl}
               btnLabel={isAr ? "بحث مباشر" : "Live Search"}
               accent="mint"
@@ -1031,27 +1036,33 @@ function UpsellCard({
 // ── Search CTA Card ───────────────────────────────────────────────────────
 
 function SearchCTACard({
-  isAr, icon, title, url, btnLabel, accent,
+  isAr, icon, title, note, url, btnLabel, accent,
 }: {
   isAr: boolean; icon: React.ReactNode; title: string;
+  note?: string;
   url: string; btnLabel: string; accent: "primary" | "mint";
 }) {
   const isPrimary = accent === "primary";
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-xl border p-3 ${isPrimary ? "border-violet-400/20 bg-violet-500/[0.08]" : "border-emerald-400/20 bg-emerald-500/[0.08]"}`}>
-      <div className="flex items-center gap-2 text-xs text-white/65">
-        <span className={isPrimary ? "text-violet-400" : "text-emerald-400"}>{icon}</span>
-        {title}
-        <span className="flex items-center gap-1 text-[10px] text-white/30">
-          <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${isPrimary ? "bg-violet-400" : "bg-emerald-400"}`} />
-          {isAr ? "مباشر" : "Live"}
-        </span>
+    <div className={`flex flex-col gap-3 rounded-xl border p-3 sm:flex-row sm:items-center sm:justify-between ${isPrimary ? "border-violet-400/20 bg-violet-500/[0.08]" : "border-emerald-400/20 bg-emerald-500/[0.08]"}`}>
+      <div className="flex min-w-0 items-start gap-2 text-xs text-white/65">
+        <span className={`mt-0.5 shrink-0 ${isPrimary ? "text-violet-400" : "text-emerald-400"}`}>{icon}</span>
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <span>{title}</span>
+            <span className="flex items-center gap-1 text-[10px] text-white/30">
+              <span className={`h-1.5 w-1.5 animate-pulse rounded-full ${isPrimary ? "bg-violet-400" : "bg-emerald-400"}`} />
+              {isAr ? "مباشر" : "Live"}
+            </span>
+          </div>
+          {note && <p className="mt-1 text-[11px] leading-relaxed text-white/40">{note}</p>}
+        </div>
       </div>
       <a
         href={url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:scale-105 ${isPrimary ? "bg-gradient-to-r from-brand-primary to-violet-600" : "bg-gradient-to-r from-emerald-500 to-teal-500"}`}
+        className={`flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-3 text-xs font-semibold text-white shadow-sm transition hover:scale-105 ${isPrimary ? "bg-gradient-to-r from-brand-primary to-violet-600" : "bg-gradient-to-r from-emerald-500 to-teal-500"}`}
       >
         {btnLabel}
         <ExternalLink className="h-3 w-3" />

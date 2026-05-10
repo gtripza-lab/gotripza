@@ -180,7 +180,11 @@ async function fetchHotelPage(
     headers: { "Accept": "application/json" },
   });
   if (!res.ok) {
-    console.warn(`[GoTripza] Hotels API error ${res.status} for location="${location}"`);
+    // Hotellook returns 404 for unavailable/unlinked hotel inventory. Treat it
+    // as an empty result so pages can still offer the partner search fallback.
+    if (res.status !== 404) {
+      console.warn(`[GoTripza] Hotels API error ${res.status} for location="${location}"`);
+    }
     return [];
   }
   let json: unknown;
