@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
-import { CalendarDays, Loader2, LogIn, MapPinned, Plane, WalletCards } from "lucide-react";
+import { CalendarDays, Headphones, Loader2, LogIn, MapPinned, Plane, WalletCards } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 import type { TripPlan } from "@/lib/trip-planner";
 
@@ -18,9 +18,24 @@ type PlansResponse = {
   error?: string;
 };
 
+type SupportTicket = {
+  id: number;
+  category: string;
+  status: string | null;
+  priority: string | null;
+  subject: string | null;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type SupportResponse = {
+  tickets?: SupportTicket[];
+};
+
 export function AccountPlans({ locale }: { locale: Locale }) {
   const isAr = locale === "ar";
   const [plans, setPlans] = useState<SavedPlan[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [status, setStatus] = useState<"loading" | "auth" | "empty" | "ready" | "error">("loading");
 
   useEffect(() => {
@@ -28,17 +43,22 @@ export function AccountPlans({ locale }: { locale: Locale }) {
 
     async function loadPlans() {
       try {
-        const res = await fetch("/api/trip-plans", { cache: "no-store" });
+        const [plansRes, ticketsRes] = await Promise.all([
+          fetch("/api/trip-plans", { cache: "no-store" }),
+          fetch("/api/support", { cache: "no-store" }),
+        ]);
         if (!active) return;
-        if (res.status === 401) {
+        if (plansRes.status === 401) {
           setStatus("auth");
           return;
         }
-        const json = (await res.json()) as PlansResponse;
-        if (!res.ok || json.error) throw new Error(json.error ?? "load_failed");
+        const json = (await plansRes.json()) as PlansResponse;
+        if (!plansRes.ok || json.error) throw new Error(json.error ?? "load_failed");
+        const supportJson = ticketsRes.ok ? ((await ticketsRes.json()) as SupportResponse) : { tickets: [] };
         const nextPlans = json.plans ?? [];
+        setTickets(supportJson.tickets ?? []);
         setPlans(nextPlans);
-        setStatus(nextPlans.length ? "ready" : "empty");
+        setStatus(nextPlans.length || (supportJson.tickets?.length ?? 0) ? "ready" : "empty");
       } catch {
         if (active) setStatus("error");
       }
@@ -112,35 +132,91 @@ export function AccountPlans({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-      {plans.map((row) => (
-        <article key={row.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-white">{row.plan.destinationName}</h2>
-              <p className="mt-1 text-xs text-white/35">
-                {new Date(row.created_at).toLocaleDateString(isAr ? "ar-SA" : "en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </p>
-            </div>
-            <span className="rounded-full bg-brand-primary/15 px-2 py-1 text-xs text-brand-primary">
-              {row.days} {isAr ? "أيام" : "days"}
-            </span>
+    <div className="space-y-8">
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white/45">
+            {isAr ? "خطط الرحلات" : "Trip Plans"}
+          </h2>
+          <Link href={`/${locale}/plan`} className="text-xs font-semibold text-brand-primary hover:text-brand-mint">
+            {isAr ? "إنشاء خطة" : "Create plan"}
+          </Link>
+        </div>
+        {plans.length ? (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {plans.map((row) => (
+              <article key={row.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{row.plan.destinationName}</h3>
+                    <p className="mt-1 text-xs text-white/35">
+                      {formatDate(row.created_at, isAr)}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-brand-primary/15 px-2 py-1 text-xs text-brand-primary">
+                    {row.days} {isAr ? "أيام" : "days"}
+                  </span>
+                </div>
+                <p className="mt-4 line-clamp-3 text-sm leading-6 text-white/50">
+                  {row.plan.summary}
+                </p>
+                <div className="mt-5 grid grid-cols-2 gap-2 text-xs text-white/45">
+                  <PlanMini icon={<Plane className="h-3.5 w-3.5" />} label={row.plan.originName} />
+                  <PlanMini icon={<MapPinned className="h-3.5 w-3.5" />} label={row.plan.destinationName} />
+                  <PlanMini icon={<CalendarDays className="h-3.5 w-3.5" />} label={`${row.plan.travelers} ${isAr ? "مسافرين" : "travelers"}`} />
+                  <PlanMini icon={<WalletCards className="h-3.5 w-3.5" />} label={`${row.plan.budget.toLocaleString()} ${row.plan.currency}`} />
+                </div>
+              </article>
+            ))}
           </div>
-          <p className="mt-4 line-clamp-3 text-sm leading-6 text-white/50">
-            {row.plan.summary}
-          </p>
-          <div className="mt-5 grid grid-cols-2 gap-2 text-xs text-white/45">
-            <PlanMini icon={<Plane className="h-3.5 w-3.5" />} label={row.plan.originName} />
-            <PlanMini icon={<MapPinned className="h-3.5 w-3.5" />} label={row.plan.destinationName} />
-            <PlanMini icon={<CalendarDays className="h-3.5 w-3.5" />} label={`${row.plan.travelers} ${isAr ? "مسافرين" : "travelers"}`} />
-            <PlanMini icon={<WalletCards className="h-3.5 w-3.5" />} label={`${row.plan.budget.toLocaleString()} ${row.plan.currency}`} />
+        ) : (
+          <InlineEmpty
+            title={isAr ? "لا توجد خطط محفوظة بعد" : "No saved plans yet"}
+            body={isAr ? "أنشئ خطة واحفظها لتظهر هنا." : "Create and save a plan to see it here."}
+          />
+        )}
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white/45">
+            {isAr ? "طلبات الدعم" : "Support Tickets"}
+          </h2>
+          <Link href={`/${locale}/contact`} className="text-xs font-semibold text-brand-primary hover:text-brand-mint">
+            {isAr ? "طلب جديد" : "New request"}
+          </Link>
+        </div>
+        {tickets.length ? (
+          <div className="grid gap-3 lg:grid-cols-2">
+            {tickets.map((ticket) => (
+              <article key={ticket.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-primary/15 text-brand-primary">
+                    <Headphones className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate text-sm font-semibold text-white">
+                        {ticket.subject || (isAr ? "طلب دعم" : "Support request")}
+                      </h3>
+                      <TicketBadge value={ticket.status ?? "open"} />
+                      <TicketBadge value={ticket.priority ?? "normal"} muted />
+                    </div>
+                    <p className="mt-2 text-xs text-white/35">
+                      #{ticket.id} · {ticket.category} · {formatDate(ticket.created_at, isAr)}
+                    </p>
+                  </div>
+                </div>
+              </article>
+            ))}
           </div>
-        </article>
-      ))}
+        ) : (
+          <InlineEmpty
+            title={isAr ? "لا توجد طلبات دعم" : "No support tickets"}
+            body={isAr ? "عند إرسال رسالة للدعم أو تصعيد ريا لمشكلة ستظهر هنا." : "Support requests and Raya escalations will appear here."}
+          />
+        )}
+      </section>
     </div>
   );
 }
@@ -186,4 +262,39 @@ function PlanMini({ icon, label }: { icon: ReactNode; label: string }) {
       <span className="truncate">{label}</span>
     </div>
   );
+}
+
+function TicketBadge({ value, muted = false }: { value: string; muted?: boolean }) {
+  const colors: Record<string, string> = {
+    open: "bg-amber-500/15 text-amber-300",
+    in_progress: "bg-sky-500/15 text-sky-300",
+    resolved: "bg-emerald-500/15 text-emerald-300",
+    closed: "bg-emerald-500/15 text-emerald-300",
+    urgent: "bg-rose-500/15 text-rose-300",
+    high: "bg-orange-500/15 text-orange-300",
+    normal: "bg-white/[0.08] text-white/45",
+    low: "bg-white/[0.05] text-white/35",
+  };
+  return (
+    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${muted ? colors[value] ?? colors.normal : colors[value] ?? colors.open}`}>
+      {value.replace("_", " ")}
+    </span>
+  );
+}
+
+function InlineEmpty({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.03] p-5">
+      <p className="text-sm font-semibold text-white/70">{title}</p>
+      <p className="mt-1 text-sm text-white/35">{body}</p>
+    </div>
+  );
+}
+
+function formatDate(date: string, isAr: boolean) {
+  return new Date(date).toLocaleDateString(isAr ? "ar-SA" : "en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
 }
