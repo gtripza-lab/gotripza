@@ -26,10 +26,12 @@ import {
   ChevronDown,
   ChevronUp,
   MessageCircleQuestion,
+  Bot,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
 import { useChat } from "./ChatContext";
+import { RayaAgentModal } from "./RayaAgentModal";
 import type { ChatMessage, ChatSearchData } from "./ChatContext";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
@@ -83,6 +85,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   const { messages, isThinking, locale, currency, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(false);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -171,17 +174,29 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           </div>
         </div>
 
-        {messages.length > 1 && (
+        <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={clearChat}
-            title={isAr ? "محادثة جديدة" : "New conversation"}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/[0.08] hover:text-white/60"
+            onClick={() => setAgentOpen(true)}
+            title={isAr ? "وكلاء ريا المتخصصون" : "Raya specialist agents"}
+            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/[0.08] hover:text-white/70"
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            <Bot className="h-3.5 w-3.5" />
           </button>
-        )}
+          {messages.length > 1 && (
+            <button
+              type="button"
+              onClick={clearChat}
+              title={isAr ? "محادثة جديدة" : "New conversation"}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/[0.08] hover:text-white/60"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
       </div>
+
+      <RayaAgentModal locale={locale} open={agentOpen} onClose={() => setAgentOpen(false)} />
 
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
