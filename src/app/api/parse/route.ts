@@ -318,6 +318,91 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   // Detect locale from the most recent user input (most reliable)
   const locale = detectLocale(query);
   const isAr = locale === "ar";
+  const lower = query.toLowerCase();
+
+  if (/ترجم|ترجمة|translate|translation|phrase|عبارة|لغة/i.test(query)) {
+    return NextResponse.json({
+      intent: { origin: null, destination: null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "أكيد. أرسل لي العبارة أو صوّر اللوحة/القائمة، وأنا أعطيك ترجمة طبيعية وما تقول بالضبط في الموقف. لو هي محادثة مع فندق أو مطار أو مطعم، قل لي السياق عشان أصيغها بأدب وبأسلوب محلي."
+        : "Absolutely. Send me the phrase or upload a photo of the sign/menu, and I’ll give you a natural translation plus exactly what to say. If it’s for a hotel, airport, or restaurant, tell me the situation so I can phrase it politely.",
+      wants: ["flights", "hotels"],
+      followup: isAr ? "أرسل العبارة هنا." : "Send the phrase here.",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/مطار|airport|boarding|gate|terminal|ترانزيت|transit|layover/i.test(query)) {
+    return NextResponse.json({
+      intent: { origin: null, destination: null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "خلّيني أمشي معك خطوة بخطوة. أولاً تأكد من رقم الرحلة والبوابة في الشاشة، ثم جهّز الجواز وبطاقة الصعود، وبعدها اتجه للأمن أو الجوازات حسب موقعك. إذا أرسلت لي اسم المطار أو صورة التذكرة/الشاشة أقول لك الخطوة التالية بدقة."
+        : "I’ll guide you step by step. First check the flight number and gate on the screen, keep your passport and boarding pass ready, then head to security or immigration depending on where you are. Send the airport name or a photo of the ticket/screen and I’ll tell you the exact next move.",
+      wants: ["flights", "hotels"],
+      followup: isAr ? "ما اسم المطار أو أرسل صورة الشاشة." : "What airport are you in, or send a photo of the screen.",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/آمن|أمان|safe|safety|scam|نصب|احتيال|خطر|danger/i.test(query)) {
+    return NextResponse.json({
+      intent: { origin: null, destination: null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "أقدر أساعدك بهدوء بدون تهويل. أعطني الوجهة أو الحي، وسأعطيك: المناطق الأفضل، المواصلات الآمنة، أشهر أساليب الاحتيال، وماذا تتجنب ليلاً. كقاعدة عامة: لا تستخدم تاكسي عشوائي، لا تسلّم الجواز إلا لجهة رسمية، واحتفظ بنسخة رقمية من وثائقك."
+        : "I can help calmly without exaggerating. Tell me the destination or neighborhood and I’ll cover safe areas, transport, common scams, and what to avoid at night. General rule: avoid random taxis, never hand over your passport except to official staff, and keep digital copies of documents.",
+      wants: ["flights", "hotels"],
+      followup: isAr ? "ما الوجهة أو الحي؟" : "Which destination or neighborhood?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/ميزانية|budget|تكلفة|cost|وفر|أوفر|cheap|رخيص/i.test(lower)) {
+    return NextResponse.json({
+      intent: { origin: null, destination: context?.destination ?? null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "أحسبها لك كمسافر، مو كجدول جامد. أعطني الوجهة، عدد الأيام، وعدد الأشخاص، وسأقسمها إلى: سكن، أكل، مواصلات، أنشطة، إنترنت/شريحة، واحتياط. إذا عندك رقم ميزانية قل لي إياه وأقول لك هل يكفي وأين نوفر."
+        : "I’ll calculate it like a traveler, not a spreadsheet. Tell me destination, days, and travelers, and I’ll split it into stay, food, transport, activities, data/eSIM, and buffer. If you have a budget number, send it and I’ll tell you if it works and where to save.",
+      wants: ["flights", "hotels"],
+      followup: isAr ? "ما الوجهة وعدد الأيام؟" : "What destination and how many days?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
 
   // Advice questions (visa, safety, weather, tips) → answer briefly and offer to plan
   if (isAdviceQuery(query)) {

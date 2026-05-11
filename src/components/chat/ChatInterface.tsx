@@ -6,6 +6,7 @@ import {
   Send,
   Mic,
   MicOff,
+  Plus,
   Trash2,
   Plane,
   Hotel as HotelIcon,
@@ -27,7 +28,6 @@ import {
   ChevronUp,
   MessageCircleQuestion,
   Bot,
-  ImagePlus,
   Languages,
   Landmark,
   ShieldAlert,
@@ -130,6 +130,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const root = document.documentElement;
+    const previousHtmlOverflow = root.style.overflow;
+    const previousBodyOverflow = document.body.style.overflow;
+    root.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
     const setVisualHeight = () => {
       const height = window.visualViewport?.height ?? window.innerHeight;
       root.style.setProperty("--gtz-visual-height", `${Math.round(height)}px`);
@@ -142,6 +146,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
       window.visualViewport?.removeEventListener("resize", setVisualHeight);
       window.visualViewport?.removeEventListener("scroll", setVisualHeight);
       window.removeEventListener("orientationchange", setVisualHeight);
+      root.style.overflow = previousHtmlOverflow;
+      document.body.style.overflow = previousBodyOverflow;
     };
   }, []);
 
@@ -160,7 +166,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     if (!q) return;
     setInput("");
     await sendMessage(q);
-    inputRef.current?.focus();
+    if (typeof window === "undefined" || window.innerWidth >= 768) {
+      inputRef.current?.focus();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -348,10 +356,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="chat-viewport-lock shrink-0 border-t border-white/[0.08] px-2 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl"
-        style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
+        className="chat-viewport-lock sticky bottom-0 z-20 shrink-0 border-t border-white/[0.06] px-2 pt-2 sm:px-4 sm:pt-3 backdrop-blur-xl"
+        style={{ background: "linear-gradient(180deg, rgba(6,17,30,0.72), rgba(6,17,30,0.96))", paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
       >
-        <div className="grid w-full max-w-full min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-end gap-1.5 min-[430px]:grid-cols-[2.5rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[2.75rem_minmax(0,1fr)_2.75rem_2.75rem] sm:gap-2.5">
+        <div className="mx-auto flex w-full max-w-3xl items-end gap-1.5 rounded-[1.35rem] border border-white/[0.12] bg-white/[0.07] p-1.5 shadow-2xl shadow-black/25 ring-1 ring-black/10 transition focus-within:border-violet-400/45 focus-within:bg-white/[0.09] focus-within:ring-violet-400/[0.18] sm:gap-2 sm:rounded-[1.6rem] sm:p-2">
           <input
             ref={imageInputRef}
             type="file"
@@ -365,9 +373,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             disabled={isThinking || isImageReading}
             aria-label={isAr ? "فهم صورة" : "Analyze image"}
             title={isAr ? "فهم صورة مع Rya Companion" : "Image help with Rya Companion"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.05] text-white/35 transition hover:bg-white/[0.10] hover:text-white/65 disabled:opacity-40 sm:h-11 sm:w-11 sm:rounded-xl"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/42 transition hover:bg-white/[0.10] hover:text-white/75 disabled:opacity-40 sm:h-10 sm:w-10"
           >
-            <ImagePlus className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isImageReading ? "animate-pulse text-brand-mint" : ""}`} />
+            <Plus className={`h-4 w-4 ${isImageReading ? "animate-pulse text-brand-mint" : ""}`} />
           </button>
 
           {/* Textarea */}
@@ -386,12 +394,12 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             }
             disabled={isThinking}
             rows={1}
-            className="min-h-[40px] min-w-0 flex-1 resize-none rounded-xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 text-base text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50 sm:min-h-[44px] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
-            style={{ maxHeight: "100px" }}
+            className="min-h-[36px] min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base leading-5 text-white/92 placeholder:text-white/32 focus:outline-none disabled:opacity-50 sm:min-h-[40px] sm:px-2 sm:py-2.5 sm:text-sm"
+            style={{ maxHeight: "120px" }}
             onInput={(e) => {
               const t = e.currentTarget;
               t.style.height = "auto";
-              t.style.height = `${Math.min(t.scrollHeight, 100)}px`;
+              t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
             }}
           />
 
@@ -401,10 +409,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleVoice}
             disabled={isThinking}
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
-            className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg transition disabled:opacity-40 min-[430px]:flex sm:h-11 sm:w-11 sm:rounded-xl ${
+            className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 min-[430px]:flex sm:h-10 sm:w-10 ${
               isListening
                 ? "animate-pulse bg-rose-500/20 text-rose-400"
-                : "border border-white/[0.12] bg-white/[0.05] text-white/35 hover:bg-white/[0.10] hover:text-white/65"
+                : "text-white/42 hover:bg-white/[0.10] hover:text-white/75"
             }`}
           >
             {isListening ? <MicOff className="h-3.5 sm:h-4 w-3.5 sm:w-4" /> : <Mic className="h-3.5 sm:h-4 w-3.5 sm:w-4" />}
@@ -416,9 +424,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleSend}
             disabled={isThinking || !input.trim()}
             aria-label={isAr ? "إرسال" : "Send"}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand-primary to-violet-600 text-white shadow-md shadow-violet-900/40 transition hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:scale-100 sm:h-11 sm:w-11 sm:rounded-xl"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-950 shadow-md shadow-black/30 transition hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-white/[0.12] disabled:text-white/28 disabled:hover:scale-100 sm:h-10 sm:w-10"
           >
-            <Send className="h-3.5 sm:h-4 w-3.5 sm:w-4 rtl:rotate-180" />
+            <Send className="h-3.5 w-3.5 rtl:rotate-180 sm:h-4 sm:w-4" />
           </button>
         </div>
 

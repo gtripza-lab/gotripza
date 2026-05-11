@@ -90,27 +90,20 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
   }
 
   return (
-    <div className="shrink-0 border-b border-white/[0.06] bg-black/25 px-3 py-2 sm:hidden">
-      <div className="rounded-2xl border border-violet-400/20 bg-violet-500/[0.10] p-3">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-violet-500/20 text-violet-200">
+    <div className="shrink-0 border-b border-white/[0.06] bg-black/20 px-2 py-1.5 sm:hidden">
+      <div className="rounded-2xl border border-violet-400/15 bg-violet-500/[0.08] px-2.5 py-2">
+        <div className="flex items-center gap-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-500/18 text-violet-200">
             <Smartphone className="h-4 w-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold text-white/85">
-              {isAr ? "ثبّت ريا على جوالك" : "Install Rya on your phone"}
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-white/48">
+            <p className="truncate text-[11px] font-semibold text-white/82">
               {trial?.active
-                ? isAr
-                  ? `تجربتك المجانية مفعلة. المتبقي ${trial.daysRemaining} يوم.`
-                  : `Your free trial is active. ${trial.daysRemaining} days remaining.`
-                : isAr
-                  ? "جرّب كامل طاقة Rya Companion على الجوال مجاناً لفترة محددة."
-                  : "Try the full Rya Companion mobile experience free for a limited time."}
+                ? isAr ? `Rya Companion مفعّلة · ${trial.daysRemaining} يوم` : `Rya Companion active · ${trial.daysRemaining}d`
+                : isAr ? "ثبّت ريا كتطبيق جوال" : "Install Rya as a mobile app"}
             </p>
             {showIosHelp ? (
-              <div className="mt-2 rounded-xl border border-white/[0.08] bg-black/25 p-2 text-[11px] leading-5 text-white/55">
+              <div className="mt-1 rounded-xl border border-white/[0.08] bg-black/25 p-2 text-[11px] leading-5 text-white/55">
                 <Share className="me-1 inline h-3.5 w-3.5" />
                 {isAr
                   ? "على iPhone: اضغط زر المشاركة في Safari ثم اختر “إضافة إلى الشاشة الرئيسية”."
@@ -120,7 +113,7 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
               <button
                 type="button"
                 onClick={() => void handleInstall()}
-                className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-full bg-white px-3 text-[11px] font-semibold text-ink-950"
+                className="mt-1 inline-flex h-7 items-center gap-1.5 rounded-full bg-white px-2.5 text-[10px] font-semibold text-ink-950"
               >
                 <Download className="h-3.5 w-3.5" />
                 {isAr ? "تفعيل وتثبيت" : "Activate & install"}
