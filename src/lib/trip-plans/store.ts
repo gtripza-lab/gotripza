@@ -7,6 +7,13 @@ import type { TripPlan } from "@/lib/trip-planner";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyTable = any;
 
+export class TripPlansSetupError extends Error {
+  constructor(message = "trip_plans table is not available") {
+    super(message);
+    this.name = "TripPlansSetupError";
+  }
+}
+
 export type SavedTripPlanRow = {
   id: string;
   user_id: string;
@@ -23,6 +30,14 @@ export type SavedTripPlanRow = {
   created_at: string;
   updated_at: string;
 };
+
+function isMissingTripPlansTable(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return false;
+  return (
+    error.code === "PGRST205" ||
+    /trip_plans/i.test(error.message ?? "") && /not find|does not exist|schema cache/i.test(error.message ?? "")
+  );
+}
 
 export async function saveTripPlan(userId: string, plan: TripPlan) {
   const db = createSupabaseService() as AnyTable;
@@ -44,6 +59,7 @@ export async function saveTripPlan(userId: string, plan: TripPlan) {
     .select("id")
     .single();
 
+  if (isMissingTripPlansTable(error)) throw new TripPlansSetupError();
   if (error) throw new Error(error.message);
   return (data as { id: string }).id;
 }
@@ -56,6 +72,7 @@ export async function getTripPlans(userId: string, limit = 30): Promise<SavedTri
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(limit);
+  if (isMissingTripPlansTable(error)) throw new TripPlansSetupError();
   if (error) return [];
   return (data ?? []) as SavedTripPlanRow[];
 }

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
-import { getTripPlans, saveTripPlan } from "@/lib/trip-plans/store";
+import { getTripPlans, saveTripPlan, TripPlansSetupError } from "@/lib/trip-plans/store";
 import type { TripPlan } from "@/lib/trip-planner";
 import { rateLimit } from "@/lib/security/rate-limit";
 
@@ -9,8 +9,15 @@ export const runtime = "nodejs";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "auth_required" }, { status: 401 });
-  const plans = await getTripPlans(user.id);
-  return NextResponse.json({ plans });
+  try {
+    const plans = await getTripPlans(user.id);
+    return NextResponse.json({ plans });
+  } catch (err) {
+    if (err instanceof TripPlansSetupError) {
+      return NextResponse.json({ plans: [], setupRequired: true });
+    }
+    return NextResponse.json({ error: "load_failed" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -30,6 +37,12 @@ export async function POST(req: NextRequest) {
     const id = await saveTripPlan(user.id, body.plan);
     return NextResponse.json({ ok: true, id });
   } catch (err) {
+    if (err instanceof TripPlansSetupError) {
+      return NextResponse.json(
+        { error: "setup_required", detail: "Apply Supabase migration 20260511000001_trip_plans.sql" },
+        { status: 503 },
+      );
+    }
     return NextResponse.json(
       { error: "save_failed", detail: err instanceof Error ? err.message : "unknown" },
       { status: 500 },

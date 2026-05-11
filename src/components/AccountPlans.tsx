@@ -16,6 +16,7 @@ type SavedPlan = {
 type PlansResponse = {
   plans?: SavedPlan[];
   error?: string;
+  setupRequired?: boolean;
 };
 
 type SupportTicket = {
@@ -37,6 +38,7 @@ export function AccountPlans({ locale }: { locale: Locale }) {
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [status, setStatus] = useState<"loading" | "auth" | "empty" | "ready" | "error">("loading");
+  const [setupRequired, setSetupRequired] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -56,6 +58,7 @@ export function AccountPlans({ locale }: { locale: Locale }) {
         if (!plansRes.ok || json.error) throw new Error(json.error ?? "load_failed");
         const supportJson = ticketsRes.ok ? ((await ticketsRes.json()) as SupportResponse) : { tickets: [] };
         const nextPlans = json.plans ?? [];
+        setSetupRequired(Boolean(json.setupRequired));
         setTickets(supportJson.tickets ?? []);
         setPlans(nextPlans);
         setStatus(nextPlans.length || (supportJson.tickets?.length ?? 0) ? "ready" : "empty");
@@ -142,7 +145,16 @@ export function AccountPlans({ locale }: { locale: Locale }) {
             {isAr ? "إنشاء خطة" : "Create plan"}
           </Link>
         </div>
-        {plans.length ? (
+        {setupRequired ? (
+          <InlineEmpty
+            title={isAr ? "تفعيل حفظ الخطط مطلوب" : "Trip plan storage needs setup"}
+            body={
+              isAr
+                ? "الكود جاهز، لكن جدول trip_plans غير موجود في Supabase الإنتاج. طبّق migration الجديد لتفعيل الحفظ في الحساب."
+                : "The code is ready, but the trip_plans table is missing in production Supabase. Apply the new migration to enable account saves."
+            }
+          />
+        ) : plans.length ? (
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             {plans.map((row) => (
               <article key={row.id} className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
