@@ -50,7 +50,7 @@ export default async function SearchPage({
 
   return (
     // Outer wrapper fills the mobile viewport and never grows wider than it.
-    <div className="chat-viewport-lock flex h-[100dvh] min-h-[100svh] w-[100dvw] max-w-[100dvw] flex-col bg-[#06111e]">
+    <div className="chat-viewport-lock flex h-[var(--gtz-visual-height,100dvh)] min-h-[var(--gtz-visual-height,100svh)] max-h-[var(--gtz-visual-height,100dvh)] w-[100dvw] max-w-[100dvw] flex-col bg-[#06111e]">
       <Navbar dict={dict} locale={locale as Locale} />
       {/*
         flex-1 + min-h-0 → fills remaining height after Navbar (works on all devices).

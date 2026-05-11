@@ -11,6 +11,7 @@ export type EventName =
   | "chat_results_ready"
   | "chat_followup_revealed"
   | "companion_image_analyzed"
+  | "ria_quick_action_clicked"
   | "traveler_service_clicked"
   | "ria_response_feedback";
 

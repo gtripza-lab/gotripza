@@ -71,17 +71,41 @@ declare global {
 
 // ── Quick suggestions shown on empty state ────────────────────────────────
 const SUGGESTIONS_AR = [
-  "خطط لي رحلة هادئة إلى تركيا",
-  "ساعدني أختار وجهة حسب ميزانيتي",
-  "ترجم لي موقف سفر صعب",
-  "ما أهم تنبيهات الأمان قبل السفر؟",
+  {
+    label: "خطط لي رحلة هادئة إلى تركيا",
+    prompt: "خطط لي رحلة هادئة إلى تركيا. اسألني فقط عن المعلومات الناقصة مثل المدينة، الميزانية، وعدد الأيام ثم ابنِ الخطة خطوة بخطوة.",
+  },
+  {
+    label: "اختيار وجهة حسب الميزانية",
+    prompt: "ساعدني أختار وجهة سفر حسب ميزانيتي. اسألني عن الميزانية، مدة السفر، ونوع الرحلة ثم اقترح خيارات مناسبة.",
+  },
+  {
+    label: "ترجمة موقف سفر",
+    prompt: "أحتاج مساعدة ترجمة أثناء السفر. اسألني عن العبارة أو الموقف، ثم أعطني ترجمة طبيعية وماذا أقول بالضبط.",
+  },
+  {
+    label: "تنبيهات الأمان",
+    prompt: "أحتاج تنبيهات أمان واحتيال سياحي قبل السفر. اسألني عن الوجهة ثم أعطني نصائح عملية بدون تهويل.",
+  },
 ];
 
 const SUGGESTIONS_EN = [
-  "Plan a calm trip to Turkey",
-  "Help me choose a destination by budget",
-  "Translate a tricky travel situation",
-  "What safety alerts should I know?",
+  {
+    label: "Plan a calm trip to Turkey",
+    prompt: "Plan a calm trip to Turkey. Ask only for missing details like city, budget, and number of days, then build the plan step by step.",
+  },
+  {
+    label: "Choose by budget",
+    prompt: "Help me choose a destination based on my budget. Ask about budget, trip length, and travel style, then suggest suitable options.",
+  },
+  {
+    label: "Translate a travel moment",
+    prompt: "I need help translating a travel situation. Ask me for the phrase or situation, then give me a natural translation and exactly what to say.",
+  },
+  {
+    label: "Safety alerts",
+    prompt: "I need practical safety and travel scam alerts before a trip. Ask me for the destination, then give calm practical tips.",
+  },
 ];
 
 // ── Main Chat Interface ───────────────────────────────────────────────────
@@ -99,6 +123,26 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   const isAr = locale === "ar";
   const suggestions = isAr ? SUGGESTIONS_AR : SUGGESTIONS_EN;
   const showSuggestions = messages.length <= 1 && !isThinking;
+
+  // Mobile browsers expose a smaller visual viewport when the keyboard is open.
+  // Keep the chat locked to that visible height so the composer stays reachable.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const root = document.documentElement;
+    const setVisualHeight = () => {
+      const height = window.visualViewport?.height ?? window.innerHeight;
+      root.style.setProperty("--gtz-visual-height", `${Math.round(height)}px`);
+    };
+    setVisualHeight();
+    window.visualViewport?.addEventListener("resize", setVisualHeight);
+    window.visualViewport?.addEventListener("scroll", setVisualHeight);
+    window.addEventListener("orientationchange", setVisualHeight);
+    return () => {
+      window.visualViewport?.removeEventListener("resize", setVisualHeight);
+      window.visualViewport?.removeEventListener("scroll", setVisualHeight);
+      window.removeEventListener("orientationchange", setVisualHeight);
+    };
+  }, []);
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -282,12 +326,16 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             <div className="flex max-w-full gap-2 overflow-x-auto pb-1 scroll-hide">
               {suggestions.map((s) => (
                 <button
-                  key={s}
+                  key={s.label}
                   type="button"
-                  onClick={() => { setInput(s); void sendMessage(s); }}
+                  onClick={() => {
+                    setInput("");
+                    logEvent("ria_quick_action_clicked", { source: "empty_state", label: s.label, locale });
+                    void sendMessage(s.prompt);
+                  }}
                   className="shrink-0 rounded-full border border-white/[0.12] bg-white/[0.05] px-3.5 py-1.5 text-xs text-white/55 transition hover:border-violet-400/40 hover:bg-violet-500/[0.15] hover:text-white/90"
                 >
-                  {s}
+                  {s.label}
                 </button>
               ))}
             </div>
@@ -325,6 +373,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            enterKeyHint="send"
+            autoComplete="off"
+            autoCorrect="on"
             placeholder={
               isAr
                 ? "اسألني عن رحلتك..."
@@ -658,7 +709,16 @@ function QuickActionBar({
             key={action.label}
             type="button"
             disabled={disabled}
-            onClick={() => onAction(action.prompt)}
+            onClick={() => {
+              logEvent("ria_quick_action_clicked", {
+                source: "message_actions",
+                label: action.label,
+                destination: destination ?? null,
+                stage: contextStageFromMessage(message),
+                locale,
+              });
+              onAction(action.prompt);
+            }}
             className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.04] px-3 text-[11px] font-medium text-white/50 transition hover:border-violet-400/30 hover:bg-violet-500/[0.12] hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <Icon className="h-3.5 w-3.5" />
@@ -668,6 +728,10 @@ function QuickActionBar({
       })}
     </div>
   );
+}
+
+function contextStageFromMessage(message: ChatMessage) {
+  return message.mode ?? null;
 }
 
 // ── Chat Search Results ───────────────────────────────────────────────────

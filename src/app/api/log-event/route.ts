@@ -14,6 +14,9 @@ const ALLOWED_EVENTS = new Set([
   "chat_message_sent",
   "chat_results_ready",
   "chat_followup_revealed",
+  "companion_image_analyzed",
+  "ria_quick_action_clicked",
+  "traveler_service_clicked",
   "ria_response_feedback",
 ]);
 
