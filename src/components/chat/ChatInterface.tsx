@@ -28,6 +28,10 @@ import {
   MessageCircleQuestion,
   Bot,
   ImagePlus,
+  Languages,
+  Landmark,
+  ShieldAlert,
+  WalletCards,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
@@ -67,17 +71,17 @@ declare global {
 
 // ── Quick suggestions shown on empty state ────────────────────────────────
 const SUGGESTIONS_AR = [
-  "أبغى أسافر تركيا",
-  "شهر عسل في المالديف",
-  "هل تركيا آمنة للسياحة؟",
-  "أفضل وقت لزيارة بالي",
+  "خطط لي رحلة هادئة إلى تركيا",
+  "ساعدني أختار وجهة حسب ميزانيتي",
+  "ترجم لي موقف سفر صعب",
+  "ما أهم تنبيهات الأمان قبل السفر؟",
 ];
 
 const SUGGESTIONS_EN = [
-  "I want to visit Turkey",
-  "Honeymoon in Maldives",
-  "Is Turkey safe for tourists?",
-  "Best time to visit Bali",
+  "Plan a calm trip to Turkey",
+  "Help me choose a destination by budget",
+  "Translate a tricky travel situation",
+  "What safety alerts should I know?",
 ];
 
 // ── Main Chat Interface ───────────────────────────────────────────────────
@@ -582,11 +586,13 @@ function QuickActionBar({
 }) {
   const isAr = locale === "ar";
   const destination = message.searchData?.intent.destination;
+  const destinationLabel = destination ?? (isAr ? "وجهتي الحالية" : "my current destination");
   const hasHotelGap =
     message.searchData?.wants.includes("hotels") &&
     (message.searchData.hotels.length === 0);
   const actions = [
     {
+      icon: Plane,
       label: isAr ? "اعمل خطة" : "Make a plan",
       prompt: destination
         ? isAr
@@ -597,6 +603,7 @@ function QuickActionBar({
           : "Make me a trip plan",
     },
     {
+      icon: WalletCards,
       label: isAr ? "احسب الميزانية" : "Estimate budget",
       prompt: destination
         ? isAr
@@ -607,6 +614,28 @@ function QuickActionBar({
           : "Estimate a trip budget",
     },
     {
+      icon: Languages,
+      label: isAr ? "ترجمة موقف" : "Translate",
+      prompt: isAr
+        ? `ساعدني في ترجمة موقف سفر في ${destinationLabel}. اسألني عن العبارة أو الصورة أو الموقف ثم أعطني ترجمة طبيعية ومناسبة.`
+        : `Help me translate a travel situation in ${destinationLabel}. Ask me for the phrase, image, or situation, then give me a natural practical translation.`,
+    },
+    {
+      icon: Landmark,
+      label: isAr ? "مساعدة المطار" : "Airport help",
+      prompt: isAr
+        ? `ساعدني خطوة بخطوة في المطار لرحلتي إلى ${destinationLabel}: ماذا أفعل أولا، متى أصل، وماذا أجهز؟`
+        : `Guide me step by step at the airport for ${destinationLabel}: what to do first, when to arrive, and what to prepare.`,
+    },
+    {
+      icon: ShieldAlert,
+      label: isAr ? "تنبيهات الأمان" : "Safety alerts",
+      prompt: isAr
+        ? `اعطني تنبيهات أمان واحتيال سياحي مهمة في ${destinationLabel} بدون تهويل، مع نصائح عملية قصيرة.`
+        : `Give me practical safety and travel scam alerts for ${destinationLabel} without exaggeration, with short next steps.`,
+    },
+    {
+      icon: hasHotelGap ? HotelIcon : Sparkles,
       label: hasHotelGap
         ? isAr ? "مناطق السكن" : "Stay areas"
         : isAr ? "خطوة تالية" : "Next step",
@@ -622,17 +651,21 @@ function QuickActionBar({
 
   return (
     <div className="flex max-w-full gap-2 overflow-x-auto pb-1 scroll-hide">
-      {actions.map((action) => (
-        <button
-          key={action.label}
-          type="button"
-          disabled={disabled}
-          onClick={() => onAction(action.prompt)}
-          className="shrink-0 rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/45 transition hover:border-violet-400/30 hover:bg-violet-500/[0.12] hover:text-white/80 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          {action.label}
-        </button>
-      ))}
+      {actions.map((action) => {
+        const Icon = action.icon;
+        return (
+          <button
+            key={action.label}
+            type="button"
+            disabled={disabled}
+            onClick={() => onAction(action.prompt)}
+            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.04] px-3 text-[11px] font-medium text-white/50 transition hover:border-violet-400/30 hover:bg-violet-500/[0.12] hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Icon className="h-3.5 w-3.5" />
+            <span>{action.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }

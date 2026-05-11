@@ -17,6 +17,8 @@ const staticRoutes = [
   { path: "/plus", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/ai-travel-assistant", priority: 0.95, changeFrequency: "monthly" as const },
   { path: "/travel-companion", priority: 0.95, changeFrequency: "monthly" as const },
+  { path: "/travel-translation", priority: 0.88, changeFrequency: "monthly" as const },
+  { path: "/travel-safety", priority: 0.88, changeFrequency: "monthly" as const },
   { path: "/smart-travel-planning", priority: 0.9, changeFrequency: "monthly" as const },
   { path: "/destinations", priority: 0.9, changeFrequency: "weekly" as const },
   { path: "/services", priority: 0.85, changeFrequency: "monthly" as const },
