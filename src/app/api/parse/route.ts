@@ -319,17 +319,43 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   const locale = detectLocale(query);
   const isAr = locale === "ar";
   const lower = query.toLowerCase();
+  const conversationText = `${history.map((turn) => turn.text).join(" ")} ${query}`;
+  const hasIstanbul = /اسطنبول|إسطنبول|istanbul/i.test(conversationText);
+  const hasFamily = /عائل|family|kids|أطفال|اطفال/i.test(conversationText);
+  const hasTaksim = /تقسيم|taksim/i.test(conversationText);
+  const normalizeDigits = (value: string) =>
+    value.replace(/[٠-٩]/g, (digit) => String("٠١٢٣٤٥٦٧٨٩".indexOf(digit)))
+      .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
+  const normalizedQuery = normalizeDigits(query);
+  const moneyMatch = normalizedQuery.match(/(\d{2,6})\s*(?:\$|دولار|usd|ريال|sar)?/i);
+  const daysMatch = normalizedQuery.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days|day)/i);
 
   if (/ترجم|ترجمة|translate|translation|phrase|عبارة|لغة/i.test(query)) {
+    const phrase = query
+      .replace(/^(?:ترجم(?:\s+لي)?|ترجمة|translate(?:\s+for\s+me)?)[\s:：-]*/i, "")
+      .replace(/^["'“”]+|["'“”]+$/g, "")
+      .trim();
+    const hasPhrase = phrase.length > 3 && phrase !== query.trim();
+    const translatedTaxiPhrase = /سيارة\s+الأجرة\s+الرسمية|التاكسي\s+الرسمي|official\s+taxi/i.test(phrase);
+    const directTranslation = isAr
+      ? translatedTaxiPhrase && hasIstanbul
+        ? "بالتركية قل: Resmi taksiyi nerede bulabilirim? معناها: أين أجد سيارة الأجرة الرسمية؟ وإذا تريد صيغة ألطف: Lütfen resmi taksi durağı nerede? انتبه فقط لا تركب مع أي شخص يعرض عليك سيارة داخل الصالة؛ اتبع لوحات Taxi الرسمية."
+        : hasPhrase
+          ? `أقدر أساعدك. العبارة التي تريد ترجمتها هي: “${phrase}”. قل لي اللغة المطلوبة، أو اكتب لي السياق: مطار، فندق، مطعم، أو تاكسي، وأصيغها لك بشكل طبيعي.`
+          : "أكيد. أرسل لي العبارة أو صوّر اللوحة/القائمة، وأنا أعطيك ترجمة طبيعية وما تقول بالضبط في الموقف. لو هي محادثة مع فندق أو مطار أو مطعم، قل لي السياق عشان أصيغها بأدب وبأسلوب محلي."
+      : translatedTaxiPhrase && hasIstanbul
+        ? "In Turkish, say: Resmi taksiyi nerede bulabilirim? It means: Where can I find the official taxi? A softer version is: Lütfen resmi taksi durağı nerede? Avoid anyone offering a car inside the arrivals hall; follow official Taxi signs."
+        : hasPhrase
+          ? `I can help. The phrase is: “${phrase}”. Tell me the target language or context, like airport, hotel, restaurant, or taxi, and I’ll phrase it naturally.`
+          : "Absolutely. Send me the phrase or upload a photo of the sign/menu, and I’ll give you a natural translation plus exactly what to say. If it’s for a hotel, airport, or restaurant, tell me the situation so I can phrase it politely.";
+
     return NextResponse.json({
       intent: { origin: null, destination: null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
       locale,
       mode: "advice",
-      message: isAr
-        ? "أكيد. أرسل لي العبارة أو صوّر اللوحة/القائمة، وأنا أعطيك ترجمة طبيعية وما تقول بالضبط في الموقف. لو هي محادثة مع فندق أو مطار أو مطعم، قل لي السياق عشان أصيغها بأدب وبأسلوب محلي."
-        : "Absolutely. Send me the phrase or upload a photo of the sign/menu, and I’ll give you a natural translation plus exactly what to say. If it’s for a hotel, airport, or restaurant, tell me the situation so I can phrase it politely.",
+      message: directTranslation,
       wants: ["flights", "hotels"],
-      followup: isAr ? "أرسل العبارة هنا." : "Send the phrase here.",
+      followup: hasPhrase ? null : isAr ? "أرسل العبارة هنا." : "Send the phrase here.",
       tips: null,
       budget_verdict: null,
       confidence: null,
@@ -342,13 +368,19 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   }
 
   if (/مطار|airport|boarding|gate|terminal|ترانزيت|transit|layover/i.test(query)) {
+    const airportMessage = isAr
+      ? hasIstanbul
+        ? `تمام، بعد الجوازات في مطار إسطنبول اتبع لوحات Baggage Claim أولاً لاستلام الشنط، ثم Customs/Exit. ${hasFamily ? "بما أنك مع عائلتك، خذوا 5 دقائق قبل الخروج لتجميع الشنط والمياه والحمام." : "بعدها خذ لحظة قبل الخروج لتتأكد من الشنط والوثائق."} للمواصلات: اتبع لوحات Taxi الرسمية أو Havaist/Metro، ولا تقبل عروض السائقين داخل الصالة. إذا أرسلت صورة الشاشة أو رقم بوابة الخروج أقول لك المسار الأدق.`
+        : "خلّيني أمشي معك خطوة بخطوة. بعد الجوازات اتبع Baggage Claim للشنط، ثم Customs/Exit، وبعد الخروج لا تركب إلا من موقف رسمي أو تطبيق موثوق. أرسل لي اسم المطار أو صورة الشاشة/التذكرة وأقول لك الخطوة التالية بدقة."
+      : hasIstanbul
+        ? `After immigration at Istanbul Airport, follow Baggage Claim first, then Customs/Exit. ${hasFamily ? "Since you’re with family, pause before exiting to regroup, use restrooms, and check bags." : "Before exiting, pause and check your bags and documents."} For transport, follow official Taxi, Havaist, or Metro signs; avoid drivers approaching you inside the hall. Send a photo of the screen or exit sign and I’ll guide you exactly.`
+        : "I’ll guide you step by step. After immigration, follow Baggage Claim, then Customs/Exit. Outside, use only official taxi stands or trusted apps. Send the airport name or a photo of the screen/ticket and I’ll tell you the exact next move.";
+
     return NextResponse.json({
       intent: { origin: null, destination: null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
       locale,
       mode: "advice",
-      message: isAr
-        ? "خلّيني أمشي معك خطوة بخطوة. أولاً تأكد من رقم الرحلة والبوابة في الشاشة، ثم جهّز الجواز وبطاقة الصعود، وبعدها اتجه للأمن أو الجوازات حسب موقعك. إذا أرسلت لي اسم المطار أو صورة التذكرة/الشاشة أقول لك الخطوة التالية بدقة."
-        : "I’ll guide you step by step. First check the flight number and gate on the screen, keep your passport and boarding pass ready, then head to security or immigration depending on where you are. Send the airport name or a photo of the ticket/screen and I’ll tell you the exact next move.",
+      message: airportMessage,
       wants: ["flights", "hotels"],
       followup: isAr ? "ما اسم المطار أو أرسل صورة الشاشة." : "What airport are you in, or send a photo of the screen.",
       tips: null,
@@ -363,15 +395,21 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   }
 
   if (/آمن|أمان|safe|safety|scam|نصب|احتيال|خطر|danger/i.test(query)) {
+    const safetyMessage = isAr
+      ? hasTaksim
+        ? `تقسيم مناسبة ومزدحمة غالباً، لكنها ليست منطقة “هادئة” للعائلة ليلاً. امشوا في الشوارع الرئيسية المضيئة، تجنبوا الأزقة المتأخرة، ولا تتعاملوا مع من يدعوكم لمقهى/بار أو يعرض مساعدة بشكل مبالغ. للمواصلات ليلاً استخدموا تطبيق موثوق أو تاكسي رسمي من نقطة واضحة. إذا كان معكم أطفال، الأفضل السكن قريب من المترو أو اختيار شيشلي/نشان تاشي لهدوء أكثر.`
+        : "أقدر أساعدك بهدوء بدون تهويل. أعطني الوجهة أو الحي، وسأعطيك: المناطق الأفضل، المواصلات الآمنة، أشهر أساليب الاحتيال، وماذا تتجنب ليلاً. كقاعدة عامة: لا تستخدم تاكسي عشوائي، لا تسلّم الجواز إلا لجهة رسمية، واحتفظ بنسخة رقمية من وثائقك."
+      : hasTaksim
+        ? "Taksim is usually busy and convenient, but it is not the calmest family area late at night. Stay on bright main streets, avoid late side alleys, and ignore people inviting you to bars/cafes or offering unusual help. At night use a trusted app or official taxi point. With kids, staying near metro access or in Sisli/Nisantasi can feel calmer."
+        : "I can help calmly without exaggerating. Tell me the destination or neighborhood and I’ll cover safe areas, transport, common scams, and what to avoid at night. General rule: avoid random taxis, never hand over your passport except to official staff, and keep digital copies of documents.";
+
     return NextResponse.json({
       intent: { origin: null, destination: null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
       locale,
       mode: "advice",
-      message: isAr
-        ? "أقدر أساعدك بهدوء بدون تهويل. أعطني الوجهة أو الحي، وسأعطيك: المناطق الأفضل، المواصلات الآمنة، أشهر أساليب الاحتيال، وماذا تتجنب ليلاً. كقاعدة عامة: لا تستخدم تاكسي عشوائي، لا تسلّم الجواز إلا لجهة رسمية، واحتفظ بنسخة رقمية من وثائقك."
-        : "I can help calmly without exaggerating. Tell me the destination or neighborhood and I’ll cover safe areas, transport, common scams, and what to avoid at night. General rule: avoid random taxis, never hand over your passport except to official staff, and keep digital copies of documents.",
+      message: safetyMessage,
       wants: ["flights", "hotels"],
-      followup: isAr ? "ما الوجهة أو الحي؟" : "Which destination or neighborhood?",
+      followup: hasTaksim ? null : isAr ? "ما الوجهة أو الحي؟" : "Which destination or neighborhood?",
       tips: null,
       budget_verdict: null,
       confidence: null,
@@ -383,16 +421,24 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
     });
   }
 
-  if (/ميزانية|budget|تكلفة|cost|وفر|أوفر|cheap|رخيص/i.test(lower)) {
+  if (/ميزاني|ميزانية|budget|تكلفة|cost|وفر|أوفر|cheap|رخيص/i.test(lower)) {
+    const budgetAmount = moneyMatch?.[1] ?? null;
+    const days = daysMatch?.[1] ?? null;
+    const budgetMessage = isAr
+      ? budgetAmount && days && hasIstanbul
+        ? `${budgetAmount} دولار لمدة ${days} أيام في إسطنبول ممكنة إذا كان السفر اقتصادي إلى متوسط. التقسيم الأقرب: سكن بسيط 45-80 دولار لليلة، أكل 20-35 دولار يومياً للشخص، مواصلات 5-12 دولار يومياً، وأنشطة 15-40 دولار يومياً حسب الاختيارات. وفر أكثر بالسكن قرب المترو، استخدام Istanbulkart، وتقليل التاكسي. إذا عدد المسافرين أكثر من شخص قل لي العدد وأحسبها بدقة.`
+        : "أحسبها لك كمسافر، مو كجدول جامد. أعطني الوجهة، عدد الأيام، وعدد الأشخاص، وسأقسمها إلى: سكن، أكل، مواصلات، أنشطة، إنترنت/شريحة، واحتياط. إذا عندك رقم ميزانية قل لي إياه وأقول لك هل يكفي وأين نوفر."
+      : budgetAmount && days && hasIstanbul
+        ? `$${budgetAmount} for ${days} days in Istanbul can work on an economy to mid-range style. Rough split: simple stay $45-80/night, food $20-35/day per person, transport $5-12/day, activities $15-40/day. Save by staying near metro, using Istanbulkart, and limiting taxis. Tell me traveler count and I’ll calculate it tighter.`
+        : "I’ll calculate it like a traveler, not a spreadsheet. Tell me destination, days, and travelers, and I’ll split it into stay, food, transport, activities, data/eSIM, and buffer. If you have a budget number, send it and I’ll tell you if it works and where to save.";
+
     return NextResponse.json({
-      intent: { origin: null, destination: context?.destination ?? null, departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
+      intent: { origin: null, destination: context?.destination ?? (hasIstanbul ? "Istanbul" : null), departure_date: null, return_date: null, adults: 2, budget_usd: budgetAmount ? Number(budgetAmount) : null, trip_type: null, cabin_class: null, notes: null },
       locale,
       mode: "advice",
-      message: isAr
-        ? "أحسبها لك كمسافر، مو كجدول جامد. أعطني الوجهة، عدد الأيام، وعدد الأشخاص، وسأقسمها إلى: سكن، أكل، مواصلات، أنشطة، إنترنت/شريحة، واحتياط. إذا عندك رقم ميزانية قل لي إياه وأقول لك هل يكفي وأين نوفر."
-        : "I’ll calculate it like a traveler, not a spreadsheet. Tell me destination, days, and travelers, and I’ll split it into stay, food, transport, activities, data/eSIM, and buffer. If you have a budget number, send it and I’ll tell you if it works and where to save.",
+      message: budgetMessage,
       wants: ["flights", "hotels"],
-      followup: isAr ? "ما الوجهة وعدد الأيام؟" : "What destination and how many days?",
+      followup: budgetAmount && days ? null : isAr ? "ما الوجهة وعدد الأيام؟" : "What destination and how many days?",
       tips: null,
       budget_verdict: null,
       confidence: null,
