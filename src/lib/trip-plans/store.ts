@@ -76,3 +76,14 @@ export async function getTripPlans(userId: string, limit = 30): Promise<SavedTri
   if (error) return [];
   return (data ?? []) as SavedTripPlanRow[];
 }
+
+export async function deleteTripPlan(userId: string, planId: string) {
+  const db = createSupabaseService() as AnyTable;
+  const { error } = await db
+    .from("trip_plans")
+    .delete()
+    .eq("id", planId)
+    .eq("user_id", userId);
+  if (isMissingTripPlansTable(error)) throw new TripPlansSetupError();
+  if (error) throw new Error(error.message);
+}
