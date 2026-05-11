@@ -11,6 +11,7 @@ export type EventName =
   | "chat_results_ready"
   | "chat_followup_revealed"
   | "companion_image_analyzed"
+  | "traveler_service_clicked"
   | "ria_response_feedback";
 
 export type EventPayload = Record<string, unknown>;

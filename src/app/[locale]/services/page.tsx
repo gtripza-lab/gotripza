@@ -3,6 +3,7 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { getDictionary } from "@/i18n/get-dictionary";
+import { TravelerServicesGrid, type TravelerServiceCard } from "@/components/TravelerServicesGrid";
 import type { Metadata } from "next";
 
 export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
@@ -18,24 +19,7 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
 }
 
 // ── Partner cards — all links use Travelpayouts affiliate tracking (tpm.li) ──
-type ServiceCard = {
-  icon: string;
-  name_ar: string;
-  name_en: string;
-  tagline_ar: string;
-  tagline_en: string;
-  desc_ar: string;
-  desc_en: string;
-  cta_ar: string;
-  cta_en: string;
-  url: string;
-  accentBg: string;
-  accentText: string;
-  accentBorder: string;
-  accentButton: string;
-};
-
-const SERVICES: ServiceCard[] = [
+const SERVICES: TravelerServiceCard[] = [
   // ── Travel Insurance ──────────────────────────────────────────────────
   {
     icon: "🛡️",
@@ -48,6 +32,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احصل على التأمين",
     cta_en: "Get Insured",
     url: "https://visitorscoverage.tpm.li/OjLSplyJ",
+    provider: "visitorscoverage",
+    resultType: "insurance",
     accentBg: "bg-blue-500/[0.08]", accentText: "text-blue-300", accentBorder: "border-blue-500/20", accentButton: "bg-blue-600",
   },
 
@@ -63,6 +49,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "اشتر شريحة الإنترنت",
     cta_en: "Buy eSIM",
     url: "https://airalo.tpm.li/6HeGxPwG",
+    provider: "airalo",
+    resultType: "esim",
     accentBg: "bg-indigo-500/[0.08]", accentText: "text-indigo-300", accentBorder: "border-indigo-500/20", accentButton: "bg-indigo-600",
   },
   {
@@ -76,6 +64,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احصل على Yesim",
     cta_en: "Get Yesim",
     url: "https://yesim.tpm.li/E7IOi4Zs",
+    provider: "yesim",
+    resultType: "esim",
     accentBg: "bg-cyan-500/[0.08]", accentText: "text-cyan-300", accentBorder: "border-cyan-500/20", accentButton: "bg-cyan-600",
   },
   {
@@ -89,6 +79,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احصل على NordVPN",
     cta_en: "Get NordVPN",
     url: "https://nordvpn.tpm.li/fExKzOuM",
+    provider: "nordvpn",
+    resultType: "partner",
     accentBg: "bg-blue-500/[0.08]", accentText: "text-blue-200", accentBorder: "border-blue-500/20", accentButton: "bg-blue-700",
   },
 
@@ -104,6 +96,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احجز تذاكرك",
     cta_en: "Book Tickets",
     url: "https://tiqets.tpm.li/5hX5mUmz",
+    provider: "tiqets",
+    resultType: "activities",
     accentBg: "bg-rose-500/[0.08]", accentText: "text-rose-300", accentBorder: "border-rose-500/20", accentButton: "bg-rose-600",
   },
   {
@@ -117,6 +111,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "اكتشف Klook",
     cta_en: "Explore Klook",
     url: "https://klook.tpm.li/nrGsmP4o",
+    provider: "klook",
+    resultType: "activities",
     accentBg: "bg-orange-500/[0.08]", accentText: "text-orange-300", accentBorder: "border-orange-500/20", accentButton: "bg-orange-600",
   },
   {
@@ -130,6 +126,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "اكتشف KKday",
     cta_en: "Explore KKday",
     url: "https://kkday.tpm.li/WCCNnGsA",
+    provider: "kkday",
+    resultType: "activities",
     accentBg: "bg-amber-500/[0.08]", accentText: "text-amber-300", accentBorder: "border-amber-500/20", accentButton: "bg-amber-600",
   },
 
@@ -145,6 +143,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "ابحث عن رحلة",
     cta_en: "Search Flights",
     url: "https://kiwi.tpm.li/UjCGbORd",
+    provider: "kiwi",
+    resultType: "flight",
     accentBg: "bg-teal-500/[0.08]", accentText: "text-teal-300", accentBorder: "border-teal-500/20", accentButton: "bg-teal-600",
   },
 
@@ -160,6 +160,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "تحقق من رحلتك",
     cta_en: "Check Your Flight",
     url: "https://airhelp.tpm.li/mmjS6uvS",
+    provider: "airhelp",
+    resultType: "compensation",
     accentBg: "bg-violet-500/[0.08]", accentText: "text-violet-300", accentBorder: "border-violet-500/20", accentButton: "bg-violet-600",
   },
 
@@ -175,6 +177,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "احجز سيارتك",
     cta_en: "Book a Car",
     url: "https://autoeurope.tpm.li/juSTrVaH",
+    provider: "autoeurope",
+    resultType: "car_rental",
     accentBg: "bg-sky-500/[0.08]", accentText: "text-sky-300", accentBorder: "border-sky-500/20", accentButton: "bg-sky-600",
   },
   {
@@ -188,6 +192,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "قارن السيارات",
     cta_en: "Compare Cars",
     url: "https://qeeq.tpm.li/xODdj69U",
+    provider: "qeeq",
+    resultType: "car_rental",
     accentBg: "bg-emerald-500/[0.08]", accentText: "text-emerald-300", accentBorder: "border-emerald-500/20", accentButton: "bg-emerald-600",
   },
   {
@@ -201,6 +207,8 @@ const SERVICES: ServiceCard[] = [
     cta_ar: "استكشف القطارات",
     cta_en: "Explore Trains",
     url: "https://www.raileurope.com/",
+    provider: "raileurope",
+    resultType: "trains",
     accentBg: "bg-lime-500/[0.08]", accentText: "text-lime-300", accentBorder: "border-lime-500/20", accentButton: "bg-lime-700",
   },
 ];
@@ -265,39 +273,7 @@ export default async function ServicesPage({
 
         {/* ── Service Cards Grid ─────────────────────────────────────── */}
         <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {SERVICES.map((s) => (
-              <a
-                key={s.name_en}
-                href={s.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`group flex flex-col rounded-2xl border ${s.accentBorder} ${s.accentBg} p-6 transition-all duration-200 hover:shadow-md hover:scale-[1.01]`}
-              >
-                <div className="mb-4 flex items-start justify-between">
-                  <span className="text-3xl">{s.icon}</span>
-                  <span className={`rounded-full border ${s.accentBorder} bg-white/[0.06] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${s.accentText}`}>
-                    {isAr ? "عبر Travelpayouts" : "via TP"}
-                  </span>
-                </div>
-
-                <h2 className="text-base font-bold text-white/90">
-                  {isAr ? s.name_ar : s.name_en}
-                </h2>
-                <p className={`mt-0.5 text-xs font-medium ${s.accentText}`}>
-                  {isAr ? s.tagline_ar : s.tagline_en}
-                </p>
-                <p className="mt-3 flex-1 text-sm leading-relaxed text-white/55">
-                  {isAr ? s.desc_ar : s.desc_en}
-                </p>
-
-                <div className={`mt-5 inline-flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white transition-all group-hover:gap-2.5 ${s.accentButton}`}>
-                  {isAr ? s.cta_ar : s.cta_en}
-                  <span className="transition-transform group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5">→</span>
-                </div>
-              </a>
-            ))}
-          </div>
+          <TravelerServicesGrid services={SERVICES} locale={locale} />
         </section>
 
       </main>
