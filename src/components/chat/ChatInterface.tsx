@@ -27,6 +27,7 @@ import {
   ChevronUp,
   MessageCircleQuestion,
   Bot,
+  ImagePlus,
   ThumbsDown,
   ThumbsUp,
 } from "lucide-react";
@@ -82,13 +83,15 @@ const SUGGESTIONS_EN = [
 // ── Main Chat Interface ───────────────────────────────────────────────────
 
 export function ChatInterface({ dict }: { dict: Dictionary }) {
-  const { messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, clearChat } = useChat();
+  const { messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, addAssistantMessage, clearChat } = useChat();
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
+  const [isImageReading, setIsImageReading] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const isAr = locale === "ar";
   const suggestions = isAr ? SUGGESTIONS_AR : SUGGESTIONS_EN;
   const showSuggestions = messages.length <= 1 && !isThinking;
@@ -141,6 +144,43 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     rec.onerror = () => setIsListening(false);
     rec.onend = () => setIsListening(false);
     rec.start();
+  };
+
+  const handleImage = async (file: File | null | undefined) => {
+    if (!file || isImageReading || isThinking) return;
+    setIsImageReading(true);
+    const form = new FormData();
+    form.set("image", file);
+    form.set("locale", locale);
+    form.set("prompt", input.trim() || (isAr ? "حللي هذه الصورة في سياق السفر." : "Analyze this image for travel context."));
+
+    try {
+      const res = await fetch("/api/companion/image", { method: "POST", body: form });
+      const data = (await res.json().catch(() => ({}))) as { message?: string; error?: string };
+      if (res.ok && data.message) {
+        addAssistantMessage(data.message, "advice");
+        logEvent("companion_image_analyzed", { locale, size: file.size, type: file.type });
+      } else if (res.status === 401 || res.status === 402) {
+        addAssistantMessage(
+          isAr
+            ? "فهم الصور متاح ضمن Rya Companion للمستخدمين المسجلين. سجّل دخولك أو فعّل الرفيق لاستخدام هذه الميزة أثناء السفر."
+            : "Image help is available with Rya Companion for signed-in travelers. Sign in or activate Companion to use it during your trip.",
+          "advice",
+        );
+      } else {
+        throw new Error(data.error ?? "image_failed");
+      }
+    } catch {
+      addAssistantMessage(
+        isAr
+          ? "لم أستطع قراءة الصورة الآن. جرّب صورة أوضح أو أرسل السؤال نصياً."
+          : "I could not read the image right now. Try a clearer image or send the question as text.",
+        "advice",
+      );
+    } finally {
+      setIsImageReading(false);
+      if (imageInputRef.current) imageInputRef.current.value = "";
+    }
   };
 
   return (
@@ -256,7 +296,25 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
         className="chat-viewport-lock shrink-0 border-t border-white/[0.08] px-2 pt-2.5 sm:px-4 sm:pt-3 backdrop-blur-xl"
         style={{ background: "rgba(0,0,0,0.40)", paddingBottom: "max(10px, env(safe-area-inset-bottom))" }}
       >
-        <div className="grid w-full max-w-full min-w-0 grid-cols-[minmax(0,1fr)_2.5rem] items-end gap-1.5 min-[390px]:grid-cols-[minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[minmax(0,1fr)_2.75rem_2.75rem] sm:gap-2.5">
+        <div className="grid w-full max-w-full min-w-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-end gap-1.5 min-[430px]:grid-cols-[2.5rem_minmax(0,1fr)_2.5rem_2.5rem] sm:grid-cols-[2.75rem_minmax(0,1fr)_2.75rem_2.75rem] sm:gap-2.5">
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            className="hidden"
+            onChange={(e) => void handleImage(e.target.files?.[0])}
+          />
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={isThinking || isImageReading}
+            aria-label={isAr ? "فهم صورة" : "Analyze image"}
+            title={isAr ? "فهم صورة مع Rya Companion" : "Image help with Rya Companion"}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-white/[0.12] bg-white/[0.05] text-white/35 transition hover:bg-white/[0.10] hover:text-white/65 disabled:opacity-40 sm:h-11 sm:w-11 sm:rounded-xl"
+          >
+            <ImagePlus className={`h-3.5 w-3.5 sm:h-4 sm:w-4 ${isImageReading ? "animate-pulse text-brand-mint" : ""}`} />
+          </button>
+
           {/* Textarea */}
           <textarea
             ref={inputRef}
@@ -270,7 +328,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             }
             disabled={isThinking}
             rows={1}
-            className="min-h-[40px] sm:min-h-[44px] flex-1 min-w-0 resize-none rounded-xl sm:rounded-2xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 sm:px-4 sm:py-3 text-base sm:text-sm text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50"
+            className="min-h-[40px] min-w-0 flex-1 resize-none rounded-xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 text-base text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50 sm:min-h-[44px] sm:rounded-2xl sm:px-4 sm:py-3 sm:text-sm"
             style={{ maxHeight: "100px" }}
             onInput={(e) => {
               const t = e.currentTarget;
@@ -285,7 +343,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleVoice}
             disabled={isThinking}
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
-            className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg transition disabled:opacity-40 min-[390px]:flex sm:h-11 sm:w-11 sm:rounded-xl ${
+            className={`hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg transition disabled:opacity-40 min-[430px]:flex sm:h-11 sm:w-11 sm:rounded-xl ${
               isListening
                 ? "animate-pulse bg-rose-500/20 text-rose-400"
                 : "border border-white/[0.12] bg-white/[0.05] text-white/35 hover:bg-white/[0.10] hover:text-white/65"
@@ -594,7 +652,7 @@ function ChatSearchResults({
   currency: import("@/lib/utils").Currency;
   locale: import("@/i18n/config").Locale;
 }) {
-  const { revealSide } = useChat();
+  const { revealSide, travelContext } = useChat();
   const isAr = locale === "ar";
   const fmt = (n: number) => formatPrice(n, currency, locale);
   const showFlights = data.wants.includes("flights");
@@ -720,7 +778,7 @@ function ChatSearchResults({
       )}
 
       {/* Smart partner recommendations */}
-      <SmartChatPartners intent={data.intent} isAr={isAr} />
+      <SmartChatPartners intent={data.intent} context={travelContext} isAr={isAr} />
     </div>
   );
 }
@@ -1110,9 +1168,11 @@ function FollowupChip({
 
 function SmartChatPartners({
   intent,
+  context,
   isAr,
 }: {
   intent: import("@/lib/ai/schemas/intent").TripIntent;
+  context?: import("@/lib/ai/schemas/intent").TravelContext | null;
   isAr: boolean;
 }) {
   const urlParams = {
@@ -1124,7 +1184,7 @@ function SmartChatPartners({
     subid: "ai_chat",
   };
 
-  const recs = getPartnerRecommendations(intent, urlParams, 4);
+  const recs = getPartnerRecommendations(intent, urlParams, 4, context);
   if (!recs.length) return null;
 
   // Split into priority groups: essentials (eSIM + insurance) vs extras

@@ -19,6 +19,7 @@ import {
   type PartnerUrlParams,
 } from "./partners";
 import type { TripIntent } from "./ai/schemas/intent";
+import type { TravelContext } from "./ai/schemas/intent";
 
 export type PartnerRec = {
   partner: Partner;
@@ -80,6 +81,7 @@ export function getPartnerRecommendations(
   intent: TripIntent,
   urlParams: PartnerUrlParams,
   maxResults = 6,
+  context?: TravelContext | null,
 ): PartnerRec[] {
   const recs: PartnerRec[] = [];
   const dest = intent.destination ?? "";
@@ -87,6 +89,8 @@ export function getPartnerRecommendations(
   const isIntl = isInternational(intent);
   const isEU = isEuropean(dest);
   const isAS = isAsian(dest);
+  const services = new Set(context?.service_interests ?? []);
+  const isReady = context?.booking_stage === "ready_to_book";
 
   // Helper: add rec if partner is configured
   function add(
@@ -111,6 +115,67 @@ export function getPartnerRecommendations(
     add("tripcom", 2,
       `Hotels + packages for ${dest} on Trip.com`,
       `فنادق وحزم سفر إلى ${dest} عبر Trip.com`
+    );
+  }
+
+  // ── Explicit service intent from Rya's conversation context ─────────────
+  if (services.has("insurance")) {
+    add("visitorscoverage", 0,
+      "Travel insurance fits what you asked for — compare coverage before you fly",
+      "تأمين السفر مناسب لما طلبته — قارن التغطية قبل السفر"
+    );
+    add("ekta", 1,
+      "Instant travel insurance policy for visa and trip protection",
+      "وثيقة تأمين فورية للتأشيرة وحماية الرحلة"
+    );
+  }
+
+  if (services.has("esim")) {
+    add("airalo", 0,
+      "eSIM data for your destination — activate before arrival",
+      "شريحة eSIM للوجهة — فعّلها قبل الوصول"
+    );
+    add("yesim", 1,
+      "eSIM with travel connectivity and security features",
+      "شريحة eSIM مع اتصال وميزات أمان للسفر"
+    );
+  }
+
+  if (services.has("activities")) {
+    add("getyourguide", 1,
+      `Activities and guided experiences that match your ${dest || "trip"} plan`,
+      `أنشطة وتجارب تناسب خطة رحلتك إلى ${dest || "الوجهة"}`
+    );
+    if (isAS) {
+      add("klook", 2,
+        `Activities, tickets, and local experiences for ${dest}`,
+        `أنشطة وتذاكر وتجارب محلية في ${dest}`
+      );
+    }
+  }
+
+  if (services.has("cars")) {
+    add("discovercars", 1,
+      `Car rental is useful for this trip — compare pickup options in ${dest}`,
+      `تأجير السيارة قد يفيد هذه الرحلة — قارن خيارات الاستلام في ${dest}`
+    );
+  }
+
+  if (services.has("compensation")) {
+    add("airhelp", 1,
+      "Check if a delayed or cancelled flight may qualify for compensation",
+      "تحقق هل الرحلة المتأخرة أو الملغاة تستحق تعويضاً"
+    );
+  }
+
+  if (isReady && isIntl) {
+    add("airalo", 3,
+      "Before booking, prepare mobile data so you land connected",
+      "قبل الحجز، جهّز الإنترنت حتى تصل وأنت متصل"
+    );
+    add("visitorscoverage", 4,
+      "Add travel insurance while your dates are still fresh",
+      "أضف تأمين السفر بينما تواريخ رحلتك واضحة"
     );
   }
 

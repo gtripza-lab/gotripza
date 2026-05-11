@@ -102,6 +102,7 @@ type ChatContextValue = {
   travelContext: TravelContext;
   companionMemory: CompanionMemory;
   sendMessage: (text: string) => Promise<void>;
+  addAssistantMessage: (text: string, mode?: ChatMode) => void;
   clearChat: () => void;
   revealSide: (messageId: string, side: "flights" | "hotels") => void;
 };
@@ -193,6 +194,20 @@ export function ChatProvider({
       knownFacts: Array.from(new Set(facts)).slice(0, 16),
     });
   }
+
+  const addAssistantMessage = useCallback((text: string, mode: ChatMode = "advice") => {
+    if (!text.trim()) return;
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: genId(),
+        role: "assistant",
+        text: text.trim(),
+        mode,
+        timestamp: Date.now(),
+      },
+    ]);
+  }, []);
 
   // Auto-send initial message from URL ?q= param (homepage suggestion chips)
   const sentInitial = useRef(false);
@@ -438,8 +453,8 @@ export function ChatProvider({
   }, []);
 
   const value = useMemo<ChatContextValue>(
-    () => ({ messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, clearChat, revealSide }),
-    [messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, clearChat, revealSide],
+    () => ({ messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, addAssistantMessage, clearChat, revealSide }),
+    [messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, addAssistantMessage, clearChat, revealSide],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

@@ -10,6 +10,7 @@ export type EventName =
   | "chat_message_sent"
   | "chat_results_ready"
   | "chat_followup_revealed"
+  | "companion_image_analyzed"
   | "ria_response_feedback";
 
 export type EventPayload = Record<string, unknown>;
