@@ -28,7 +28,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (!authed) redirect("/en/admin");
 
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="ar" dir="rtl" className="dark" suppressHydrationWarning>
       <body
         className={`${sans.variable} ${display.variable} antialiased font-sans bg-[#08080d] text-white`}
         suppressHydrationWarning

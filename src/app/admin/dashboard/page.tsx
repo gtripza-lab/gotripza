@@ -1,5 +1,11 @@
 import dynamic from "next/dynamic";
-import { getDashboardStats } from "@/lib/admin/data";
+import {
+  getCostStats,
+  getDashboardStats,
+  getRiaFeedbackStats,
+  getSupportRequests,
+  getTripPlanAdminStats,
+} from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { AdminAutoRefresh } from "@/components/admin/AdminAutoRefresh";
 
@@ -38,14 +44,20 @@ function modeBadge(mode: string | null) {
 }
 
 export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+  const [stats, support, trips, costs, feedback] = await Promise.all([
+    getDashboardStats(),
+    getSupportRequests(),
+    getTripPlanAdminStats(),
+    getCostStats(),
+    getRiaFeedbackStats(),
+  ]);
 
   if (!stats) {
     return (
       <div className="min-h-screen bg-[#08080d] flex items-center justify-center">
         <div className="text-center rounded-2xl bg-white/[0.03] border border-white/[0.06] p-10">
-          <p className="text-red-400 text-lg font-semibold mb-2">Failed to load dashboard</p>
-          <p className="text-white/40 text-sm">Could not retrieve dashboard stats. Please try again later.</p>
+          <p className="text-red-400 text-lg font-semibold mb-2">تعذر تحميل لوحة التشغيل</p>
+          <p className="text-white/40 text-sm">لم نتمكن من جلب الإحصائيات. حاول لاحقاً.</p>
         </div>
       </div>
     );
@@ -57,6 +69,8 @@ export default async function DashboardPage() {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(stats.estRevWeek);
+  const openSupport = support.rows.filter((row) => row.status === "open" || row.status == null).length;
+  const helpfulRate = `${Math.round(feedback.helpfulRate * 100)}%`;
 
   return (
     <div className="min-h-screen bg-[#08080d] px-6 py-8 space-y-8">
@@ -65,42 +79,49 @@ export default async function DashboardPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-white text-2xl font-semibold tracking-tight">Operations Dashboard</h1>
-        <p className="text-white/40 text-sm mt-1">Real-time metrics and activity · auto-refreshes every 60s</p>
+        <h1 className="text-white text-2xl font-semibold tracking-tight">لوحة تشغيل GoTripza</h1>
+        <p className="text-white/40 text-sm mt-1">مؤشرات التشغيل والنشاط · تحديث تلقائي كل 60 ثانية</p>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         <MetricCard
-          label="Conversations (24h)"
+          label="محادثات 24 ساعة"
           value={stats.conversations24h.toLocaleString()}
         />
         <MetricCard
-          label="Conversations (7d)"
+          label="محادثات 7 أيام"
           value={stats.conversationsWeek.toLocaleString()}
         />
         <MetricCard
-          label="AI Traces (total)"
+          label="سجلات الذكاء"
           value={stats.aiTracesTotal.toLocaleString()}
         />
         <MetricCard
-          label="Clicks (24h)"
+          label="نقرات 24 ساعة"
           value={stats.searchClicks24h.toLocaleString()}
         />
         <MetricCard
-          label="Est. Revenue (7d)"
+          label="إيراد تقديري 7 أيام"
           value={estRevFormatted}
         />
         <MetricCard
-          label="Avg Latency"
+          label="متوسط السرعة"
           value={`${stats.avgLatencyMs.toLocaleString()} ms`}
-          sub={`${errorRatePct}% error rate`}
+          sub={`${errorRatePct}% معدل أخطاء`}
         />
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <MetricCard label="طلبات دعم مفتوحة" value={openSupport.toLocaleString()} color={openSupport ? "yellow" : "green"} />
+        <MetricCard label="خطط محفوظة" value={trips.total.toLocaleString()} color="blue" />
+        <MetricCard label="رضا ريا" value={feedback.total ? helpfulRate : "—"} sub={`${feedback.total.toLocaleString()} تقييم`} color={feedback.unhelpful > feedback.helpful ? "yellow" : "green"} />
+        <MetricCard label="تكلفة اليوم" value={costs ? `$${costs.costToday.toFixed(3)}` : "—"} color="default" />
       </div>
 
       {/* Area Chart */}
       <AreaChartCard
-        label="Daily Conversations (14d)"
+        label="المحادثات اليومية (14 يوم)"
         data={stats.dailyConversations as unknown as Record<string, unknown>[]}
         dataKey="count"
       />
@@ -108,25 +129,25 @@ export default async function DashboardPage() {
       {/* Recent AI Traces Table */}
       <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">
         <div className="px-6 py-4 border-b border-white/[0.06]">
-          <h2 className="text-white text-base font-medium">Recent AI Traces</h2>
+          <h2 className="text-white text-base font-medium">آخر سجلات ريا</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.06]">
-                <th className="text-left px-6 py-3 text-white/40 font-medium">Time</th>
-                <th className="text-left px-6 py-3 text-white/40 font-medium">Mode</th>
-                <th className="text-left px-6 py-3 text-white/40 font-medium">Status</th>
-                <th className="text-left px-6 py-3 text-white/40 font-medium">Model</th>
-                <th className="text-right px-6 py-3 text-white/40 font-medium">Latency</th>
-                <th className="text-right px-6 py-3 text-white/40 font-medium">Tokens In / Out</th>
+                <th className="text-right px-6 py-3 text-white/40 font-medium">الوقت</th>
+                <th className="text-right px-6 py-3 text-white/40 font-medium">الوضع</th>
+                <th className="text-right px-6 py-3 text-white/40 font-medium">الحالة</th>
+                <th className="text-right px-6 py-3 text-white/40 font-medium">النموذج</th>
+                <th className="text-left px-6 py-3 text-white/40 font-medium">السرعة</th>
+                <th className="text-left px-6 py-3 text-white/40 font-medium">Tokens داخل / خارج</th>
               </tr>
             </thead>
             <tbody>
               {stats.recentTraces.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-white/40">
-                    No traces found.
+                    لا توجد سجلات بعد.
                   </td>
                 </tr>
               ) : (

@@ -37,32 +37,32 @@ export default async function UsersPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="font-display text-2xl font-bold text-white">Users</h1>
-        <p className="mt-1 text-sm text-white/40">Overview of registered and anonymous user activity.</p>
+        <h1 className="font-display text-2xl font-bold text-white">المستخدمون</h1>
+        <p className="mt-1 text-sm text-white/40">نظرة على نشاط المستخدمين المسجلين والجلسات المجهولة.</p>
       </div>
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
-          label="Registered Users"
+          label="المستخدمون المسجلون"
           value={totalRegistered.toLocaleString()}
           icon={Users}
           color="blue"
         />
         <MetricCard
-          label="Anonymous Sessions (7d)"
+          label="جلسات مجهولة (7 أيام)"
           value={totalAnon.toLocaleString()}
           icon={UserCheck}
           color="default"
         />
         <MetricCard
-          label="New Users (7d)"
+          label="مستخدمون جدد (7 أيام)"
           value={newThisWeek.toLocaleString()}
           icon={UserPlus}
           color="green"
         />
         <MetricCard
-          label="Active Users (7d)"
+          label="نشطون (7 أيام)"
           value={activeThisWeek.toLocaleString()}
           icon={Activity}
           color="yellow"
@@ -72,20 +72,20 @@ export default async function UsersPage() {
       {/* Top Users Table */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03]">
         <div className="border-b border-white/[0.06] px-6 py-4">
-          <h2 className="text-sm font-semibold text-white/70">Top Users by Conversations</h2>
+          <h2 className="text-sm font-semibold text-white/70">أكثر المستخدمين حسب المحادثات</h2>
         </div>
 
         {topUsers.length === 0 ? (
-          <p className="px-6 py-8 text-sm text-white/30">No user data available.</p>
+          <p className="px-6 py-8 text-sm text-white/30">لا توجد بيانات مستخدمين بعد.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.06] text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
-                  <th className="px-6 py-3">Rank</th>
-                  <th className="px-6 py-3">User ID</th>
-                  <th className="px-6 py-3">Conversations</th>
-                  <th className="px-6 py-3">Last Active</th>
+                  <th className="px-6 py-3">الترتيب</th>
+                  <th className="px-6 py-3">معرف المستخدم</th>
+                  <th className="px-6 py-3">المحادثات</th>
+                  <th className="px-6 py-3">آخر نشاط</th>
                 </tr>
               </thead>
               <tbody>
@@ -116,7 +116,7 @@ export default async function UsersPage() {
 
       {/* PII Note */}
       <p className="text-[11px] leading-relaxed text-white/25">
-        User IDs are UUIDs from Supabase Auth. Full PII is only visible in the Supabase dashboard.
+        معرفات المستخدمين مأخوذة من Supabase Auth. بيانات التواصل الكاملة تظهر فقط في لوحة Supabase.
       </p>
     </div>
   );

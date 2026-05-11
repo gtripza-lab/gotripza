@@ -10,6 +10,7 @@ import {
   Search,
   Users,
   DollarSign,
+  Map,
   BarChart2,
   FileText,
   HeadphonesIcon,
@@ -23,17 +24,18 @@ import {
 } from "lucide-react";
 
 const NAV_ITEMS = [
-  { href: "/admin/dashboard",     label: "Dashboard",       icon: LayoutDashboard },
-  { href: "/admin/ai",            label: "AI Control",      icon: Bot },
-  { href: "/admin/conversations", label: "Conversations",   icon: MessageSquare },
-  { href: "/admin/search",        label: "Search & Clicks", icon: Search },
-  { href: "/admin/users",         label: "Users",           icon: Users },
-  { href: "/admin/costs",         label: "Cost Center",     icon: DollarSign },
-  { href: "/admin/analytics",     label: "Analytics",       icon: BarChart2 },
-  { href: "/admin/content",       label: "Content",         icon: FileText },
-  { href: "/admin/support",       label: "Support",         icon: HeadphonesIcon },
-  { href: "/admin/observability", label: "Observability",   icon: Activity },
-  { href: "/admin/settings",      label: "Settings",        icon: Settings },
+  { href: "/admin/dashboard",     label: "لوحة التشغيل",       icon: LayoutDashboard },
+  { href: "/admin/ai",            label: "مركز ريا والذكاء",    icon: Bot },
+  { href: "/admin/conversations", label: "المحادثات",           icon: MessageSquare },
+  { href: "/admin/search",        label: "البحث والنقرات",      icon: Search },
+  { href: "/admin/users",         label: "المستخدمون",          icon: Users },
+  { href: "/admin/trips",         label: "خطط الرحلات",         icon: Map },
+  { href: "/admin/costs",         label: "مركز التكلفة",        icon: DollarSign },
+  { href: "/admin/analytics",     label: "التحليلات",           icon: BarChart2 },
+  { href: "/admin/content",       label: "المحتوى وSEO",        icon: FileText },
+  { href: "/admin/support",       label: "الدعم",               icon: HeadphonesIcon },
+  { href: "/admin/observability", label: "المراقبة",            icon: Activity },
+  { href: "/admin/settings",      label: "الإعدادات",           icon: Settings },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -48,7 +50,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#08080d] text-white">
+    <div className="flex min-h-screen bg-[#08080d] text-white" dir="rtl">
       {/* ── Sidebar ───────────────────────────────────────────────── */}
       {/* Mobile overlay */}
       {open && (
@@ -60,9 +62,9 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-40 flex w-60 flex-col border-r border-white/[0.06] bg-[#0d0d14]",
+          "fixed inset-y-0 right-0 z-40 flex w-60 flex-col border-l border-white/[0.06] bg-[#0d0d14]",
           "transition-transform duration-200 lg:translate-x-0",
-          open ? "translate-x-0" : "-translate-x-full",
+          open ? "translate-x-0" : "translate-x-full",
         ].join(" ")}
       >
         {/* Logo */}
@@ -72,7 +74,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </div>
           <div>
             <p className="text-[13px] font-bold text-white">GoTripza</p>
-            <p className="text-[10px] text-white/30 uppercase tracking-widest">Ops Console</p>
+            <p className="text-[10px] text-white/30 uppercase tracking-widest">مركز التشغيل</p>
           </div>
         </div>
 
@@ -95,7 +97,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                   >
                     <Icon className="h-4 w-4 shrink-0" />
                     {label}
-                    {active && <ChevronRight className="ml-auto h-3 w-3 opacity-60" />}
+                    {active && <ChevronRight className="mr-auto h-3 w-3 rotate-180 opacity-60" />}
                   </Link>
                 </li>
               );
@@ -110,13 +112,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-[13px] text-white/40 transition hover:bg-white/[0.05] hover:text-white/70"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            تسجيل الخروج
           </button>
         </div>
       </aside>
 
       {/* ── Main content ──────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col lg:pl-60">
+      <div className="flex flex-1 flex-col lg:pr-60">
         {/* Top bar */}
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-white/[0.06] bg-[#08080d]/80 px-5 backdrop-blur">
           <button

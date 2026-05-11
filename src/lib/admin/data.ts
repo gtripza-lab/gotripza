@@ -633,6 +633,77 @@ export async function updateSupportRequest(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// SAVED TRIP PLANS
+// ─────────────────────────────────────────────────────────────────────────────
+export type AdminTripPlanRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  locale: "ar" | "en";
+  origin: string | null;
+  destination: string;
+  days: number;
+  travelers: number;
+  budget: number | null;
+  currency: string;
+  trip_type: string | null;
+  created_at: string;
+};
+
+export type TripPlanAdminStats = {
+  total: number;
+  createdWeek: number;
+  avgBudget: number;
+  avgDays: number;
+  topDestinations: { destination: string; count: number }[];
+  tripTypes: { type: string; count: number }[];
+  recent: AdminTripPlanRow[];
+};
+
+export async function getTripPlanAdminStats(): Promise<TripPlanAdminStats> {
+  try {
+    const db = createSupabaseService() as AnyTable;
+    const d7 = daysAgo(7);
+    const { data, count } = await db
+      .from("trip_plans")
+      .select("id,user_id,title,locale,origin,destination,days,travelers,budget,currency,trip_type,created_at", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .limit(500);
+
+    const rows = ((data ?? []) as AdminTripPlanRow[]);
+    const createdWeek = rows.filter((row) => row.created_at >= d7).length;
+    const budgets = rows.map((row) => Number(row.budget ?? 0)).filter((value) => value > 0);
+    const avgBudget = budgets.length ? Math.round(budgets.reduce((sum, value) => sum + value, 0) / budgets.length) : 0;
+    const avgDays = rows.length ? Math.round(rows.reduce((sum, row) => sum + row.days, 0) / rows.length) : 0;
+
+    const destMap = new Map<string, number>();
+    const typeMap = new Map<string, number>();
+    for (const row of rows) {
+      destMap.set(row.destination, (destMap.get(row.destination) ?? 0) + 1);
+      const type = row.trip_type ?? "unknown";
+      typeMap.set(type, (typeMap.get(type) ?? 0) + 1);
+    }
+
+    return {
+      total: count ?? rows.length,
+      createdWeek,
+      avgBudget,
+      avgDays,
+      topDestinations: Array.from(destMap.entries())
+        .map(([destination, value]) => ({ destination, count: value }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10),
+      tripTypes: Array.from(typeMap.entries())
+        .map(([type, value]) => ({ type, count: value }))
+        .sort((a, b) => b.count - a.count),
+      recent: rows.slice(0, 50),
+    };
+  } catch {
+    return { total: 0, createdWeek: 0, avgBudget: 0, avgDays: 0, topDestinations: [], tripTypes: [], recent: [] };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ANALYTICS
 // ─────────────────────────────────────────────────────────────────────────────
 export type AnalyticsStats = {
