@@ -19,7 +19,9 @@ import {
   getOrCreateConversation,
   getCachedDestinationIntel,
   getConversationSummary,
+  getConversationState,
   setConversationSummary,
+  setConversationState,
   appendAiTrace,
 } from "../memory/store";
 import { extractAndUpdate, extractAndUpdateAnon } from "../memory/extract";
@@ -46,6 +48,32 @@ export type OrchestratorResult = {
   };
 };
 
+function mergeStoredContext(
+  stored: Partial<TravelContext> | null | undefined,
+  current: TravelContext,
+): TravelContext {
+  const s = stored ?? {};
+  return {
+    destination: current.destination ?? s.destination ?? null,
+    origin: current.origin ?? s.origin ?? null,
+    departure_date: current.departure_date ?? s.departure_date ?? null,
+    return_date: current.return_date ?? s.return_date ?? null,
+    adults: current.adults ?? s.adults ?? 2,
+    budget_usd: current.budget_usd ?? s.budget_usd ?? null,
+    trip_type: current.trip_type ?? s.trip_type ?? null,
+    cabin_class: current.cabin_class ?? s.cabin_class ?? null,
+    traveler_type: current.traveler_type ?? s.traveler_type ?? null,
+    hotel_preferences: Array.from(
+      new Set([...(s.hotel_preferences ?? []), ...(current.hotel_preferences ?? [])]),
+    ).slice(-8),
+    service_interests: Array.from(
+      new Set([...(s.service_interests ?? []), ...(current.service_interests ?? [])]),
+    ).slice(-8) as TravelContext["service_interests"],
+    booking_stage: current.booking_stage ?? s.booking_stage ?? null,
+    concerns: Array.from(new Set([...(s.concerns ?? []), ...(current.concerns ?? [])])).slice(-10),
+  };
+}
+
 export async function runRayaOrchestrator(
   query: string,
   history: ChatTurn[],
@@ -58,9 +86,9 @@ export async function runRayaOrchestrator(
   if (!HAS_OPENAI_KEY) throw new Error("[orchestrator] OPENAI_API_KEY not set");
 
   // 1. Pre-filter — deterministic slot extraction merged into context
-  const pre = runPreFilter(query, history, context);
+  let pre = runPreFilter(query, history, context);
   const enrichedContext = pre.context;
-  const extractedKeys = Object.keys(pre.newlyExtracted).filter(
+  let extractedKeys = Object.keys(pre.newlyExtracted).filter(
     (k) =>
       pre.newlyExtracted[k as keyof typeof pre.newlyExtracted] !== null &&
       pre.newlyExtracted[k as keyof typeof pre.newlyExtracted] !== undefined,
@@ -79,6 +107,21 @@ export async function runRayaOrchestrator(
   // stay coherent across days.
   const conv = await conversationPromise;
   const existingSummary = conv ? await getConversationSummary(conv.id).catch(() => null) : null;
+  const storedState = conv ? await getConversationState(conv.id).catch(() => ({ context: null, lastIntent: null })) : null;
+  const durableContext = mergeStoredContext(storedState?.context, enrichedContext);
+  if (storedState?.context) {
+    pre = runPreFilter(query, history, durableContext);
+    extractedKeys = Array.from(
+      new Set([
+        ...extractedKeys,
+        ...Object.keys(pre.newlyExtracted).filter(
+          (k) =>
+            pre.newlyExtracted[k as keyof typeof pre.newlyExtracted] !== null &&
+            pre.newlyExtracted[k as keyof typeof pre.newlyExtracted] !== undefined,
+        ),
+      ]),
+    );
+  }
 
   // Compress old history when very long, feeding back the prior summary.
   const { summary, truncatedHistory } = await maybeSummarize(history, existingSummary);
@@ -95,7 +138,7 @@ export async function runRayaOrchestrator(
     const r = await getTravelIntelligenceWithUsage(
       query,
       truncatedHistory,
-      enrichedContext,
+      pre.context,
       { userId, sessionId, summary },
     );
     intelligence = r.intelligence;
@@ -124,7 +167,7 @@ export async function runRayaOrchestrator(
   const { intel: finalIntel, mergedContext } = postProcess(
     intelligence,
     history,
-    enrichedContext,
+    pre.context,
   );
 
   // N4: populate destination_intel in advice mode from cache.
@@ -146,6 +189,7 @@ export async function runRayaOrchestrator(
   if (conv) {
     void (async () => {
       try {
+        await setConversationState(conv.id, mergedContext, finalIntel.intent);
         await appendMessage({
           conversationId: conv.id,
           role: "user",
@@ -169,15 +213,13 @@ export async function runRayaOrchestrator(
     })();
   }
 
-  // M9: only persist preference signals from confirmed search-mode turns
-  // (advice / clarify don't represent actual travel intent).
-  if (finalIntel.mode === "search") {
-    if (userId) {
-      void extractAndUpdate(userId, finalIntel.intent, query);
-    } else if (sessionId) {
-      // M6: Anonymous memory — keyed by gtz_sid cookie.
-      void extractAndUpdateAnon(sessionId, finalIntel.intent, query);
-    }
+  // Persist preference signals from every successful turn. Rya can learn
+  // durable preferences from planning/advice messages before booking intent.
+  if (userId) {
+    void extractAndUpdate(userId, finalIntel.intent, query, mergedContext);
+  } else if (sessionId) {
+    // M6: Anonymous memory — keyed by gtz_sid cookie.
+    void extractAndUpdateAnon(sessionId, finalIntel.intent, query, mergedContext);
   }
 
   // M15: persist successful trace — await so Vercel lambda doesn't exit before the write

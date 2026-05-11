@@ -39,6 +39,8 @@ export type Conversation = {
   started_at: string;
   last_at: string;
   summary: string | null;
+  context?: Record<string, unknown> | null;
+  last_intent?: Record<string, unknown> | null;
   message_count: number;
 };
 

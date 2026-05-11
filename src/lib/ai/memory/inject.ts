@@ -31,6 +31,14 @@ function buildBlock(profile: Profile | null, prefs: TravelerPreferences): string
     lines.push(
       `• Past destinations: ${prefs.past_destinations.slice(-5).join(", ")}`,
     );
+  const noteList = (key: string) =>
+    Array.isArray(prefs.notes?.[key]) ? (prefs.notes[key] as string[]).slice(0, 6) : [];
+  const services = noteList("service_interests");
+  if (services.length) lines.push(`• Interested services: ${services.join(", ")}`);
+  const hotelPrefs = noteList("hotel_preferences");
+  if (hotelPrefs.length) lines.push(`• Stay preferences: ${hotelPrefs.join(", ")}`);
+  const concerns = noteList("travel_concerns");
+  if (concerns.length) lines.push(`• Travel concerns: ${concerns.join(", ")}`);
 
   if (lines.length === 0) return "";
   return (
@@ -76,7 +84,7 @@ export async function buildMemoryBlock(
         accessibility_needs: [],
         preferred_airlines: anon.preferred_airlines,
         past_destinations: anon.past_destinations,
-        notes: {},
+        notes: anon.notes ?? {},
       };
       return buildBlock(null, prefsAdapter);
     }

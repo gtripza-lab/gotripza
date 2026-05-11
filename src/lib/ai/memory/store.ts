@@ -13,6 +13,7 @@ import type {
   Conversation,
   StoredMessage,
 } from "./types";
+import type { TravelContext, TripIntent } from "../schemas/intent";
 
 // Tables defined in 20260508000001 migration aren't in the auto-generated
 // Supabase types yet; cast at the boundary. Once `supabase gen types` is
@@ -215,6 +216,45 @@ export async function setConversationSummary(
     .eq("id", conversationId);
 }
 
+export async function getConversationState(
+  conversationId: string,
+): Promise<{ context: Partial<TravelContext> | null; lastIntent: Partial<TripIntent> | null }> {
+  const sb = createSupabaseService() as AnyTable;
+  const { data, error } = await sb
+    .from("conversations")
+    .select("context,last_intent")
+    .eq("id", conversationId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn("[memory] getConversationState error:", error.message);
+    return { context: null, lastIntent: null };
+  }
+
+  const row = data as { context?: Partial<TravelContext> | null; last_intent?: Partial<TripIntent> | null } | null;
+  return {
+    context: row?.context ?? null,
+    lastIntent: row?.last_intent ?? null,
+  };
+}
+
+export async function setConversationState(
+  conversationId: string,
+  context: TravelContext,
+  intent: TripIntent,
+): Promise<void> {
+  const sb = createSupabaseService() as AnyTable;
+  const { error } = await sb
+    .from("conversations")
+    .update({
+      context,
+      last_intent: intent,
+      last_at: new Date().toISOString(),
+    })
+    .eq("id", conversationId);
+  if (error) console.warn("[memory] setConversationState error:", error.message);
+}
+
 // ── M15: AI trace persistence ───────────────────────────────────────
 export async function appendAiTrace(t: {
   conversationId: string | null;
@@ -256,6 +296,7 @@ export type AnonPreferences = {
   interests: string[];
   preferred_airlines: string[];
   past_destinations: string[];
+  notes: Record<string, unknown>;
 };
 
 export async function getAnonPreferences(
@@ -276,6 +317,7 @@ export async function getAnonPreferences(
       interests: [],
       preferred_airlines: [],
       past_destinations: [],
+      notes: {},
     }
   );
 }

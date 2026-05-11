@@ -15,6 +15,7 @@ import {
   type AnonPreferences,
 } from "./store";
 import type { TripIntent } from "../schemas/intent";
+import type { TravelContext } from "../schemas/intent";
 import type { TravelerPreferences } from "./types";
 
 function uniq(arr: string[]): string[] {
@@ -58,6 +59,46 @@ function tripPaceFromText(text: string): TravelerPreferences["trip_pace"] | null
   return null;
 }
 
+function appendNote(
+  notes: Record<string, unknown>,
+  key: string,
+  values: string[],
+): Record<string, unknown> {
+  const current = Array.isArray(notes[key]) ? (notes[key] as string[]) : [];
+  const merged = uniq([...current, ...values]).slice(-12);
+  return { ...notes, [key]: merged };
+}
+
+function travelerSignals(text: string, context?: TravelContext): string[] {
+  const signals: string[] = [];
+  if (/أطفال|kids|children|طفل/i.test(text)) signals.push("kids");
+  if (/عائلة|family/i.test(text) || context?.traveler_type === "family") signals.push("family");
+  if (/زوج|زوجة|couple|partner|honeymoon|شهر عسل/i.test(text) || context?.traveler_type === "couple") signals.push("partner");
+  if (/أصدقاء|friends/i.test(text) || context?.traveler_type === "friends") signals.push("friends");
+  if (/لوحدي|solo|alone/i.test(text) || context?.traveler_type === "solo") signals.push("solo");
+  if (/عمل|business|conference|مؤتمر/i.test(text) || context?.traveler_type === "business") signals.push("business");
+  return uniq(signals);
+}
+
+function dietarySignals(text: string): string[] {
+  const signals: string[] = [];
+  if (/حلال|halal/i.test(text)) signals.push("halal");
+  if (/vegetarian|نباتي/i.test(text)) signals.push("vegetarian");
+  if (/vegan|نباتي صارم/i.test(text)) signals.push("vegan");
+  if (/gluten|جلوتين/i.test(text)) signals.push("gluten-free");
+  return signals;
+}
+
+function serviceSignals(text: string, context?: TravelContext): string[] {
+  const signals = [...(context?.service_interests ?? [])];
+  if (/تأمين|insurance/i.test(text)) signals.push("insurance");
+  if (/esim|eSIM|شريحة|انترنت|إنترنت/i.test(text)) signals.push("esim");
+  if (/نشاط|جولة|tour|activity|activities/i.test(text)) signals.push("activities");
+  if (/سيارة|car rental|rent.*car|تأجير/i.test(text)) signals.push("cars");
+  if (/تعويض|compensation|delay|تأخير/i.test(text)) signals.push("compensation");
+  return uniq(signals);
+}
+
 /**
  * Update preferences after a successful turn.
  *
@@ -67,6 +108,7 @@ export async function extractAndUpdate(
   userId: string,
   intent: TripIntent,
   userMessage: string,
+  context?: TravelContext,
 ): Promise<void> {
   if (!userId) return;
   try {
@@ -78,9 +120,12 @@ export async function extractAndUpdate(
     if (tier && tier !== current.budget_tier) patch.budget_tier = tier;
 
     // Travels-with
+    const text = userMessage.toLowerCase();
     const tw = travelsWithFromTripType(intent.trip_type);
-    if (tw && !current.travels_with.includes(tw)) {
-      patch.travels_with = uniq([...current.travels_with, tw]);
+    const travelers = uniq([...(tw ? [tw] : []), ...travelerSignals(text, context)]);
+    const newTravelers = travelers.filter((t) => !current.travels_with.includes(t));
+    if (newTravelers.length) {
+      patch.travels_with = uniq([...current.travels_with, ...newTravelers]);
     }
 
     // Past destinations — append IATA when search succeeded
@@ -91,12 +136,13 @@ export async function extractAndUpdate(
       ]).slice(-20); // cap to last 20
     }
 
-    // Interest signals from message text (cheap regex scan)
-    const text = userMessage.toLowerCase();
     const style = travelStyleFromText(text);
     if (style && style !== current.travel_style) patch.travel_style = style;
     const pace = tripPaceFromText(text);
-    if (pace && pace !== current.trip_pace) patch.trip_pace = pace;
+    const contextPace = context?.booking_stage === "planning" && /هادئ|relaxed|slow/i.test(text) ? "relaxed" : null;
+    if ((pace ?? contextPace) && (pace ?? contextPace) !== current.trip_pace) {
+      patch.trip_pace = pace ?? contextPace;
+    }
 
     const interestMap: Array<[RegExp, string]> = [
       [/beach|شاطئ|بحر/, "beach"],
@@ -117,6 +163,19 @@ export async function extractAndUpdate(
       patch.interests = uniq([...current.interests, ...newInterests]);
     }
 
+    const dietary = dietarySignals(text).filter((d) => !current.dietary.includes(d));
+    if (dietary.length) patch.dietary = uniq([...current.dietary, ...dietary]);
+
+    const notes = current.notes ?? {};
+    const services = serviceSignals(text, context);
+    const hotelPrefs = context?.hotel_preferences ?? [];
+    const concerns = context?.concerns ?? [];
+    let nextNotes = notes;
+    if (services.length) nextNotes = appendNote(nextNotes, "service_interests", services);
+    if (hotelPrefs.length) nextNotes = appendNote(nextNotes, "hotel_preferences", hotelPrefs);
+    if (concerns.length) nextNotes = appendNote(nextNotes, "travel_concerns", concerns);
+    if (JSON.stringify(nextNotes) !== JSON.stringify(notes)) patch.notes = nextNotes;
+
     if (Object.keys(patch).length === 0) return;
     await updatePreferences(userId, patch);
   } catch (err) {
@@ -132,6 +191,7 @@ export async function extractAndUpdateAnon(
   sessionId: string,
   intent: TripIntent,
   userMessage: string,
+  context?: TravelContext,
 ): Promise<void> {
   if (!sessionId) return;
   try {
@@ -141,9 +201,12 @@ export async function extractAndUpdateAnon(
     const tier = budgetTierFromUsd(intent.budget_usd);
     if (tier && tier !== current.budget_tier) patch.budget_tier = tier;
 
+    const text = userMessage.toLowerCase();
     const tw = travelsWithFromTripType(intent.trip_type);
-    if (tw && !current.travels_with.includes(tw)) {
-      patch.travels_with = uniq([...current.travels_with, tw]);
+    const travelers = uniq([...(tw ? [tw] : []), ...travelerSignals(text, context)]);
+    const newTravelers = travelers.filter((t) => !current.travels_with.includes(t));
+    if (newTravelers.length) {
+      patch.travels_with = uniq([...current.travels_with, ...newTravelers]);
     }
 
     if (
@@ -156,7 +219,6 @@ export async function extractAndUpdateAnon(
       ]).slice(-20);
     }
 
-    const text = userMessage.toLowerCase();
     const style = travelStyleFromText(text);
     if (style && style !== current.travel_style) patch.travel_style = style;
     const pace = tripPaceFromText(text);
@@ -180,6 +242,16 @@ export async function extractAndUpdateAnon(
     if (newInterests.length) {
       patch.interests = uniq([...current.interests, ...newInterests]).slice(-12);
     }
+
+    const notes = current.notes ?? {};
+    const services = serviceSignals(text, context);
+    const hotelPrefs = context?.hotel_preferences ?? [];
+    const concerns = context?.concerns ?? [];
+    let nextNotes = notes;
+    if (services.length) nextNotes = appendNote(nextNotes, "service_interests", services);
+    if (hotelPrefs.length) nextNotes = appendNote(nextNotes, "hotel_preferences", hotelPrefs);
+    if (concerns.length) nextNotes = appendNote(nextNotes, "travel_concerns", concerns);
+    if (JSON.stringify(nextNotes) !== JSON.stringify(notes)) patch.notes = nextNotes;
 
     if (Object.keys(patch).length === 0) return;
     await updateAnonPreferences(sessionId, patch);
