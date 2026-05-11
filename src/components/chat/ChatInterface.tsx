@@ -331,6 +331,7 @@ function MessageBubble({
 }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
+  const { sendMessage, isThinking } = useChat();
 
   if (message.isLoading) return null; // handled by TypingIndicator
 
@@ -392,6 +393,15 @@ function MessageBubble({
         )}
 
         {!isUser && message.id !== "welcome" && !message.error && (
+          <QuickActionBar
+            locale={locale}
+            message={message}
+            disabled={isThinking}
+            onAction={(text) => void sendMessage(text)}
+          />
+        )}
+
+        {!isUser && message.id !== "welcome" && !message.error && (
           <div className="flex items-center gap-1 self-start rounded-full border border-white/[0.06] bg-white/[0.03] p-1">
             <button
               type="button"
@@ -421,6 +431,74 @@ function MessageBubble({
         )}
       </div>
     </motion.div>
+  );
+}
+
+function QuickActionBar({
+  locale,
+  message,
+  disabled,
+  onAction,
+}: {
+  locale: import("@/i18n/config").Locale;
+  message: ChatMessage;
+  disabled: boolean;
+  onAction: (text: string) => void;
+}) {
+  const isAr = locale === "ar";
+  const destination = message.searchData?.intent.destination;
+  const hasHotelGap =
+    message.searchData?.wants.includes("hotels") &&
+    (message.searchData.hotels.length === 0);
+  const actions = [
+    {
+      label: isAr ? "اعمل خطة" : "Make a plan",
+      prompt: destination
+        ? isAr
+          ? `اعمل لي خطة سفر إلى ${destination}`
+          : `Make me a trip plan to ${destination}`
+        : isAr
+          ? "اعمل لي خطة سفر"
+          : "Make me a trip plan",
+    },
+    {
+      label: isAr ? "احسب الميزانية" : "Estimate budget",
+      prompt: destination
+        ? isAr
+          ? `احسب لي ميزانية رحلة إلى ${destination}`
+          : `Estimate a trip budget for ${destination}`
+        : isAr
+          ? "احسب لي ميزانية رحلة"
+          : "Estimate a trip budget",
+    },
+    {
+      label: hasHotelGap
+        ? isAr ? "مناطق السكن" : "Stay areas"
+        : isAr ? "خطوة تالية" : "Next step",
+      prompt: hasHotelGap && destination
+        ? isAr
+          ? `اقترح لي أفضل مناطق السكن في ${destination} لأن الفنادق غير مربوطة بعد`
+          : `Suggest the best areas to stay in ${destination} while live hotels are being connected`
+        : isAr
+          ? "ما الخطوة التالية لهذه الرحلة؟"
+          : "What is the next step for this trip?",
+    },
+  ];
+
+  return (
+    <div className="flex max-w-full gap-2 overflow-x-auto pb-1 scroll-hide">
+      {actions.map((action) => (
+        <button
+          key={action.label}
+          type="button"
+          disabled={disabled}
+          onClick={() => onAction(action.prompt)}
+          className="shrink-0 rounded-full border border-white/[0.10] bg-white/[0.04] px-3 py-1.5 text-[11px] font-medium text-white/45 transition hover:border-violet-400/30 hover:bg-violet-500/[0.12] hover:text-white/80 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          {action.label}
+        </button>
+      ))}
+    </div>
   );
 }
 

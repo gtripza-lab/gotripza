@@ -44,10 +44,25 @@ type SupportResponse = {
   tickets?: SupportTicket[];
 };
 
+type TravelerPreferences = {
+  travel_style: string | null;
+  budget_tier: string | null;
+  travels_with: string[];
+  trip_pace: string | null;
+  interests: string[];
+  preferred_airlines: string[];
+  past_destinations: string[];
+};
+
+type PreferencesResponse = {
+  preferences?: TravelerPreferences;
+};
+
 export function AccountPlans({ locale }: { locale: Locale }) {
   const isAr = locale === "ar";
   const [plans, setPlans] = useState<SavedPlan[]>([]);
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [preferences, setPreferences] = useState<TravelerPreferences | null>(null);
   const [status, setStatus] = useState<"loading" | "auth" | "empty" | "ready" | "error">("loading");
   const [setupRequired, setSetupRequired] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SavedPlan | null>(null);
@@ -59,9 +74,10 @@ export function AccountPlans({ locale }: { locale: Locale }) {
 
     async function loadPlans() {
       try {
-        const [plansRes, ticketsRes] = await Promise.all([
+        const [plansRes, ticketsRes, prefsRes] = await Promise.all([
           fetch("/api/trip-plans", { cache: "no-store" }),
           fetch("/api/support", { cache: "no-store" }),
+          fetch("/api/account/preferences", { cache: "no-store" }),
         ]);
         if (!active) return;
         if (plansRes.status === 401) {
@@ -71,11 +87,13 @@ export function AccountPlans({ locale }: { locale: Locale }) {
         const json = (await plansRes.json()) as PlansResponse;
         if (!plansRes.ok || json.error) throw new Error(json.error ?? "load_failed");
         const supportJson = ticketsRes.ok ? ((await ticketsRes.json()) as SupportResponse) : { tickets: [] };
+        const prefsJson = prefsRes.ok ? ((await prefsRes.json()) as PreferencesResponse) : {};
         const nextPlans = json.plans ?? [];
         setSetupRequired(Boolean(json.setupRequired));
         setTickets(supportJson.tickets ?? []);
+        setPreferences(prefsJson.preferences ?? null);
         setPlans(nextPlans);
-        setStatus(nextPlans.length || (supportJson.tickets?.length ?? 0) ? "ready" : "empty");
+        setStatus(nextPlans.length || (supportJson.tickets?.length ?? 0) || hasPreferenceData(prefsJson.preferences) ? "ready" : "empty");
       } catch {
         if (active) setStatus("error");
       }
@@ -262,6 +280,36 @@ export function AccountPlans({ locale }: { locale: Locale }) {
       <section>
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white/45">
+            {isAr ? "تفضيلات ريا" : "Raya Preferences"}
+          </h2>
+          <Link href={`/${locale}/search`} className="text-xs font-semibold text-brand-primary hover:text-brand-mint">
+            {isAr ? "حدّثها بالمحادثة" : "Update in chat"}
+          </Link>
+        </div>
+        {preferences && hasPreferenceData(preferences) ? (
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            <PreferenceCard label={isAr ? "أسلوب السفر" : "Travel style"} value={labelPreference(preferences.travel_style, isAr)} />
+            <PreferenceCard label={isAr ? "الميزانية" : "Budget tier"} value={labelPreference(preferences.budget_tier, isAr)} />
+            <PreferenceCard label={isAr ? "إيقاع الرحلة" : "Trip pace"} value={labelPreference(preferences.trip_pace, isAr)} />
+            <PreferenceList label={isAr ? "تسافر غالباً مع" : "Often travels with"} values={preferences.travels_with} />
+            <PreferenceList label={isAr ? "الاهتمامات" : "Interests"} values={preferences.interests} />
+            <PreferenceList label={isAr ? "وجهات سابقة" : "Recent destinations"} values={preferences.past_destinations.slice(-5).reverse()} />
+          </div>
+        ) : (
+          <InlineEmpty
+            title={isAr ? "ريا لم تتعلم تفضيلاتك بعد" : "Raya has not learned your preferences yet"}
+            body={
+              isAr
+                ? "اسأل ريا عن رحلة فيها ميزانية أو نوع سفر، وستحفظ الإشارات المهمة لحسابك."
+                : "Chat with Raya about a trip, budget, or travel style and useful signals will appear here."
+            }
+          />
+        )}
+      </section>
+
+      <section>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-white/45">
             {isAr ? "طلبات الدعم" : "Support Tickets"}
           </h2>
           <Link href={`/${locale}/contact`} className="text-xs font-semibold text-brand-primary hover:text-brand-mint">
@@ -442,6 +490,34 @@ function PlanMini({ icon, label }: { icon: ReactNode; label: string }) {
   );
 }
 
+function PreferenceCard({ label, value }: { label: string; value: string | null }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
+      <p className="text-xs text-white/35">{label}</p>
+      <p className="mt-2 text-sm font-semibold text-white/80">{value || "—"}</p>
+    </div>
+  );
+}
+
+function PreferenceList({ label, values }: { label: string; values: string[] }) {
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-5">
+      <p className="text-xs text-white/35">{label}</p>
+      {values.length ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {values.slice(0, 8).map((value) => (
+            <span key={value} className="rounded-full bg-brand-primary/15 px-2.5 py-1 text-xs text-brand-primary">
+              {value}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-2 text-sm text-white/25">—</p>
+      )}
+    </div>
+  );
+}
+
 function DetailMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
@@ -502,4 +578,33 @@ function formatDate(date: string, isAr: boolean) {
     month: "short",
     day: "numeric",
   });
+}
+
+function hasPreferenceData(preferences?: TravelerPreferences | null) {
+  if (!preferences) return false;
+  return Boolean(
+    preferences.travel_style ||
+      preferences.budget_tier ||
+      preferences.trip_pace ||
+      preferences.travels_with.length ||
+      preferences.interests.length ||
+      preferences.preferred_airlines.length ||
+      preferences.past_destinations.length,
+  );
+}
+
+function labelPreference(value: string | null, isAr: boolean) {
+  if (!value) return null;
+  const ar: Record<string, string> = {
+    luxury: "فاخر",
+    comfort: "مريح",
+    balanced: "متوازن",
+    budget: "اقتصادي",
+    backpacker: "خفيف وعملي",
+    moderate: "متوسطة",
+    premium: "مرتفعة",
+    relaxed: "هادئ",
+    packed: "مليء بالأنشطة",
+  };
+  return isAr ? ar[value] ?? value : value.replace("_", " ");
 }
