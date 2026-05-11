@@ -88,10 +88,10 @@ export default async function PlusPage({ params }: { params: { locale: string } 
                 <Sparkles className="h-8 w-8 text-brand-primary" />
               </div>
               <div className="mt-6">
-                <span className="text-4xl font-bold text-white">$49.99</span>
-                <span className="ms-2 text-sm text-white/35">{isAr ? "للرحلة" : "per trip"}</span>
+                <span className="text-4xl font-bold text-white">{isAr ? "تجربة مجانية" : "Free trial"}</span>
+                <span className="ms-2 text-sm text-white/35">{isAr ? "مؤقتاً" : "for now"}</span>
                 <p className="mt-2 text-sm text-white/40">
-                  {isAr ? "أو $29.99 إذا حجزت أي خدمة عبر GoTripza: طيران، تأمين، شريحة، أنشطة، أو غيرها." : "Or $29.99 if you book any service through GoTripza: flights, insurance, eSIM, activities, or more."}
+                  {isAr ? "نفعّل لك كامل تجربة Rya Companion على الجوال لفترة مجانية محددة إلى أن نربط الدفع لاحقاً." : "Use the full Rya Companion mobile experience free for a limited time until payments are connected later."}
                 </p>
               </div>
               <ul className="mt-6 space-y-3">
@@ -109,12 +109,12 @@ export default async function PlusPage({ params }: { params: { locale: string } 
 
             <div className="rounded-2xl border border-brand-mint/20 bg-brand-mint/[0.06] p-6">
               <h2 className="text-xl font-semibold text-white">
-                {isAr ? "متى تحصل على الخصم؟" : "How the discount works"}
+                {isAr ? "التثبيت على الجوال" : "Install on mobile"}
               </h2>
               <p className="mt-3 text-sm leading-7 text-white/55">
                 {isAr
-                  ? "إذا ضغطت أو حجزت أي خدمة عبر روابط GoTripza مثل الطيران أو التأمين أو eSIM أو الأنشطة، يتم تفعيل سعر $29.99 عند الدفع بدلاً من $49.99."
-                  : "If you click or book any service through GoTripza links such as flights, insurance, eSIMs, or activities, checkout uses the $29.99 price instead of $49.99."}
+                  ? "افتح ريا من الجوال واضغط تثبيت. على Android يظهر التثبيت مباشرة، وعلى iPhone اختر مشاركة ثم إضافة إلى الشاشة الرئيسية."
+                  : "Open Rya on mobile and install it. Android shows an install prompt; on iPhone, tap Share then Add to Home Screen."}
               </p>
               <div className="mt-5 rounded-xl bg-black/20 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-mint">

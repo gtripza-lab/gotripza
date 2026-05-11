@@ -11,6 +11,12 @@ export type EventName =
   | "chat_results_ready"
   | "chat_followup_revealed"
   | "companion_image_analyzed"
+  | "companion_trial_started"
+  | "pwa_install_cta_clicked"
+  | "pwa_install_cta_shown"
+  | "pwa_app_installed"
+  | "pwa_ios_install_instructions_shown"
+  | "pwa_standalone_opened"
   | "ria_quick_action_clicked"
   | "traveler_service_clicked"
   | "ria_response_feedback";

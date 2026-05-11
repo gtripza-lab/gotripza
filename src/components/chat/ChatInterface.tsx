@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { useChat } from "./ChatContext";
 import { RayaAgentModal } from "./RayaAgentModal";
+import { RyaInstallPrompt } from "./RyaInstallPrompt";
 import type { ChatMessage, ChatSearchData } from "./ChatContext";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
@@ -291,6 +292,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
         context={travelContext}
         facts={companionMemory.knownFacts}
       />
+
+      <RyaInstallPrompt locale={locale} />
 
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div

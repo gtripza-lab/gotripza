@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { rateLimit } from "@/lib/security/rate-limit";
+import { getCurrentUser } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
 
@@ -15,6 +16,12 @@ const ALLOWED_EVENTS = new Set([
   "chat_results_ready",
   "chat_followup_revealed",
   "companion_image_analyzed",
+  "companion_trial_started",
+  "pwa_install_cta_clicked",
+  "pwa_install_cta_shown",
+  "pwa_app_installed",
+  "pwa_ios_install_instructions_shown",
+  "pwa_standalone_opened",
   "ria_quick_action_clicked",
   "traveler_service_clicked",
   "ria_response_feedback",
@@ -35,11 +42,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "unknown_event" }, { status: 400 });
     }
 
+    const user = await getCurrentUser();
+    const sessionId = req.cookies.get("gtz_sid")?.value ?? null;
+    const enrichedPayload = {
+      ...(typeof payload === "object" && payload !== null ? payload : {}),
+      user_id: user?.id ?? null,
+      user_email: user?.email ?? null,
+      session_id: sessionId,
+      user_agent: req.headers.get("user-agent") ?? null,
+    };
     const sb = createSupabaseService();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     await (sb as any).from("events").insert({
       name,
-      payload: typeof payload === "object" && payload !== null ? payload : {},
+      payload: enrichedPayload,
       locale:  typeof locale === "string" ? locale : null,
       path:    typeof path   === "string" ? path   : null,
     });

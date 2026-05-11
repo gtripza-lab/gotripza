@@ -446,6 +446,17 @@ export type UserStat = {
   totalAnon: number;
   newThisWeek: number;
   activeThisWeek: number;
+  appInstalled: number;
+  trialStarted: number;
+  standaloneOpens: number;
+  recentAppUsers: {
+    event: string;
+    user_id: string | null;
+    user_email: string | null;
+    session_id: string | null;
+    created_at: string;
+    locale: string | null;
+  }[];
   topUsers: { user_id: string; conv_count: number; last_active: string }[];
 };
 
@@ -454,12 +465,17 @@ export async function getUserStats(): Promise<UserStat | null> {
     const db = createSupabaseService() as AnyTable;
     const d7 = daysAgo(7);
 
-    const [regRes, anonSess, newUsers, activeCons, topRes] = await Promise.all([
+    const [regRes, anonSess, newUsers, activeCons, topRes, appEvents] = await Promise.all([
       db.from("conversations").select("user_id").not("user_id", "is", null),
       db.from("conversations").select("session_id").is("user_id", null).gte("started_at", d7),
       db.from("conversations").select("user_id").not("user_id", "is", null).gte("started_at", d7),
       db.from("conversations").select("user_id").not("user_id", "is", null).gte("last_message_at", d7),
       db.from("conversations").select("user_id,started_at").not("user_id", "is", null),
+      db.from("events")
+        .select("name,payload,locale,created_at")
+        .in("name", ["pwa_app_installed", "pwa_standalone_opened", "companion_trial_started", "pwa_install_cta_clicked"])
+        .order("created_at", { ascending: false })
+        .limit(200),
     ]);
 
     const registered = new Set((regRes.data ?? []).map((r: { user_id: string }) => r.user_id));
@@ -479,11 +495,41 @@ export async function getUserStats(): Promise<UserStat | null> {
       .sort((a, b) => b.conv_count - a.conv_count)
       .slice(0, 20);
 
+    type AppEventRow = { name: string; payload: Record<string, unknown> | null; locale: string | null; created_at: string };
+    const appRows = (appEvents.data ?? []) as AppEventRow[];
+    const installIdentity = new Set<string>();
+    const standaloneIdentity = new Set<string>();
+    const trialIdentity = new Set<string>();
+    const identityFor = (payload: Record<string, unknown> | null) => {
+      const userId = typeof payload?.user_id === "string" ? payload.user_id : null;
+      const sessionId = typeof payload?.session_id === "string" ? payload.session_id : null;
+      return userId ? `u:${userId}` : sessionId ? `s:${sessionId}` : null;
+    };
+    for (const row of appRows) {
+      const id = identityFor(row.payload);
+      if (!id) continue;
+      if (row.name === "pwa_app_installed") installIdentity.add(id);
+      if (row.name === "pwa_standalone_opened") standaloneIdentity.add(id);
+      if (row.name === "companion_trial_started") trialIdentity.add(id);
+    }
+    const recentAppUsers = appRows.slice(0, 25).map((row) => ({
+      event: row.name,
+      user_id: typeof row.payload?.user_id === "string" ? row.payload.user_id : null,
+      user_email: typeof row.payload?.user_email === "string" ? row.payload.user_email : null,
+      session_id: typeof row.payload?.session_id === "string" ? row.payload.session_id : null,
+      created_at: row.created_at,
+      locale: row.locale,
+    }));
+
     return {
       totalRegistered: registered.size,
       totalAnon: (anonSess.data ?? []).length,
       newThisWeek: newWeekSet.size,
       activeThisWeek: activeSet.size,
+      appInstalled: installIdentity.size,
+      trialStarted: trialIdentity.size,
+      standaloneOpens: standaloneIdentity.size,
+      recentAppUsers,
       topUsers,
     };
   } catch (err) {

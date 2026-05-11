@@ -16,6 +16,8 @@ import "server-only";
  */
 import { getSubscription, ensureLaunchFreeSubscription } from "@/lib/ai/memory/store";
 import { createSupabaseService } from "@/lib/supabase/service";
+import { cookies } from "next/headers";
+import { getTrialState, RYA_TRIAL_COOKIE } from "@/lib/companion/trial";
 
 const GATING_ON = process.env.RIA_PLUS_GATING_ENABLED === "true";
 
@@ -27,6 +29,7 @@ export type Entitlement = {
   plan: string | null;
   reason:
     | "anonymous"
+    | "mobile_trial"
     | "launch_default"
     | "subscription_active"
     | "subscription_inactive"
@@ -37,6 +40,10 @@ export async function getEntitlement(
   userId: string | null | undefined,
 ): Promise<Entitlement> {
   if (!userId) {
+    const trial = getTrialState(cookies().get(RYA_TRIAL_COOKIE)?.value);
+    if (trial.active) {
+      return { isPremium: true, plan: "mobile_trial", reason: "mobile_trial" };
+    }
     return { isPremium: false, plan: null, reason: "anonymous" };
   }
 
