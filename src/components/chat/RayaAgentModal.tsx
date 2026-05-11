@@ -76,12 +76,12 @@ export function RayaAgentModal({
           <div className="min-w-0">
             <p className="flex items-center gap-2 text-sm font-semibold text-white">
               <Bot className="h-4 w-4 text-brand-primary" />
-              {isAr ? "ريا عبر Agent Builder" : "Raya via Agent Builder"}
+              {isAr ? "ريا عبر Agent Builder" : "Rya via Agent Builder"}
             </p>
             <p className="mt-1 text-xs text-white/40">
               {isAr
                 ? "وكلاء متخصصون من OpenAI للبحث والدعم، بجانب ريا الأساسية."
-                : "Specialized OpenAI agents for research and support alongside core Raya."}
+                : "Specialized OpenAI agents for research and support alongside core Rya."}
             </p>
           </div>
           <button

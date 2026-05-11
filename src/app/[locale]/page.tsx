@@ -6,11 +6,11 @@ import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
-import { SearchResults } from "@/components/SearchResults";
 import { StatsBar } from "@/components/StatsBar";
 import { BrandStory } from "@/components/BrandStory";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { Footer } from "@/components/Footer";
+import { RyaCompanionPromise } from "@/components/RyaCompanionPromise";
 import { TravelerServicesSection } from "@/components/TravelerServicesSection";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { FaqJsonLd } from "@/components/JsonLd";
@@ -71,11 +71,11 @@ const FAQ_AR = [
 const FAQ_EN = [
   {
     q: "What is GoTripza?",
-    a: "GoTripza is a free AI travel advisor. Raya helps you find cheap flights, choose the right stay area, and plan your full trip.",
+    a: "GoTripza is built around Rya, a travel companion that helps you plan, prepare, and choose useful trip services at the right moment.",
   },
   {
     q: "How do I find the cheapest flights?",
-    a: "Type your destination and dates in the search bar and tap 'Start with Raya'. Raya compares prices across 180+ airlines in real time and shows you the best options by price and travel time.",
+    a: "Start a conversation with Rya, share your destination and dates, and she will bring in flight options when you are ready to compare.",
   },
   {
     q: "Is GoTripza completely free?",
@@ -91,7 +91,7 @@ const FAQ_EN = [
   },
   {
     q: "How do I book a hotel through GoTripza?",
-    a: "For now, ask Raya for the best areas to stay and hotel-picking tips. Direct hotel offers will appear after the provider integration is complete.",
+    a: "For now, ask Rya for the best areas to stay and hotel-picking tips. Direct hotel offers will appear after the provider integration is complete.",
   },
 ];
 
@@ -104,12 +104,12 @@ export function generateMetadata({
   const isAr = locale === "ar";
 
   const title = isAr
-    ? "GoTripza — ريا مستشارة السفر الذكية | طيران وتخطيط رحلات"
-    : "GoTripza — Raya AI Travel Advisor | Flights & Trip Planning";
+    ? "GoTripza — ريا رفيقة السفر الذكية"
+    : "GoTripza — Rya AI Travel Companion";
 
   const description = isAr
-    ? "ريا مستشارتك الذكية للسفر. قارن الطيران، خطط الميزانية، واختر خدمات الرحلة من تأمين وشرائح وأنشطة مجاناً."
-    : "Raya is your personal AI travel advisor. Compare flights, plan your budget, and choose trip essentials like insurance, eSIMs, and activities for free.";
+    ? "تحدث مع ريا كرفيقة سفر تفهم رحلتك، تتذكر تفضيلاتك، وتساعدك في التخطيط والميزانية والترجمة والأمان وخدمات السفر عند الحاجة."
+    : "Talk to Rya like a travel companion who understands your trip, remembers your preferences, and helps with planning, budgeting, translation, safety, and travel services when needed.";
 
   return {
     title,
@@ -158,7 +158,7 @@ export default async function LandingPage({
       <Navbar dict={dict} locale={locale as Locale} />
       <main>
         <Hero dict={dict} />
-        <SearchResults dict={dict} />
+        <RyaCompanionPromise locale={locale as Locale} />
         <StatsBar dict={dict} />
         <BrandStory dict={dict} locale={locale} />
         <TravelerServicesSection locale={locale as Locale} />

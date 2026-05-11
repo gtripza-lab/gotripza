@@ -30,7 +30,7 @@ export function SearchPageClient({
           <span className="text-sm font-medium text-white/55">
             {isAr
               ? "ريا — مستشارة السفر الذكية"
-              : "Raya — your AI travel advisor"}
+              : "Rya — your travel companion"}
           </span>
         </div>
 

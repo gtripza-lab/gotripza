@@ -1,26 +1,26 @@
 "use client";
 import { motion } from "framer-motion";
-import { MessageSquare, BarChart3, ArrowUpRight } from "lucide-react";
+import { MessageSquare, Brain, ArrowUpRight } from "lucide-react";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 const STEPS_AR = [
   {
     icon: MessageSquare,
     num: "١",
-    title: "صف رحلتك",
-    desc: "اكتب وجهتك وتواريخك وميزانيتك بكلماتك — بالعربي أو الإنجليزي.",
+    title: "ابدأ بمحادثة",
+    desc: "احكِ لريا عن الوجهة، الميزانية، الأشخاص، وما يقلقك بكلماتك العادية.",
   },
   {
-    icon: BarChart3,
+    icon: Brain,
     num: "٢",
-    title: "نقارن المئات",
-    desc: "GoTripza يقارن الطيران فوراً، ويقترح مناطق السكن المناسبة إلى أن يكتمل ربط الفنادق.",
+    title: "ريا تفهم السياق",
+    desc: "تلتقط نيتك: تخطيط، ميزانية، دعم، فندق، فيزا، أو استعداد للحجز.",
   },
   {
     icon: ArrowUpRight,
     num: "٣",
-    title: "احجز بثقة",
-    desc: "اختر الخيار الأنسب وأكمل حجزك مباشرة عند الشريك — بدون رسوم إضافية.",
+    title: "توصيات في وقتها",
+    desc: "عندما تكون جاهزاً، تظهر الرحلات والتأمين والشرائح والأنشطة كجزء طبيعي من الحوار.",
   },
 ];
 
@@ -28,20 +28,20 @@ const STEPS_EN = [
   {
     icon: MessageSquare,
     num: "1",
-    title: "Describe your trip",
-    desc: "Type your destination, dates, and budget — in plain language.",
+    title: "Start with a conversation",
+    desc: "Tell Rya the destination, budget, travelers, and concerns in your own words.",
   },
   {
-    icon: BarChart3,
+    icon: Brain,
     num: "2",
-    title: "We compare hundreds",
-    desc: "GoTripza compares flights instantly and suggests the right stay areas while hotel offers are being connected.",
+    title: "Rya understands intent",
+    desc: "She identifies planning, budget, support, hotels, visa, or ready-to-book moments.",
   },
   {
     icon: ArrowUpRight,
     num: "3",
-    title: "Book with confidence",
-    desc: "Pick the best option and complete your booking directly — no extra fees.",
+    title: "Recommendations arrive naturally",
+    desc: "When it fits, flights, insurance, eSIMs, activities, and cars appear inside the conversation.",
   },
 ];
 

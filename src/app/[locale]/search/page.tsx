@@ -16,11 +16,11 @@ export async function generateMetadata({
   const isAr = params.locale === "ar";
   return {
     title: isAr
-      ? "ريا — مستشارة السفر الذكية"
-      : "Raya — AI Travel Advisor",
+      ? "ريا — رفيقة السفر الذكية"
+      : "Rya — Travel Companion",
     description: isAr
       ? "تحدث مع ريا، مساعد السفر الذكي الذي يفهمك ويخطط رحلتك خطوة بخطوة. طيران · مناطق سكن · تأمين · أنشطة."
-      : "Chat with Raya, the first free AI travel assistant that actually understands your trip and plans it step by step.",
+      : "Chat with Rya, the travel companion that understands your trip, remembers context, and helps you plan step by step.",
     alternates: {
       canonical: isAr
         ? "https://gotripza.com/ar/search"
@@ -54,7 +54,7 @@ export default async function SearchPage({
       <Navbar dict={dict} locale={locale as Locale} />
       {/*
         flex-1 + min-h-0 → fills remaining height after Navbar (works on all devices).
-        The mobile BottomNav is intentionally hidden on /search so Raya has the
+        The mobile BottomNav is intentionally hidden on /search so Rya has the
         full visual viewport, especially when the iOS keyboard is open.
       */}
       <main className="chat-viewport-lock min-h-0 min-w-0 flex-1">

@@ -9,43 +9,43 @@
     "getStarted": "Start free"
   },
   "hero": {
-    "badge": "The world's first free AI travel advisor",
-    "title1": "Plan your trip with",
-    "title2": "a real AI travel advisor",
-    "subtitle": "Raya listens, understands your trip deeply, and finds smart options — flights, insurance, activities, and clear stay guidance while direct hotel offers are being connected.",
-    "placeholder": "Tell me about your trip...",
-    "cta": "Start with Raya — free",
+    "badge": "Rya — your AI travel companion",
+    "title1": "Travel smarter with",
+    "title2": "Rya",
+    "subtitle": "Talk to Rya like a travel advisor who knows you: planning, budgeting, safety, translation, airports, and trip services when you need them.",
+    "placeholder": "Tell Rya about your trip or travel moment...",
+    "cta": "Talk to Rya",
     "voice": "Voice search",
-    "tagline": "Your intelligent travel companion — always.",
+    "tagline": "Your calm companion before and during travel.",
     "suggestions": {
       "title": "Try:",
       "items": [
-        "Dubai 3 nights best price",
-        "Honeymoon in Maldives budget $3,000",
-        "Family trip to Istanbul June",
-        "Cheapest flights to Bali this week"
+        "Plan a calm Turkey trip",
+        "I need eSIM and insurance for Japan",
+        "Help me at the airport",
+        "How do I avoid scams in Istanbul?"
       ]
     }
   },
   "brandStory": {
-    "title": "How GoTripza Works",
-    "body": "Tell us about your trip in plain language — GoTripza reads your request, evaluates your budget, checks visa requirements and weather, compares flight options, and suggests the right areas to stay while direct hotel offers are being connected.",
+    "title": "How Rya Helps",
+    "body": "Start with a natural conversation. Rya understands your destination, budget, and travel style, then recommends the right plan and services inside the conversation when they are genuinely useful.",
     "highlights": [
-      "180+ airlines",
-      "Real-time flight comparison",
-      "Prices in your currency"
+      "Personal travel memory",
+      "Calm planning",
+      "Help during the trip"
     ]
   },
   "mockups": {
-    "title": "Search to booking in three steps",
-    "subtitle": "Type. Compare. Book.",
+    "title": "From one question to a clearer trip",
+    "subtitle": "Ask. Understand. Travel with confidence.",
     "screens": {
       "search": {
         "greet": "Hi, Sarah!",
         "prompt": "Where's your next trip?",
         "input": "Describe your trip...",
-        "popular": "Most booked right now",
-        "ai": "AI picks for you",
+        "popular": "Ideas that fit you now",
+        "ai": "Rya's calm suggestion",
         "place1": "Bali",
         "place1Sub": "Indonesia",
         "place2": "Santorini",
@@ -81,27 +81,27 @@
     }
   },
   "values": {
-    "title": "Why travelers choose GoTripza",
+    "title": "Why travelers trust Rya",
     "items": {
       "ai": {
-        "title": "Search in plain language",
-        "desc": "Type what you want — no forms, no dropdowns, no friction"
+        "title": "Understands language and context",
+        "desc": "Rya reads intent and follows along without repeating the same questions"
       },
       "smart": {
-        "title": "Prices in your currency",
-        "desc": "No conversions — what you see is what you pay"
+        "title": "Personal travel memory",
+        "desc": "Keeps session preferences like budget, cities, and trip style in mind"
       },
       "fast": {
-        "title": "180+ airlines in one search",
-        "desc": "We reach the best price across all sources at once"
+        "title": "Help during the trip",
+        "desc": "Translation, airports, safety, budgeting, and everyday travel moments"
       },
       "support": {
-        "title": "Completely free to use",
-        "desc": "No service fees — we only earn when you book"
+        "title": "Recommendations without pressure",
+        "desc": "Services appear when useful, not as early booking spam"
       },
       "secure": {
-        "title": "All payment methods",
-        "desc": "Apple Pay, PayPal, Visa, Mastercard, Klarna"
+        "title": "Trusted partner links",
+        "desc": "Flights, insurance, eSIMs, and activities preserve affiliate attribution"
       }
     }
   },
@@ -159,7 +159,7 @@
   },
   "destinations": {
     "title": "Destinations Worth Remembering",
-    "subtitle": "Discover. Book. Go.",
+    "subtitle": "Ask Rya, then decide calmly.",
     "items": {
       "story": "Every journey has a story",
       "fly": "Best flight price",
@@ -168,15 +168,15 @@
     }
   },
   "social": {
-    "travelers": "airlines compared instantly",
-    "destinations": "destinations worldwide",
-    "saved": "service fees — always free",
-    "travelersCount": "180+",
+    "travelers": "travel help with you",
+    "destinations": "destinations Rya understands",
+    "saved": "personal travel memory",
+    "travelersCount": "24/7",
     "destinationsCount": "500+",
-    "savedCount": "$0"
+    "savedCount": "1"
   },
   "results": {
-    "loading": "Comparing prices across hundreds of sources...",
+    "loading": "Rya is understanding your request and preparing the best next step...",
     "flights": "Flights",
     "hotels": "Hotels",
     "bestValue": "Best Value",
@@ -193,7 +193,7 @@
     "activitiesDesc": "Discover top activities and guided tours"
   },
   "footer": {
-    "tagline": "Best price. In seconds.",
+    "tagline": "Travel smarter with Rya.",
     "rights": "All rights reserved",
     "about": "About",
     "contact": "Contact",

@@ -48,7 +48,7 @@ export function generateMetadata({
 
   const description = isAr
     ? "خطط رحلتك مع ريا: قارن الطيران، افهم التأشيرة والميزانية، واختر خدماتك من تأمين وشرائح وأنشطة وسيارات."
-    : "Plan your trip with Raya: compare flights, understand visa and budget needs, and choose essentials like insurance, eSIMs, activities, and cars.";
+    : "Plan your trip with Rya: compare flights, understand visa and budget needs, and choose essentials like insurance, eSIMs, activities, and cars.";
 
   const keywords: string[] = isAr
     ? [
@@ -74,7 +74,9 @@ export function generateMetadata({
         "cheap flights",
         "book flights online",
         "hotel area guide",
-        "AI travel advisor",
+        "AI travel companion",
+        "smart travel planning",
+        "AI trip planner",
         "flight search",
         "compare flights",
         "Dubai stay guide",
@@ -89,12 +91,12 @@ export function generateMetadata({
       ];
 
   const ogTitle = isAr
-    ? "GoTripza — ريا مستشارة السفر الذكية"
-    : "GoTripza — Raya AI Travel Advisor";
+    ? "GoTripza — ريا رفيقة السفر الذكية"
+    : "GoTripza — Rya AI Travel Companion";
 
   const ogDescription = isAr
     ? "قارن الطيران وخطط ميزانيتك واختر خدمات الرحلة مع ريا."
-    : "Compare flights, plan your budget, and choose trip essentials with Raya.";
+    : "Compare flights, plan your budget, and choose trip essentials with Rya.";
 
   return {
     title: {

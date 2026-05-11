@@ -42,13 +42,13 @@ export function generateMetadata({
   };
 }
 
-// ── How Raya works steps ──────────────────────────────────────────────────────
+// ── How Rya works steps ───────────────────────────────────────────────────────
 const HOW_IT_WORKS = [
   {
     step: "01",
     icon: "💬",
     title_ar: "أخبر ريا عن رحلتك",
-    title_en: "Tell Raya about your trip",
+    title_en: "Tell Rya about your trip",
     desc_ar:
       "اكتب ما تريده بكلامك العادي: \"أريد شهر عسل رومانسي بميزانية معقولة\" أو \"رحلة عائلية مع أطفال للصيف\".",
     desc_en:
@@ -58,11 +58,11 @@ const HOW_IT_WORKS = [
     step: "02",
     icon: "🎯",
     title_ar: "ريا تسأل الأسئلة الصحيحة",
-    title_en: "Raya asks the right questions",
+    title_en: "Rya asks the right questions",
     desc_ar:
       "بدلاً من قوائم لا نهاية لها، ريا تسألك عما يهم فعلاً: الميزانية، الأشخاص، التأشيرة، والتفضيلات.",
     desc_en:
-      "Instead of endless forms, Raya pinpoints what matters: budget, travelers, visa situation, and your preferences.",
+      "Instead of endless forms, Rya pinpoints what matters: budget, travelers, visa situation, and your preferences.",
   },
   {
     step: "03",
@@ -76,7 +76,7 @@ const HOW_IT_WORKS = [
   },
 ];
 
-// ── What Raya can do ──────────────────────────────────────────────────────────
+// ── What Rya can do ───────────────────────────────────────────────────────────
 const CAPABILITIES = [
   { icon: "💍", label_ar: "تخطيط شهر العسل", label_en: "Plan your honeymoon" },
   { icon: "👨‍👩‍👧‍👦", label_ar: "رحلات عائلية", label_en: "Family trips" },
@@ -96,7 +96,7 @@ const COMPARISON_ROWS = [
     google_ar: "بحث نصي، أنت تصيغ السؤال",
     google_en: "Keyword search — you do the heavy lifting",
     raya_ar: "محادثة طبيعية، ريا تفهم قصدك",
-    raya_en: "Natural conversation — Raya understands intent",
+    raya_en: "Natural conversation — Rya understands intent",
   },
   {
     criterion_ar: "التخصيص",
@@ -120,7 +120,7 @@ const COMPARISON_ROWS = [
     google_ar: "عليك فتح عشرات المواقع",
     google_en: "You open dozens of tabs yourself",
     raya_ar: "ريا تقارن وتوصي في مكان واحد",
-    raya_en: "Raya compares and recommends in one place",
+    raya_en: "Rya compares and recommends in one place",
   },
   {
     criterion_ar: "التكلفة",
@@ -152,34 +152,34 @@ export default async function AITravelAssistantPage({
     mainEntity: [
       {
         "@type": "Question",
-        name: isAr ? "ما هي ريا؟" : "What is Raya?",
+        name: isAr ? "ما هي ريا؟" : "What is Rya?",
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
             ? "ريا هي مساعدة السفر الذكية على GoTripza. تستطيع تخطيط رحلتك كاملة من الاقتراح حتى الحجز."
-            : "Raya is GoTripza's AI travel assistant. She can plan your entire trip from suggestions to booking.",
+            : "Rya is GoTripza's travel companion. She helps you plan, prepare, and travel with more confidence.",
         },
       },
       {
         "@type": "Question",
-        name: isAr ? "هل ريا مجانية؟" : "Is Raya free to use?",
+        name: isAr ? "هل ريا مجانية؟" : "Is Rya free to use?",
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
             ? "نعم، ريا مجانية تماماً. لا اشتراك ولا رسوم خفية."
-            : "Yes, Raya is completely free. No subscription, no hidden fees.",
+            : "Yes, Rya is free to start. Rya Companion is optional for deeper help during trips.",
         },
       },
       {
         "@type": "Question",
         name: isAr
           ? "ما الذي يميز ريا عن Google؟"
-          : "What makes Raya different from Google?",
+          : "What makes Rya different from Google?",
         acceptedAnswer: {
           "@type": "Answer",
           text: isAr
             ? "ريا تفهم سياق رحلتك وجنسيتك وميزانيتك وتقدم توصيات مخصصة، بينما يقدم Google نتائج عامة."
-            : "Raya understands your trip context, nationality, and budget to deliver personalized recommendations, while Google returns generic results.",
+            : "Rya understands your trip context, nationality, and budget to deliver personalized recommendations, while Google returns generic results.",
         },
       },
     ],
@@ -209,27 +209,27 @@ export default async function AITravelAssistantPage({
             <h1 className="font-display text-4xl font-bold leading-tight text-white sm:text-5xl lg:text-6xl">
               {isAr ? (
                 <>
-                  أول مساعد سفر{" "}
+                  رفيقة سفر{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-mint">
-                    ذكي مجاني
+                    ذكية وهادئة
                   </span>{" "}
-                  في العالم
+                  تفهمك
                 </>
               ) : (
                 <>
-                  The world&apos;s first{" "}
+                  Your calm{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-brand-primary to-brand-mint">
-                    free AI
+                    AI travel
                   </span>{" "}
-                  travel assistant
+                  companion
                 </>
               )}
             </h1>
 
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-white/60">
               {isAr
-                ? "ريا لا تبحث فقط — بل تفهم رحلتك. أخبرها عن حلمك وهي تخطط لكل التفاصيل بناءً على ميزانيتك وجنسيتك وتفضيلاتك."
-                : "Raya doesn't just search — she understands your trip. Tell her your dream and she'll plan every detail based on your budget, nationality, and preferences."}
+                ? "ريا لا تبحث فقط — بل تفهم رحلتك. أخبرها بما تريد، وهي ترتب التفكير حول ميزانيتك وجنسيتك وتفضيلاتك."
+                : "Rya doesn't just search — she understands your trip. Tell her what you need and she shapes the plan around your budget, nationality, and preferences."}
             </p>
 
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -239,7 +239,7 @@ export default async function AITravelAssistantPage({
               >
                 <span>🤖</span>
                 <span>
-                  {isAr ? "ابدأ المحادثة مع ريا" : "Start chatting with Raya"}
+                  {isAr ? "ابدأ المحادثة مع ريا" : "Start chatting with Rya"}
                 </span>
               </a>
               <p className="text-sm text-white/40">
@@ -251,12 +251,12 @@ export default async function AITravelAssistantPage({
           </div>
         </section>
 
-        {/* ── How Raya Works ───────────────────────────────────────────── */}
+        {/* ── How Rya Works ────────────────────────────────────────────── */}
         <section className="bg-gray-50 px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-5xl">
             <div className="text-center mb-12">
               <h2 className="font-display text-3xl font-bold text-ink-950 sm:text-4xl">
-                {isAr ? "كيف تعمل ريا؟" : "How Raya works"}
+                {isAr ? "كيف تعمل ريا؟" : "How Rya works"}
               </h2>
               <p className="mt-3 text-gray-500">
                 {isAr
@@ -287,17 +287,17 @@ export default async function AITravelAssistantPage({
           </div>
         </section>
 
-        {/* ── What Raya Can Do ─────────────────────────────────────────── */}
+        {/* ── What Rya Can Do ──────────────────────────────────────────── */}
         <section className="bg-white px-4 py-16 sm:py-20">
           <div className="mx-auto max-w-5xl">
             <div className="text-center mb-12">
               <h2 className="font-display text-3xl font-bold text-ink-950 sm:text-4xl">
-                {isAr ? "ماذا تستطيع ريا أن تفعل؟" : "What Raya can do for you"}
+                {isAr ? "ماذا تستطيع ريا أن تفعل؟" : "What Rya can do for you"}
               </h2>
               <p className="mt-3 text-gray-500">
                 {isAr
-                  ? "ريا مدربة على كل جوانب السفر"
-                  : "Raya is trained on every aspect of travel planning"}
+                  ? "ريا تساعدك في أهم لحظات السفر"
+                  : "Rya helps across the most important travel moments"}
               </p>
             </div>
 
@@ -322,7 +322,7 @@ export default async function AITravelAssistantPage({
           <div className="mx-auto max-w-5xl">
             <div className="text-center mb-12">
               <h2 className="font-display text-3xl font-bold text-ink-950 sm:text-4xl">
-                {isAr ? "لماذا لا تستخدم Google فقط؟" : "Why not just Google it?"}
+                {isAr ? "لماذا لا تكتفي بالبحث العادي؟" : "Why not just search normally?"}
               </h2>
               <p className="mt-3 text-gray-500">
                 {isAr
@@ -337,7 +337,7 @@ export default async function AITravelAssistantPage({
                 <span>{isAr ? "المعيار" : "Criterion"}</span>
                 <span className="text-center">Google</span>
                 <span className="text-center text-brand-mint">
-                  {isAr ? "ريا (GoTripza)" : "Raya (GoTripza)"}
+                  {isAr ? "ريا (GoTripza)" : "Rya (GoTripza)"}
                 </span>
               </div>
 
@@ -374,9 +374,9 @@ export default async function AITravelAssistantPage({
               {[
                 {
                   q_ar: "هل ريا مجانية؟",
-                  q_en: "Is Raya free?",
+                  q_en: "Is Rya free?",
                   a_ar: "نعم، ريا مجانية تماماً. لا اشتراك ولا رسوم خفية.",
-                  a_en: "Yes, Raya is completely free. No subscription, no hidden fees.",
+                  a_en: "Yes, Rya is free to start. Rya Companion is optional for deeper help during trips.",
                 },
                 {
                   q_ar: "هل أحتاج إلى إنشاء حساب؟",
@@ -386,15 +386,15 @@ export default async function AITravelAssistantPage({
                 },
                 {
                   q_ar: "ما اللغات التي تدعمها ريا؟",
-                  q_en: "What languages does Raya support?",
+                  q_en: "What languages does Rya support?",
                   a_ar: "ريا تتحدث العربية والإنجليزية بطلاقة.",
-                  a_en: "Raya speaks both Arabic and English fluently.",
+                  a_en: "Rya speaks both Arabic and English fluently.",
                 },
                 {
                   q_ar: "هل يمكن لريا مساعدتي في التأشيرة؟",
-                  q_en: "Can Raya help me with visa requirements?",
+                  q_en: "Can Rya help me with visa requirements?",
                   a_ar: "نعم، ريا تعرف متطلبات التأشيرة لأغلب الجنسيات والوجهات.",
-                  a_en: "Yes, Raya knows visa requirements for most nationalities and destinations.",
+                  a_en: "Yes, Rya can guide you through common visa requirements and tell you when official confirmation is needed.",
                 },
               ].map((faq, i) => (
                 <details
@@ -428,7 +428,7 @@ export default async function AITravelAssistantPage({
             <p className="mx-auto mt-4 max-w-xl text-white/55">
               {isAr
                 ? "ريا تنتظرك. ابدأ المحادثة الآن وخطط لرحلة لن تنساها."
-                : "Raya is waiting. Start the conversation now and plan a trip you'll never forget."}
+                : "Rya is ready. Start the conversation and make your trip clearer."}
             </p>
             <a
               href={chatHref}
@@ -438,7 +438,7 @@ export default async function AITravelAssistantPage({
               <span>
                 {isAr
                   ? "ابدأ التخطيط مع ريا"
-                  : "Start planning with Raya"}
+                  : "Start planning with Rya"}
               </span>
             </a>
             <p className="mt-4 text-sm text-white/35">

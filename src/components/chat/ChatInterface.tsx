@@ -166,7 +166,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           </div>
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-white/90">
-              {isAr ? "ريا — مستشارة السفر الذكية" : "Raya — AI Travel Advisor"}
+              {isAr ? "ريا — رفيقة السفر الذكية" : "Rya — Travel Companion"}
             </p>
             <p className="truncate text-[11px] text-white/40">
               {isAr ? "متاحة الآن · GoTripza" : "Online now · GoTripza"}
@@ -178,7 +178,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           <button
             type="button"
             onClick={() => setAgentOpen(true)}
-            title={isAr ? "وكلاء ريا المتخصصون" : "Raya specialist agents"}
+            title={isAr ? "وكلاء ريا المتخصصون" : "Rya specialist agents"}
             className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/[0.08] hover:text-white/70"
           >
             <Bot className="h-3.5 w-3.5" />
@@ -386,7 +386,7 @@ function TypingIndicator({ isAr }: { isAr: boolean }) {
           <span className="h-2 w-2 animate-bounce rounded-full bg-violet-300/70" style={{ animationDelay: "300ms" }} />
         </div>
         <p className="mt-1 text-[10px] text-white/35">
-          {isAr ? "ريا تفكر..." : "Raya is thinking..."}
+          {isAr ? "ريا تفكر..." : "Rya is thinking..."}
         </p>
       </div>
     </motion.div>

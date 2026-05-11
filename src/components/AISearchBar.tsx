@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, MicOff, Sparkles, ArrowRight, Loader2, Clock, X } from "lucide-react";
+import { Mic, MicOff, Sparkles, ArrowRight, Clock, X } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import { useSearch } from "./search/SearchContext";
 import { cn } from "@/lib/utils";
@@ -67,8 +68,9 @@ export function AISearchBar({
   dict: Dictionary;
   theme?: Theme;
 }) {
-  const { query, setQuery, status, search } = useSearch();
-  const loading = status === "loading";
+  const { query, setQuery } = useSearch();
+  const router = useRouter();
+  const pathname = usePathname();
   const isLight = theme === "light";
   const [recent, setRecent] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
@@ -88,9 +90,13 @@ export function AISearchBar({
   }, []);
 
   const handleSearch = (q: string) => {
-    saveRecent(q);
+    const cleanQuery = q.trim();
+    if (!cleanQuery) return;
+
+    saveRecent(cleanQuery);
     setRecent(loadRecent());
-    search(q);
+    const locale = pathname?.startsWith("/ar") ? "ar" : "en";
+    router.push(`/${locale}/search?q=${encodeURIComponent(cleanQuery)}`);
   };
 
   const handleVoice = () => {
@@ -161,7 +167,6 @@ export function AISearchBar({
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={dict.hero.placeholder}
-          disabled={loading}
           className={cn(
             "min-w-0 flex-1 bg-transparent px-2 py-3 text-base focus:outline-none",
             isLight
@@ -189,17 +194,11 @@ export function AISearchBar({
         </button>
         <button
           type="submit"
-          disabled={loading || !query.trim()}
+          disabled={!query.trim()}
           className="btn-primary !rounded-xl !px-5 !py-2.5 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <>
-              <span className="hidden sm:inline">{dict.hero.cta}</span>
-              <ArrowRight className="h-4 w-4 rtl:rotate-180" />
-            </>
-          )}
+          <span className="hidden sm:inline">{dict.hero.cta}</span>
+          <ArrowRight className="h-4 w-4 rtl:rotate-180" />
         </button>
       </motion.form>
 

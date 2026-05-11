@@ -260,7 +260,7 @@ function ReadyState({
                 title={isAr ? "عروض الفنادق المباشرة قريباً" : "Direct Hotel Offers Coming Soon"}
                 desc={isAr
                   ? `مزود الفنادق لم يفعّل الربط بعد. افتح ريا لتحديد أفضل مناطق السكن في ${data.intent.destination}.`
-                  : `The hotel provider integration is not active yet. Ask Raya for the best stay areas in ${data.intent.destination}.`}
+                  : `The hotel provider integration is not active yet. Ask Rya for the best stay areas in ${data.intent.destination}.`}
                 url={hotelSearchUrl}
                 btnLabel={isAr ? "دليل السكن" : "Stay Guide"}
                 accent="mint"

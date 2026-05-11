@@ -152,7 +152,7 @@ export function ChatProvider({
     mode: "advice",
     text: locale === "ar"
       ? "مرحباً! 👋 أنا ريا، مستشارتك الذكية في GoTripza.\n\nأخبرني عن رحلتك — إلى أين تفكر تسافر؟ أو اسألني أي سؤال عن السفر وأنا هنا أساعدك 🌍"
-      : "Hi there! 👋 I'm Raya, your AI travel advisor at GoTripza.\n\nTell me about your trip — where are you thinking of going? Or ask me anything about travel and I'll guide you 🌍",
+      : "Hi there! 👋 I'm Rya, your travel companion at GoTripza.\n\nTell me about your trip — where are you thinking of going? Or ask me anything about travel and I'll guide you 🌍",
     timestamp: 0,
   }), [locale]);
 
@@ -197,12 +197,19 @@ export function ChatProvider({
   // Auto-send initial message from URL ?q= param (homepage suggestion chips)
   const sentInitial = useRef(false);
   useEffect(() => {
-    if (initialMessage && !sentInitial.current) {
+    const urlMessage = typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search).get("q")?.trim()
+      : undefined;
+    const seedMessage = (initialMessage?.trim() || urlMessage || "").trim();
+    if (!seedMessage || sentInitial.current) return;
+
+    // Small delay so welcome message renders first
+    const timer = setTimeout(() => {
+      if (sentInitial.current) return;
       sentInitial.current = true;
-      // Small delay so welcome message renders first
-      const timer = setTimeout(() => sendMessage(initialMessage), 400);
-      return () => clearTimeout(timer);
-    }
+      sendMessage(seedMessage);
+    }, 400);
+    return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessage]);
 
