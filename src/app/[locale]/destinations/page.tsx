@@ -16,8 +16,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? "دليل الوجهات السياحية — أفضل 50 وجهة في العالم"
     : "Destination Travel Guides — World's Best 50 Destinations";
   const description = isAr
-    ? "استكشف أفضل الوجهات السياحية في العالم: دليل شامل للطيران والفنادق والميزانية والتأشيرة وأفضل وقت للزيارة."
-    : "Explore the world's best travel destinations with complete guides: flights, hotels, budget planning, visa requirements, and the best time to visit.";
+    ? "استكشف أفضل الوجهات السياحية في العالم: دليل شامل للطيران، مناطق السكن، الميزانية، التأشيرة، وأفضل وقت للزيارة."
+    : "Explore the world's best travel destinations with complete guides: flights, stay areas, budget planning, visa requirements, and the best time to visit.";
   return {
     title,
     description,
@@ -73,8 +73,8 @@ export default async function DestinationsIndexPage({ params }: Props) {
         </h1>
         <p className="text-white/60 mb-10 max-w-2xl">
           {isAr
-            ? "أدلة سفر شاملة لأكثر من 50 وجهة: طيران، فنادق، ميزانية، تأشيرة وأكثر."
-            : "Complete travel guides for 50+ destinations: flights, hotels, budget, visa requirements and more."}
+            ? "أدلة سفر شاملة لأكثر من 50 وجهة: طيران، مناطق سكن، ميزانية، تأشيرة وأكثر."
+            : "Complete travel guides for 50+ destinations: flights, stay areas, budget, visa requirements and more."}
         </p>
 
         {/* ── Featured Destinations Photo Grid ─────────────────────── */}

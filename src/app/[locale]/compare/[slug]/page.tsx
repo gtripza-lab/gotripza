@@ -38,8 +38,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `${nameA} أم ${nameB}؟ مقارنة شاملة 2025`
     : `${destA.nameEn} vs ${destB.nameEn} — Full Comparison 2025`;
   const description = isAr
-    ? `مقارنة شاملة بين ${nameA} و${nameB}: التكاليف، الطقس، التأشيرة، الفنادق، الأنشطة. اختر الوجهة المثالية لرحلتك.`
-    : `${destA.nameEn} vs ${destB.nameEn}: full comparison of costs, weather, visa, hotels, and activities. Find out which destination is right for your trip.`;
+    ? `مقارنة شاملة بين ${nameA} و${nameB}: التكاليف، الطقس، التأشيرة، مناطق السكن، الأنشطة، والخدمات المناسبة.`
+    : `${destA.nameEn} vs ${destB.nameEn}: full comparison of costs, weather, visa, stay areas, activities, and useful services.`;
 
   const pageUrl = `${BASE}/${params.locale}/compare/${params.slug}`;
   return {

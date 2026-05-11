@@ -13,8 +13,8 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
   return {
     title: isAr ? "دليل السفر" : "Travel Guide",
     description: isAr
-      ? "مقالات ودلائل سفر شاملة لأفضل الوجهات — فنادق، طيران، ونصائح موفّرة."
-      : "Comprehensive travel guides for top destinations — hotels, flights, and money-saving tips.",
+      ? "مقالات ودلائل سفر شاملة لأفضل الوجهات — طيران، مناطق سكن، ونصائح موفّرة."
+      : "Comprehensive travel guides for top destinations — flights, stay areas, and money-saving tips.",
   };
 }
 

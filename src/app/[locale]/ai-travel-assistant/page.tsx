@@ -70,9 +70,9 @@ const HOW_IT_WORKS = [
     title_ar: "نتائج مخصصة لك تماماً",
     title_en: "Results tailored just for you",
     desc_ar:
-      "تحصل على وجهات، فنادق، رحلات طيران، تأمين، وشرائح إنترنت — كل شيء منسق لرحلتك أنت.",
+      "تحصل على وجهات، رحلات طيران، مناطق سكن، تأمين، شرائح إنترنت، وأنشطة — كل شيء منسق لرحلتك أنت.",
     desc_en:
-      "You get destinations, hotels, flights, insurance, and eSIMs — everything curated for your specific trip.",
+      "You get destinations, flights, stay areas, insurance, eSIMs, and activities — everything curated for your specific trip.",
   },
 ];
 

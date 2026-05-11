@@ -36,8 +36,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     ? `هل ${bp.budgetUsd} دولار كافية لـ${name} (${bp.durationDays} أيام)؟ دليل الميزانية 2025`
     : `Is $${bp.budgetUsd} Enough for ${dest.nameEn} (${bp.durationDays} Days)? Budget Guide 2025`;
   const description = isAr
-    ? `خطة ميزانية كاملة لرحلة ${name} بـ${bp.budgetUsd} دولار لمدة ${bp.durationDays} أيام: الفنادق، الطعام، المواصلات، والأنشطة.`
-    : `Complete budget breakdown for ${dest.nameEn} with $${bp.budgetUsd} for ${bp.durationDays} days — hotels, food, transport, and activities covered.`;
+    ? `خطة ميزانية كاملة لرحلة ${name} بـ${bp.budgetUsd} دولار لمدة ${bp.durationDays} أيام: السكن، الطعام، المواصلات، الأنشطة، والتأمين.`
+    : `Complete budget breakdown for ${dest.nameEn} with $${bp.budgetUsd} for ${bp.durationDays} days — stays, food, transport, activities, and insurance.`;
 
   return {
     title,

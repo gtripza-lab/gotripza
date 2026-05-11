@@ -14,7 +14,7 @@ const AreaChartCard = dynamic(
   { ssr: false },
 );
 
-export const metadata = { title: "Dashboard" };
+export const metadata = { title: "لوحة التشغيل" };
 
 type AiTraceRow = {
   id: string;

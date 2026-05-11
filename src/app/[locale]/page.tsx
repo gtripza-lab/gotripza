@@ -11,6 +11,7 @@ import { StatsBar } from "@/components/StatsBar";
 import { BrandStory } from "@/components/BrandStory";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { Footer } from "@/components/Footer";
+import { TravelerServicesSection } from "@/components/TravelerServicesSection";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { FaqJsonLd } from "@/components/JsonLd";
 import { detectGeo } from "@/lib/geo";
@@ -43,7 +44,7 @@ const BASE = "https://gotripza.com";
 const FAQ_AR = [
   {
     q: "ما هو GoTripza؟",
-    a: "GoTripza هو أول مساعد سفر ذكاء اصطناعي مجاني في العالم. مساعدتك الذكية ريا تساعدك في البحث عن أرخص تذاكر الطيران وأفضل الفنادق وتخطيط رحلتك كاملاً.",
+    a: "GoTripza هو مساعد سفر ذكاء اصطناعي مجاني. مساعدتك الذكية ريا تساعدك في البحث عن أرخص تذاكر الطيران، اختيار منطقة السكن المناسبة، وتخطيط رحلتك كاملاً.",
   },
   {
     q: "كيف أبحث عن أرخص رحلات الطيران؟",
@@ -55,18 +56,22 @@ const FAQ_AR = [
   },
   {
     q: "ما هي الفنادق والمدن التي يغطيها GoTripza؟",
-    a: "يغطي GoTripza أكثر من 50 وجهة سياحية حول العالم بما فيها دبي ومكة المكرمة ولندن وباريس وطوكيو وغيرها، مع آلاف الفنادق في كل مدينة.",
+    a: "يغطي GoTripza أكثر من 50 وجهة سياحية حول العالم بما فيها دبي ومكة المكرمة ولندن وباريس وطوكيو، مع أدلة سكن مؤقتة إلى أن يكتمل ربط عروض الفنادق المباشرة.",
+  },
+  {
+    q: "ما الخدمات الأخرى غير الطيران؟",
+    a: "GoTripza يرشح خدمات مكملة للرحلة مثل تأمين السفر، شرائح eSIM، الأنشطة والجولات، تأجير السيارات، وتعويض الرحلات المتأخرة.",
   },
   {
     q: "كيف أحجز فندقاً عبر GoTripza؟",
-    a: "اطلب من ريا خيارات الفنادق في وجهتك وستعرض لك أفضل الأسعار. عند اختيارك، ستنقلك إلى موقع الشريك لإتمام الحجز مباشرة.",
+    a: "حالياً اطلب من ريا أفضل مناطق السكن في وجهتك ونصائح اختيار الفندق. عروض الفنادق المباشرة ستظهر بعد اكتمال ربط مزود الفنادق.",
   },
 ];
 
 const FAQ_EN = [
   {
     q: "What is GoTripza?",
-    a: "GoTripza is the world's first free AI travel advisor. Raya, your AI assistant, helps you find the cheapest flights, best hotels, and plan your entire trip in seconds.",
+    a: "GoTripza is a free AI travel advisor. Raya helps you find cheap flights, choose the right stay area, and plan your full trip.",
   },
   {
     q: "How do I find the cheapest flights?",
@@ -78,11 +83,15 @@ const FAQ_EN = [
   },
   {
     q: "Which cities and hotels does GoTripza cover?",
-    a: "GoTripza covers 50+ top destinations worldwide including Dubai, Mecca, London, Paris, Tokyo, and more, with thousands of hotels in each city.",
+    a: "GoTripza covers 50+ top destinations worldwide including Dubai, Mecca, London, Paris, Tokyo, and more, with stay guides while direct hotel offers are being connected.",
+  },
+  {
+    q: "What else does GoTripza help with besides flights?",
+    a: "GoTripza recommends trip essentials such as travel insurance, eSIM data, activities and tours, car rental, and flight compensation.",
   },
   {
     q: "How do I book a hotel through GoTripza?",
-    a: "Ask Raya for hotel options at your destination and she'll present the best prices. When you choose one, she directs you to the partner site to complete your booking directly.",
+    a: "For now, ask Raya for the best areas to stay and hotel-picking tips. Direct hotel offers will appear after the provider integration is complete.",
   },
 ];
 
@@ -95,12 +104,12 @@ export function generateMetadata({
   const isAr = locale === "ar";
 
   const title = isAr
-    ? "GoTripza — أول مساعد سفر ذكي مجاني في العالم | رحلات وفنادق"
-    : "GoTripza — The World's First Free AI Travel Advisor | Flights & Hotels";
+    ? "GoTripza — ريا مستشارة السفر الذكية | طيران وتخطيط رحلات"
+    : "GoTripza — Raya AI Travel Advisor | Flights & Trip Planning";
 
   const description = isAr
-    ? "ريا مستشارتك الذكية للسفر. احصل على أسعار الطيران والفنادق وتوصيات مخصصة لوجهتك مجاناً. أكثر من 180 شركة طيران وآلاف الفنادق."
-    : "Raya is your personal AI travel advisor. Get flight & hotel prices plus personalised recommendations for your trip — completely free. 180+ airlines, thousands of hotels.";
+    ? "ريا مستشارتك الذكية للسفر. قارن الطيران، خطط الميزانية، واختر خدمات الرحلة من تأمين وشرائح وأنشطة مجاناً."
+    : "Raya is your personal AI travel advisor. Compare flights, plan your budget, and choose trip essentials like insurance, eSIMs, and activities for free.";
 
   return {
     title,
@@ -152,6 +161,7 @@ export default async function LandingPage({
         <SearchResults dict={dict} />
         <StatsBar dict={dict} />
         <BrandStory dict={dict} locale={locale} />
+        <TravelerServicesSection locale={locale as Locale} />
 
         {/* Below-fold sections — deferred for faster initial load */}
         <MobileMockups dict={dict} />

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getConversations } from "@/lib/admin/data";
 import type { ConversationRow } from "@/lib/admin/data";
 
-export const metadata = { title: "Conversations" };
+export const metadata = { title: "المحادثات" };
 
 function typeBadge(hasUser: boolean) {
   const base =
@@ -40,7 +40,7 @@ function GhostIcon() {
 
 function formatDate(iso: string | null): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
+  return new Date(iso).toLocaleString("ar-SA", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -75,21 +75,20 @@ export default async function ConversationsPage() {
       {/* Header */}
       <div>
         <h1 className="text-white text-2xl font-semibold tracking-tight">
-          Conversations
+          المحادثات
         </h1>
         <p className="text-white/40 text-sm mt-1">
-          {total.toLocaleString()} total conversation
-          {total !== 1 ? "s" : ""}
+          {total.toLocaleString("ar-SA")} محادثة إجمالية
         </p>
       </div>
 
       {/* Summary Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total", value: total.toLocaleString() },
-          { label: "Registered Users", value: registeredCount.toLocaleString() },
-          { label: "Anonymous", value: anonymousCount.toLocaleString() },
-          { label: "Avg Messages", value: avgMessages },
+          { label: "الإجمالي", value: total.toLocaleString("ar-SA") },
+          { label: "مستخدمون مسجلون", value: registeredCount.toLocaleString("ar-SA") },
+          { label: "زوار بدون حساب", value: anonymousCount.toLocaleString("ar-SA") },
+          { label: "متوسط الرسائل", value: avgMessages },
         ].map(({ label, value }) => (
           <div
             key={label}
@@ -123,19 +122,19 @@ export default async function ConversationsPage() {
                   ID
                 </th>
                 <th className="text-left px-5 py-3 text-white/40 font-medium">
-                  Type
+                  النوع
                 </th>
                 <th className="text-right px-5 py-3 text-white/40 font-medium">
-                  Messages
+                  الرسائل
                 </th>
                 <th className="text-left px-5 py-3 text-white/40 font-medium">
-                  Started
+                  البداية
                 </th>
                 <th className="text-left px-5 py-3 text-white/40 font-medium">
-                  Last Active
+                  آخر نشاط
                 </th>
                 <th className="text-left px-5 py-3 text-white/40 font-medium">
-                  Summary
+                  الملخص
                 </th>
               </tr>
             </thead>
@@ -146,7 +145,7 @@ export default async function ConversationsPage() {
                     colSpan={6}
                     className="px-5 py-10 text-center text-white/40"
                   >
-                    No conversations found.
+                    لا توجد محادثات حتى الآن.
                   </td>
                 </tr>
               ) : (
@@ -168,12 +167,12 @@ export default async function ConversationsPage() {
                         {row.user_id !== null ? (
                           <>
                             <UserIcon />
-                            User
+                            مستخدم
                           </>
                         ) : (
                           <>
                             <GhostIcon />
-                            Anon
+                            زائر
                           </>
                         )}
                       </span>

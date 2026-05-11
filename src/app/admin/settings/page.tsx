@@ -1,15 +1,15 @@
 import { ExternalLink } from "lucide-react";
 import { getAgentWorkflowStatuses } from "@/lib/openai/agent-workflows";
 
-export const metadata = { title: "Settings" };
+export const metadata = { title: "الإعدادات" };
 
 function ConfigRow({ label, value }: { label: string; value: string }) {
-  const isSet = Boolean(value);
+  const isSet = Boolean(value) && value !== "غير مضبوط";
   return (
     <div className="flex items-center justify-between py-3 border-b border-white/[0.04] last:border-0">
       <span className="text-sm text-white/60">{label}</span>
       <span className={`font-mono text-xs ${isSet ? "text-white/80" : "text-white/25 italic"}`}>
-        {isSet ? value : "not set"}
+        {isSet ? value : "غير مضبوط"}
       </span>
     </div>
   );
@@ -68,36 +68,36 @@ export default function SettingsPage() {
     <div className="space-y-8 p-6">
       {/* Page header */}
       <div>
-        <h1 className="font-display text-xl font-semibold text-white">Settings & Configuration</h1>
-        <p className="mt-1 text-xs text-white/35">Read-only view of the current environment configuration</p>
+        <h1 className="font-display text-xl font-semibold text-white">الإعدادات والتهيئة</h1>
+        <p className="mt-1 text-xs text-white/35">عرض آمن للمتغيرات الحالية بدون كشف الأسرار</p>
       </div>
 
       {/* Section 1: AI Configuration */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
-          AI Configuration
+          إعدادات الذكاء الاصطناعي
         </p>
-        <p className="mb-4 text-xs text-white/20">Active model configuration read from environment variables</p>
+        <p className="mb-4 text-xs text-white/20">النماذج النشطة المقروءة من متغيرات البيئة</p>
         <ConfigRow
-          label="Primary Model (AI_MODEL_PRIMARY)"
-          value={primaryModel || "not set"}
+          label="النموذج الأساسي (AI_MODEL_PRIMARY)"
+          value={primaryModel || "غير مضبوط"}
         />
         <ConfigRow
-          label="Lite Model (AI_MODEL_LITE)"
-          value={liteModel || "not set"}
+          label="النموذج الخفيف (AI_MODEL_LITE)"
+          value={liteModel || "غير مضبوط"}
         />
         <ConfigRow
-          label="Ria Plus Gating (RIA_PLUS_GATING_ENABLED)"
-          value={riaPlusGating || "not set"}
+          label="تفعيل باقة ريا التجريبية (RIA_PLUS_GATING_ENABLED)"
+          value={riaPlusGating || "غير مضبوط"}
         />
       </div>
 
       {/* Section 2: Feature Flags */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
-          Feature Flags
+          مفاتيح التشغيل
         </p>
-        <p className="mb-4 text-xs text-white/20">Runtime flags and secret presence checks</p>
+        <p className="mb-4 text-xs text-white/20">حالة الميزات والأسرار دون عرض قيمها</p>
 
         <FlagRow
           label="RIA_PLUS_GATING_ENABLED"
@@ -106,17 +106,17 @@ export default function SettingsPage() {
         />
         <FlagRow
           label="TP_WEBHOOK_SECRET"
-          status={tpWebhookSecret ? "Set ✓" : "⚠ Not set"}
+          status={tpWebhookSecret ? "موجود" : "غير مضبوط"}
           variant={tpWebhookSecret ? "ok" : "warn"}
         />
         <FlagRow
           label="SENTRY_DSN"
-          status={sentryDsn ? "Set ✓" : "Not configured"}
+          status={sentryDsn ? "موجود" : "غير مهيأ"}
           variant={sentryDsn ? "ok" : "neutral"}
         />
         <FlagRow
           label="OPENAI_API_KEY"
-          status={openaiApiKey ? "Set ✓" : "⚠ Not set"}
+          status={openaiApiKey ? "موجود" : "غير مضبوط"}
           variant={openaiApiKey ? "ok" : "warn"}
         />
       </div>
@@ -126,12 +126,12 @@ export default function SettingsPage() {
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           OpenAI Agent Builder
         </p>
-        <p className="mb-4 text-xs text-white/20">Workflow ID presence checks. Values are hidden.</p>
+        <p className="mb-4 text-xs text-white/20">فحص وجود معرفات الـ Workflow. القيم مخفية.</p>
         {agentWorkflows.map((workflow) => (
           <FlagRow
             key={workflow.key}
             label={workflow.envVar}
-            status={workflow.configured ? "Set ✓" : "⚠ Not set"}
+            status={workflow.configured ? "موجود" : "غير مضبوط"}
             variant={workflow.configured ? "ok" : "warn"}
           />
         ))}
@@ -140,9 +140,9 @@ export default function SettingsPage() {
       {/* Section 4: Affiliate Configuration */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
-          Affiliate Configuration
+          إعدادات الشراكات
         </p>
-        <p className="mb-4 text-xs text-white/20">Public affiliate identifiers used for tracking and attribution</p>
+        <p className="mb-4 text-xs text-white/20">معرفات عامة للتتبع ونسب النقرات</p>
 
         <div className="flex items-center justify-between py-3 border-b border-white/[0.04]">
           <span className="text-sm text-white/60">NEXT_PUBLIC_TRAVELPAYOUTS_MARKER</span>
@@ -150,20 +150,20 @@ export default function SettingsPage() {
         </div>
 
         <p className="mt-4 text-xs text-white/25 italic">
-          API keys and secrets are never shown here. Manage them in Vercel dashboard.
+          مفاتيح API والأسرار لا تظهر هنا أبداً. إدارتها تكون من لوحة Vercel.
         </p>
       </div>
 
       {/* Section 5: Quick Links */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
-          Quick Links
+          روابط سريعة
         </p>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <QuickLink label="Supabase Dashboard" href="https://supabase.com/dashboard" />
-          <QuickLink label="Vercel Dashboard" href="https://vercel.com/dashboard" />
-          <QuickLink label="OpenAI Platform" href="https://platform.openai.com" />
-          <QuickLink label="Travelpayouts Dashboard" href="https://www.travelpayouts.com/dashboard" />
+          <QuickLink label="لوحة Supabase" href="https://supabase.com/dashboard" />
+          <QuickLink label="لوحة Vercel" href="https://vercel.com/dashboard" />
+          <QuickLink label="منصة OpenAI" href="https://platform.openai.com" />
+          <QuickLink label="لوحة Travelpayouts" href="https://www.travelpayouts.com/dashboard" />
         </div>
       </div>
     </div>

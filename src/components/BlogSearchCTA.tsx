@@ -18,13 +18,13 @@ export function BlogSearchCTA({ locale, destination }: BlogSearchCTAProps) {
     : (destination ?? "your destination");
 
   const heading = isAr
-    ? `ابحث الآن عن أفضل أسعار الطيران والفنادق إلى ${displayDestination} — مجاناً بلا رسوم`
-    : `Find the best flights and hotels to ${displayDestination} — free, no fees`;
+    ? `ابحث عن الطيران وخطة السكن المناسبة إلى ${displayDestination} — مجاناً بلا رسوم`
+    : `Find flights and the right stay plan for ${displayDestination} — free, no fees`;
 
   const buttonLabel = isAr ? "ابحث مجاناً" : "Search Free";
 
   const searchQuery = destination
-    ? `flights and hotels to ${destination}`
+    ? `flights and stay guide to ${destination}`
     : "best trip deals";
 
   const href = `/${locale}/search?q=${encodeURIComponent(searchQuery)}`;

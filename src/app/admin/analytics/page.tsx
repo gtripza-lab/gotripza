@@ -1,7 +1,7 @@
 import { getAnalyticsStats } from "@/lib/admin/data";
 import { AdminAutoRefresh } from "@/components/admin/AdminAutoRefresh";
 
-export const metadata = { title: "Analytics" };
+export const metadata = { title: "التحليلات" };
 
 const fmt = new Intl.NumberFormat("en-US");
 const usd = new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 2 });
@@ -30,17 +30,17 @@ export default async function AnalyticsPage() {
     return (
       <div className="min-h-screen bg-[#08080d] flex items-center justify-center">
         <div className="text-center rounded-2xl bg-white/[0.03] border border-white/[0.06] p-10">
-          <p className="text-red-400 text-lg font-semibold mb-2">Failed to load analytics</p>
-          <p className="text-white/40 text-sm">Could not retrieve data. Please try again later.</p>
+          <p className="text-red-400 text-lg font-semibold mb-2">تعذر تحميل التحليلات</p>
+          <p className="text-white/40 text-sm">لم نتمكن من جلب البيانات. حاول لاحقاً.</p>
         </div>
       </div>
     );
   }
 
   const funnelSteps = [
-    { label: "Conversations", value: stats.conversationsTotal, color: "bg-blue-500" },
-    { label: "AI Searches", value: stats.searchesTotal, color: "bg-purple-500" },
-    { label: "Affiliate Clicks", value: stats.clicksTotal, color: "bg-emerald-500" },
+    { label: "المحادثات", value: stats.conversationsTotal, color: "bg-blue-500" },
+    { label: "عمليات بحث ريا", value: stats.searchesTotal, color: "bg-purple-500" },
+    { label: "نقرات الشراكات", value: stats.clicksTotal, color: "bg-emerald-500" },
   ];
   const funnelMax = Math.max(...funnelSteps.map((s) => s.value), 1);
 
@@ -50,21 +50,21 @@ export default async function AnalyticsPage() {
 
       {/* Header */}
       <div>
-        <h1 className="text-white text-2xl font-semibold tracking-tight">Analytics</h1>
-        <p className="text-white/40 text-sm mt-1">Last 30 days · auto-refreshes every 60s</p>
+        <h1 className="text-white text-2xl font-semibold tracking-tight">التحليلات</h1>
+        <p className="text-white/40 text-sm mt-1">آخر 30 يوم · تحديث تلقائي كل 60 ثانية</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard label="Conversations" value={fmt.format(stats.conversationsTotal)} sub="Last 30 days" />
-        <StatCard label="Affiliate Clicks" value={fmt.format(stats.clicksTotal)} sub="Flights + Hotels" />
-        <StatCard label="Conversion Rate" value={pct(stats.conversionRate)} sub="Clicks ÷ Conversations" />
-        <StatCard label="Est. Revenue" value={usd.format(stats.estRevTotal)} sub="30-day affiliate est." />
+        <StatCard label="المحادثات" value={fmt.format(stats.conversationsTotal)} sub="آخر 30 يوم" />
+        <StatCard label="نقرات الشراكات" value={fmt.format(stats.clicksTotal)} sub="طيران + روابط إقامة" />
+        <StatCard label="معدل التحويل" value={pct(stats.conversionRate)} sub="النقرات ÷ المحادثات" />
+        <StatCard label="دخل تقديري" value={usd.format(stats.estRevTotal)} sub="تقدير شراكات 30 يوم" />
       </div>
 
       {/* Conversion Funnel */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6">
-        <SectionHeader title="Conversion Funnel" />
+        <SectionHeader title="مسار التحويل" />
         <div className="space-y-3">
           {funnelSteps.map((step) => (
             <div key={step.label}>
@@ -87,30 +87,30 @@ export default async function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Revenue breakdown */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6">
-          <SectionHeader title="Revenue by Channel" />
+          <SectionHeader title="الدخل حسب القناة" />
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-blue-500 inline-block" />
-                <span className="text-sm text-white/70">Flights</span>
+                <span className="text-sm text-white/70">الطيران</span>
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold text-white">{usd.format(stats.estRevFlights)}</p>
-                <p className="text-[11px] text-white/40">{fmt.format(stats.flightClicks)} clicks</p>
+                <p className="text-[11px] text-white/40">{fmt.format(stats.flightClicks)} نقرة</p>
               </div>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-3 w-3 rounded-full bg-emerald-500 inline-block" />
-                <span className="text-sm text-white/70">Hotels</span>
+                <span className="text-sm text-white/70">روابط الإقامة</span>
               </div>
               <div className="text-right">
                 <p className="text-sm font-semibold text-white">{usd.format(stats.estRevHotels)}</p>
-                <p className="text-[11px] text-white/40">{fmt.format(stats.hotelClicks)} clicks</p>
+                <p className="text-[11px] text-white/40">{fmt.format(stats.hotelClicks)} نقرة</p>
               </div>
             </div>
             <div className="border-t border-white/[0.06] pt-3 flex items-center justify-between">
-              <span className="text-sm font-semibold text-white/60">Total Est.</span>
+              <span className="text-sm font-semibold text-white/60">الإجمالي التقديري</span>
               <span className="text-sm font-bold text-white">{usd.format(stats.estRevTotal)}</span>
             </div>
           </div>
@@ -118,14 +118,14 @@ export default async function AnalyticsPage() {
 
         {/* Weekly trend */}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6">
-          <SectionHeader title="Weekly Trend (8 weeks)" />
+          <SectionHeader title="الاتجاه الأسبوعي آخر 8 أسابيع" />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.06]">
-                  <th className="text-left py-2 text-white/40 font-medium">Week of</th>
-                  <th className="text-right py-2 text-white/40 font-medium">Convs</th>
-                  <th className="text-right py-2 text-white/40 font-medium">Clicks</th>
+                  <th className="text-right py-2 text-white/40 font-medium">الأسبوع</th>
+                  <th className="text-right py-2 text-white/40 font-medium">محادثات</th>
+                  <th className="text-right py-2 text-white/40 font-medium">نقرات</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,18 +144,18 @@ export default async function AnalyticsPage() {
 
       {/* Top Destinations */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6">
-        <SectionHeader title="Top Destinations (affiliate clicks, last 30d)" />
+        <SectionHeader title="أكثر الوجهات طلباً حسب النقرات" />
         {stats.topDestinations.length === 0 ? (
-          <p className="text-white/40 text-sm">No click data yet — will populate once users start booking.</p>
+          <p className="text-white/40 text-sm">لا توجد بيانات نقرات بعد. ستظهر عند بدء استخدام الروابط.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.06]">
                   <th className="text-left py-2 pr-4 text-white/40 font-medium w-6">#</th>
-                  <th className="text-left py-2 px-4 text-white/40 font-medium">Destination</th>
-                  <th className="text-right py-2 px-4 text-white/40 font-medium">Clicks</th>
-                  <th className="text-right py-2 text-white/40 font-medium">Est. Revenue</th>
+                  <th className="text-right py-2 px-4 text-white/40 font-medium">الوجهة</th>
+                  <th className="text-right py-2 px-4 text-white/40 font-medium">النقرات</th>
+                  <th className="text-right py-2 text-white/40 font-medium">دخل تقديري</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,7 +180,7 @@ export default async function AnalyticsPage() {
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-white">Google Analytics 4</p>
-            <p className="text-xs text-white/40 mt-0.5">Session data, page views, device breakdown</p>
+            <p className="text-xs text-white/40 mt-0.5">الجلسات، مشاهدات الصفحات، وتحليل الأجهزة</p>
           </div>
           <a
             href="https://analytics.google.com"
@@ -188,7 +188,7 @@ export default async function AnalyticsPage() {
             rel="noopener noreferrer"
             className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-blue-400 hover:text-blue-300 transition-colors"
           >
-            Open GA4
+            فتح GA4
             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>
@@ -197,7 +197,7 @@ export default async function AnalyticsPage() {
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-6 flex items-center justify-between">
           <div>
             <p className="text-sm font-semibold text-white">Google Search Console</p>
-            <p className="text-xs text-white/40 mt-0.5">Search impressions, CTR, Core Web Vitals</p>
+            <p className="text-xs text-white/40 mt-0.5">الظهور في البحث، معدل النقر، وقياسات الأداء</p>
           </div>
           <a
             href="https://search.google.com/search-console"
@@ -205,7 +205,7 @@ export default async function AnalyticsPage() {
             rel="noopener noreferrer"
             className="shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
           >
-            Open GSC
+            فتح GSC
             <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
             </svg>

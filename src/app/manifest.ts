@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "GoTripza — AI Travel Companion",
     short_name: "GoTripza",
     description:
-      "AI-powered travel search. Find the best flights and hotels with live prices.",
+      "AI-powered travel planning. Compare flights and get clear stay guidance while direct hotel offers are being connected.",
     start_url: "/en",
     display: "standalone",
     background_color: "#0a0a14",

@@ -7,7 +7,7 @@ const AreaChartCard = dynamic(
   { ssr: false },
 );
 
-export const metadata = { title: "Cost Center" };
+export const metadata = { title: "مركز التكلفة" };
 
 type CostStats = {
   totalCostUsd: number;
@@ -38,6 +38,7 @@ function fmtComma(value: number): string {
 
 export default async function CostCenterPage() {
   const stats: CostStats | null = await getCostStats().catch(() => null);
+  const dailyAlertLimit = Number(process.env.OPENAI_DAILY_COST_ALERT_USD ?? "5");
 
   const totalCostUsd = stats?.totalCostUsd ?? 0;
   const costToday = stats?.costToday ?? 0;
@@ -45,34 +46,47 @@ export default async function CostCenterPage() {
   const avgCostPerConv = stats?.avgCostPerConv ?? 0;
   const byModel = stats?.byModel ?? [];
   const daily = stats?.daily ?? [];
+  const overDailyLimit = costToday >= dailyAlertLimit;
 
   return (
     <div className="space-y-8 p-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Cost Control Center</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-white">مركز مراقبة التكلفة</h1>
         <p className="text-sm text-white/40 mt-1">
-          Monitor AI inference spend across models and time periods.
+          متابعة تكلفة OpenAI حسب النموذج والفترة، مع تنبيه يومي عند تجاوز الحد.
         </p>
       </div>
 
-      {/* Yellow info box */}
       <div className="flex items-start gap-3 rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-4 py-3 text-sm text-amber-400">
         <span className="mt-0.5 shrink-0" aria-hidden="true">⚠</span>
-        <p>Cost estimates are based on OpenAI list prices. Actual costs may vary.</p>
+        <p>
+          التقديرات مبنية على أسعار OpenAI المعلنة وقد تختلف الفاتورة الفعلية قليلاً. حد التنبيه اليومي الحالي:
+          {" "}<span className="font-mono text-amber-200">${dailyAlertLimit.toFixed(2)}</span>.
+        </p>
       </div>
 
-      {/* Metric cards */}
+      {overDailyLimit && (
+        <div className="rounded-lg border border-rose-500/30 bg-rose-500/[0.08] px-4 py-3 text-sm text-rose-300">
+          تنبيه تكلفة: تكلفة آخر 24 ساعة وصلت إلى {fmt4(costToday)} وتجاوزت الحد المحدد. راجع نماذج ريا وعدد المحادثات فوراً.
+        </div>
+      )}
+
+      {!overDailyLimit && (
+        <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.06] px-4 py-3 text-sm text-emerald-300">
+          التكلفة اليومية ضمن الحد الحالي: {fmt4(costToday)} من {fmt2(dailyAlertLimit)}.
+        </div>
+      )}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <MetricCard label="Today's Cost" value={fmt4(costToday)} />
-        <MetricCard label="This Week" value={fmt2(costThisWeek)} />
-        <MetricCard label="Total 30d" value={fmt2(totalCostUsd)} />
-        <MetricCard label="Avg Cost / Conv" value={fmt4(avgCostPerConv)} />
+        <MetricCard label="تكلفة اليوم" value={fmt4(costToday)} />
+        <MetricCard label="هذا الأسبوع" value={fmt2(costThisWeek)} />
+        <MetricCard label="آخر 30 يوم" value={fmt2(totalCostUsd)} />
+        <MetricCard label="متوسط المحادثة" value={fmt4(avgCostPerConv)} />
       </div>
 
-      {/* Daily cost area chart */}
       {daily.length > 0 && (
         <AreaChartCard
-          label="Daily Cost (30d)"
+          label="التكلفة اليومية آخر 30 يوم"
           data={daily as unknown as Record<string, unknown>[]}
           dataKey="cost_usd"
           prefix="$"
@@ -82,21 +96,21 @@ export default async function CostCenterPage() {
       {/* Model breakdown table */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] overflow-hidden">
         <div className="border-b border-white/[0.06] px-6 py-4">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">Model Breakdown</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">تفصيل النماذج</h2>
         </div>
         {byModel.length === 0 ? (
-          <p className="px-6 py-8 text-sm text-white/30">No model data available.</p>
+          <p className="px-6 py-8 text-sm text-white/30">لا توجد بيانات نماذج حتى الآن.</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/[0.06] text-left text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
-                  <th className="px-6 py-3">Model</th>
-                  <th className="px-6 py-3 text-right">Calls</th>
-                  <th className="px-6 py-3 text-right">Tokens In</th>
-                  <th className="px-6 py-3 text-right">Tokens Out</th>
-                  <th className="px-6 py-3 text-right">Cost</th>
-                  <th className="px-6 py-3 text-right">% of Total</th>
+                  <th className="px-6 py-3 text-right">النموذج</th>
+                  <th className="px-6 py-3 text-right">الطلبات</th>
+                  <th className="px-6 py-3 text-right">رموز داخلة</th>
+                  <th className="px-6 py-3 text-right">رموز خارجة</th>
+                  <th className="px-6 py-3 text-right">التكلفة</th>
+                  <th className="px-6 py-3 text-right">% من الإجمالي</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/[0.04]">

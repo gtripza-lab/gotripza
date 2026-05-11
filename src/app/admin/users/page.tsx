@@ -2,7 +2,7 @@ import { getUserStats } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { Users, UserCheck, UserPlus, Activity } from "lucide-react";
 
-export const metadata = { title: "Users" };
+export const metadata = { title: "المستخدمون" };
 
 type UserStat = {
   totalRegistered: number;

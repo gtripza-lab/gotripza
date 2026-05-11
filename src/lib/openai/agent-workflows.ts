@@ -17,32 +17,32 @@ export type AgentWorkflowDefinition = {
 export const AGENT_WORKFLOWS: AgentWorkflowDefinition[] = [
   {
     key: "seo",
-    name: "Gotripza SEO Agent",
-    description: "Generates SEO briefs, keyword ideas, and page improvement suggestions.",
+    name: "وكيل SEO",
+    description: "يقترح كلمات مفتاحية، عناوين، وتحسينات صفحات الظهور في البحث.",
     envVar: "OPENAI_WORKFLOW_SEO_AGENT_ID",
   },
   {
     key: "marketing",
-    name: "Gotripza Marketing Agent",
-    description: "Creates campaign ideas, captions, hooks, and social content plans.",
+    name: "وكيل التسويق",
+    description: "ينشئ أفكار حملات، عناوين إعلانية، وخطط محتوى للشبكات الاجتماعية.",
     envVar: "OPENAI_WORKFLOW_MARKETING_AGENT_ID",
   },
   {
     key: "travel_research",
-    name: "Gotripza Travel Research Agent",
-    description: "Researches destinations, seasonality, safety, visas, and travel tips.",
+    name: "وكيل أبحاث السفر",
+    description: "يبحث في الوجهات، المواسم، الأمان، التأشيرات، ونصائح السفر.",
     envVar: "OPENAI_WORKFLOW_TRAVEL_RESEARCH_AGENT_ID",
   },
   {
     key: "support_draft",
-    name: "Gotripza Support Draft Agent",
-    description: "Drafts customer support responses and escalation summaries.",
+    name: "وكيل مسودات الدعم",
+    description: "يقترح ردود دعم العملاء وملخصات التصعيد لفريق الإدارة.",
     envVar: "OPENAI_WORKFLOW_SUPPORT_DRAFT_AGENT_ID",
   },
   {
     key: "analytics_insight",
-    name: "Gotripza Analytics Insight Agent",
-    description: "Turns analytics and performance notes into operational insights.",
+    name: "وكيل تحليلات الأداء",
+    description: "يحوّل مؤشرات الأداء والتحليلات إلى ملاحظات تشغيلية قابلة للتنفيذ.",
     envVar: "OPENAI_WORKFLOW_ANALYTICS_INSIGHT_AGENT_ID",
   },
 ];

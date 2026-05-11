@@ -12,7 +12,7 @@
     "badge": "The world's first free AI travel advisor",
     "title1": "Plan your trip with",
     "title2": "a real AI travel advisor",
-    "subtitle": "Raya listens, understands your trip deeply, and finds you the world's best options — flights, hotels, insurance and activities, all in one smart conversation.",
+    "subtitle": "Raya listens, understands your trip deeply, and finds smart options — flights, insurance, activities, and clear stay guidance while direct hotel offers are being connected.",
     "placeholder": "Tell me about your trip...",
     "cta": "Start with Raya — free",
     "voice": "Voice search",
@@ -29,10 +29,10 @@
   },
   "brandStory": {
     "title": "How GoTripza Works",
-    "body": "Tell us about your trip in plain language — GoTripza reads your request, evaluates your budget, checks visa requirements and weather, then compares prices across hundreds of verified airlines and hotels. All in under 10 seconds. No fees — we only earn when you complete a booking.",
+    "body": "Tell us about your trip in plain language — GoTripza reads your request, evaluates your budget, checks visa requirements and weather, compares flight options, and suggests the right areas to stay while direct hotel offers are being connected.",
     "highlights": [
       "180+ airlines",
-      "Real-time comparison",
+      "Real-time flight comparison",
       "Prices in your currency"
     ]
   },
@@ -51,7 +51,7 @@
         "place2": "Santorini",
         "place2Sub": "Greece",
         "feature": "Dubai",
-        "featureSub": "5 Nights · Flights + Hotel"
+        "featureSub": "5 nights · flights + stay guide"
       },
       "trip": {
         "title": "Your Trip to Dubai",
@@ -163,7 +163,7 @@
     "items": {
       "story": "Every journey has a story",
       "fly": "Best flight price",
-      "stay": "Stay with price guarantee",
+      "stay": "Stay area guidance",
       "explore": "Explore more"
     }
   },

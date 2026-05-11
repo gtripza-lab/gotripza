@@ -38,8 +38,8 @@ export function AgentWorkflowPanel({ workflows }: { workflows: WorkflowStatus[] 
       if (!res.ok || !json.ok || !json.client_secret) {
         const message =
           json.error === "workflow_id_missing" && json.envVar
-            ? `Missing ${json.envVar} in Vercel environment variables.`
-            : json.detail ?? json.error ?? "Session test failed.";
+            ? `المتغير ${json.envVar} غير موجود في Vercel.`
+            : json.detail ?? json.error ?? "فشل اختبار الجلسة.";
         setStates((prev) => ({ ...prev, [key]: { status: "error", message } }));
         return;
       }
@@ -47,7 +47,7 @@ export function AgentWorkflowPanel({ workflows }: { workflows: WorkflowStatus[] 
         ...prev,
         [key]: {
           status: "ok",
-          message: "ChatKit session created. Workflow ID is valid.",
+          message: "تم إنشاء جلسة ChatKit. معرف الـ Workflow صحيح.",
           clientSecret: json.client_secret!,
         },
       }));
@@ -56,7 +56,7 @@ export function AgentWorkflowPanel({ workflows }: { workflows: WorkflowStatus[] 
         ...prev,
         [key]: {
           status: "error",
-          message: err instanceof Error ? err.message : "Network error.",
+          message: err instanceof Error ? err.message : "خطأ في الاتصال.",
         },
       }));
     }
@@ -72,14 +72,14 @@ export function AgentWorkflowPanel({ workflows }: { workflows: WorkflowStatus[] 
       <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
-            Agent Builder Workflows
+            مسارات Agent Builder
           </p>
           <h2 className="mt-2 font-display text-lg font-semibold text-white">
-            OpenAI Platform Agents
+            وكلاء منصة OpenAI
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-white/35">
-            Add the workflow IDs from OpenAI Agent Builder to Vercel, then test each workflow by
-            creating a real ChatKit session from this dashboard.
+            أضف معرفات الـ Workflow من OpenAI Agent Builder إلى Vercel، ثم اختبر كل وكيل
+            من هنا بإنشاء جلسة ChatKit حقيقية.
           </p>
         </div>
         <button
@@ -88,7 +88,7 @@ export function AgentWorkflowPanel({ workflows }: { workflows: WorkflowStatus[] 
           className="inline-flex h-9 items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.04] px-3 text-xs font-medium text-white/60 transition hover:bg-white/[0.08] hover:text-white"
         >
           <Copy className="h-3.5 w-3.5" />
-          Copy env names
+          نسخ أسماء المتغيرات
         </button>
       </div>
 
@@ -115,7 +115,7 @@ export function AgentWorkflowPanel({ workflows }: { workflows: WorkflowStatus[] 
                           : "bg-amber-500/15 text-amber-400"
                       }`}
                     >
-                      {workflow.configured ? "Configured" : "Missing ID"}
+                      {workflow.configured ? "مربوط" : "المعرف ناقص"}
                     </span>
                   </div>
                   <p className="mt-1 text-xs leading-relaxed text-white/35">
@@ -133,7 +133,7 @@ export function AgentWorkflowPanel({ workflows }: { workflows: WorkflowStatus[] 
                   className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-white px-3 text-xs font-semibold text-black transition hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-                  Test session
+                  اختبار الجلسة
                 </button>
                 {state.status === "ok" && (
                   <span className="inline-flex items-center gap-1.5 text-xs text-emerald-400">

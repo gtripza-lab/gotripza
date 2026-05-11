@@ -16,8 +16,8 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
         : "About Us",
     description:
       locale === "ar"
-        ? "تعرّف على GoTripza، منصة البحث الذكي عن السفر التي تساعدك في إيجاد أفضل رحلاتك وفنادقك بسهولة."
-        : "Learn about GoTripza, the AI-powered travel search platform helping you find the best flights and hotels effortlessly.",
+        ? "تعرّف على GoTripza، منصة السفر الذكية التي تساعدك في إيجاد الطيران المناسب وتخطيط السكن والميزانية بسهولة."
+        : "Learn about GoTripza, the AI-powered travel platform helping you find flights and plan stays and budgets effortlessly.",
     alternates: {
       canonical,
       languages: {
@@ -82,16 +82,16 @@ export default async function AboutPage({
             {(isAr
               ? [
                   { step: "١", title: "صف رحلتك بكلماتك", desc: 'اكتب ما تريد بالعربية أو الإنجليزية — مثل "رحلة لعائلتي إلى إسطنبول في يوليو بميزانية معقولة"' },
-                  { step: "٢", title: "يحلل الذكاء الاصطناعي طلبك", desc: "يفهم نموذج Gemini AI نيتك ويستخرج الوجهة والتواريخ وعدد المسافرين وتفضيلاتك." },
-                  { step: "٣", title: "نبحث في مئات المصادر", desc: "نستعلم من شركاء Travelpayouts عن أفضل أسعار الطيران والفنادق في الوقت الفعلي." },
-                  { step: "٤", title: "تحصل على 3 خيارات مُختارة", desc: "نعرض لك أفضل قيمة + الأرخص + الأريح — لا فوضى، لا إرهاق من الخيارات." },
+                  { step: "٢", title: "يحلل الذكاء الاصطناعي طلبك", desc: "تفهم ريا نيتك وتستخرج الوجهة والتواريخ وعدد المسافرين وتفضيلاتك." },
+                  { step: "٣", title: "نبحث ونرتّب الخيارات", desc: "نقارن الطيران ونقترح مناطق السكن المناسبة إلى أن يكتمل ربط عروض الفنادق المباشرة." },
+                  { step: "٤", title: "تحصل على خيارات مُختارة", desc: "نعرض لك أفضل قيمة + الأرخص + الأريح — لا فوضى، لا إرهاق من الخيارات." },
                   { step: "٥", title: "احجز مباشرة مع الشريك", desc: "عند النقر على الحجز، يتم توجيهك مباشرة لموقع الشريك الموثوق لإتمام الحجز بأمان." },
                 ]
               : [
                   { step: "1", title: "Describe your trip naturally", desc: 'Write what you want in English or Arabic — like "family trip to Istanbul in July with a reasonable budget"' },
-                  { step: "2", title: "AI analyses your request", desc: "Our Gemini AI model understands your intent and extracts destination, dates, traveller count, and preferences." },
-                  { step: "3", title: "We search hundreds of sources", desc: "We query Travelpayouts partners for real-time best prices on flights and hotels." },
-                  { step: "4", title: "You get 3 curated options", desc: "We show you Best Value + Cheapest + Most Comfortable — no clutter, no decision fatigue." },
+                  { step: "2", title: "AI analyses your request", desc: "Raya understands your intent and extracts destination, dates, traveller count, and preferences." },
+                  { step: "3", title: "We search and organize options", desc: "We compare flights and suggest the right stay areas while direct hotel offers are being connected." },
+                  { step: "4", title: "You get curated options", desc: "We show you Best Value + Cheapest + Most Comfortable — no clutter, no decision fatigue." },
                   { step: "5", title: "Book directly with the partner", desc: "When you click book, you're taken straight to the trusted partner site to complete your booking securely." },
                 ]
             ).map((item) => (
@@ -118,7 +118,7 @@ export default async function AboutPage({
               ? [
                   { icon: "🤖", title: "بحث بالذكاء الاصطناعي", desc: "لا نماذج معقدة. فقط صف رحلتك كما تتحدث." },
                   { icon: "💰", title: "بدون رسوم إضافية", desc: "أسعار مماثلة تماماً لما تجده على مواقع الحجز المباشر." },
-                  { icon: "🔍", title: "مقارنة مئات المصادر", desc: "نبحث في آلاف الرحلات والفنادق لنقدم لك الأفضل." },
+                  { icon: "🔍", title: "مقارنة ذكية", desc: "نبحث في الطيران ونرتّب معلومات السكن لتصل إلى قرار أوضح." },
                   { icon: "🛡️", title: "شفافية تامة", desc: "نُفصح عن علاقاتنا التجارية بوضوح. نحن نعمل لصالحك." },
                   { icon: "🌍", title: "ثنائي اللغة", desc: "واجهة كاملة بالعربية والإنجليزية مع دعم العملات المحلية." },
                   { icon: "⚡", title: "نتائج فورية", desc: "نتائج دقيقة في ثوانٍ، لا دقائق." },
@@ -126,7 +126,7 @@ export default async function AboutPage({
               : [
                   { icon: "🤖", title: "AI-powered search", desc: "No complex forms. Just describe your trip the way you talk." },
                   { icon: "💰", title: "No extra fees", desc: "Prices identical to what you'd find booking directly." },
-                  { icon: "🔍", title: "Hundreds of sources compared", desc: "We search thousands of flights and hotels to surface the best." },
+                  { icon: "🔍", title: "Smart comparison", desc: "We compare flights and organize stay guidance so you can decide faster." },
                   { icon: "🛡️", title: "Full transparency", desc: "We clearly disclose our commercial relationships. We work for you." },
                   { icon: "🌍", title: "Bilingual", desc: "Full Arabic and English interface with local currency support." },
                   { icon: "⚡", title: "Instant results", desc: "Accurate results in seconds, not minutes." },
@@ -148,8 +148,8 @@ export default async function AboutPage({
           </h2>
           <p className="mb-5 text-sm leading-relaxed text-white/65">
             {isAr
-              ? "نشارك مع منصة Travelpayouts الرائدة للتحالف السياحي، والتي تضم أكثر من 100 شريك من كبرى شركات الطيران ومنصات الفنادق حول العالم."
-              : "We partner with Travelpayouts, a leading travel affiliate network featuring over 100 partners including major airlines and hotel platforms worldwide."}
+              ? "نشارك مع منصة Travelpayouts للتحالف السياحي. ربط الطيران يعمل، أما عروض الفنادق المباشرة فستظهر بعد اكتمال تفعيل مزود الفنادق."
+              : "We partner with Travelpayouts. Flight routing is active, while direct hotel offers will appear after the hotel provider integration is complete."}
           </p>
           <div className="flex flex-wrap gap-3">
             {["Aviasales", "Hotellook", "DiscoverCars", "GetYourGuide", "Kiwitaxi", "Omio"].map(

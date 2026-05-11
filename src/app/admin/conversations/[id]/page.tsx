@@ -2,13 +2,13 @@ import Link from "next/link";
 import { getConversationDetail } from "@/lib/admin/data";
 import type { ConversationDetail, MessageRow } from "@/lib/admin/data";
 
-export const metadata = { title: "Conversation" };
+export const metadata = { title: "تفاصيل المحادثة" };
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 function formatDate(iso: string | null | undefined): string {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-US", {
+  return new Date(iso).toLocaleString("ar-SA", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -19,7 +19,7 @@ function formatDate(iso: string | null | undefined): string {
 
 function formatTime(iso: string | null | undefined): string {
   if (!iso) return "";
-  return new Date(iso).toLocaleTimeString("en-US", {
+  return new Date(iso).toLocaleTimeString("ar-SA", {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
@@ -78,14 +78,14 @@ function TypeBadge({ hasUser }: { hasUser: boolean }) {
     return (
       <span className={`${base} bg-emerald-500/20 text-emerald-400`}>
         <UserIcon />
-        User
+        مستخدم
       </span>
     );
   }
   return (
     <span className={`${base} bg-white/[0.08] text-white/50`}>
       <GhostIcon />
-      Anon
+      زائر
     </span>
   );
 }
@@ -145,13 +145,13 @@ export default async function ConversationDetailPage({
   if (!conversation) {
     return (
       <div className="min-h-screen bg-[#08080d] px-6 py-8 flex flex-col items-center justify-center gap-4">
-        <p className="text-white/60 text-lg">Conversation not found.</p>
+        <p className="text-white/60 text-lg">المحادثة غير موجودة.</p>
         <Link
           href="/admin/conversations"
           className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition-colors"
         >
           <BackArrowIcon />
-          Back to Conversations
+          العودة إلى المحادثات
         </Link>
       </div>
     );
@@ -171,7 +171,7 @@ export default async function ConversationDetailPage({
           className="inline-flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition-colors"
         >
           <BackArrowIcon />
-          Conversations
+          المحادثات
         </Link>
 
         {/* Title row */}
@@ -185,20 +185,20 @@ export default async function ConversationDetailPage({
         {/* Meta row */}
         <div className="flex flex-wrap items-center gap-6 text-sm text-white/40">
           <span>
-            Started{" "}
+            بدأت{" "}
             <span className="text-white/60">
               {formatDate(conversation.started_at)}
             </span>
           </span>
           <span>
-            Messages{" "}
+            الرسائل{" "}
             <span className="text-white/60 tabular-nums">
               {conversation.message_count ?? conversation.messages.length}
             </span>
           </span>
           {conversation.last_message_at != null && (
             <span>
-              Last active{" "}
+              آخر نشاط{" "}
               <span className="text-white/60">
                 {formatDate(conversation.last_message_at)}
               </span>
@@ -209,7 +209,7 @@ export default async function ConversationDetailPage({
         {/* Summary box */}
         {conversation.summary != null && conversation.summary !== "" && (
           <div className="rounded-xl bg-sky-500/[0.08] border border-sky-500/[0.15] px-4 py-3 text-sm text-sky-200/70 leading-relaxed">
-            <span className="text-sky-400/70 font-medium mr-2">Summary</span>
+            <span className="text-sky-400/70 font-medium mr-2">الملخص</span>
             {conversation.summary}
           </div>
         )}
@@ -219,7 +219,7 @@ export default async function ConversationDetailPage({
       <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-6 py-6">
         {conversation.messages.length === 0 ? (
           <p className="text-center text-white/30 py-10 text-sm">
-            No messages in this conversation.
+            لا توجد رسائل في هذه المحادثة.
           </p>
         ) : (
           <div className="flex flex-col gap-5">

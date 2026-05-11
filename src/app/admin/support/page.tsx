@@ -3,7 +3,7 @@ import { updateSupportRequest, getSupportRequests } from "@/lib/admin/data";
 import type { SupportRow } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
 
-export const metadata = { title: "Support" };
+export const metadata = { title: "الدعم" };
 
 function statusBadge(status: string | null) {
   const base = "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium";
@@ -98,7 +98,7 @@ export default async function SupportPage() {
                 <span className="text-sm capitalize text-white/65">{item.label}</span>
                 <span className="text-xs text-white/35">{item.count}</span>
               </div>
-            )) : <p className="text-sm text-white/30">No categories yet</p>}
+            )) : <p className="text-sm text-white/30">لا توجد تصنيفات بعد</p>}
           </div>
         </div>
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
@@ -111,7 +111,7 @@ export default async function SupportPage() {
                 <span className="text-sm capitalize text-white/65">{item.label}</span>
                 <span className="text-xs text-white/35">{item.count}</span>
               </div>
-            )) : <p className="text-sm text-white/30">No priorities yet</p>}
+            )) : <p className="text-sm text-white/30">لا توجد أولويات بعد</p>}
           </div>
         </div>
       </div>
@@ -165,7 +165,7 @@ export default async function SupportPage() {
                       </code>
                     </td>
                     <td className="px-6 py-3.5 text-white/70 whitespace-nowrap">
-                      {row.contact_email ?? <span className="text-white/30 italic">Anonymous</span>}
+                      {row.contact_email ?? <span className="text-white/30 italic">زائر بدون بريد</span>}
                     </td>
                     <td className="px-6 py-3.5 max-w-xl">
                       <div className="flex flex-wrap items-center gap-2">
@@ -179,7 +179,7 @@ export default async function SupportPage() {
                       <p className="mt-1 whitespace-pre-wrap break-words text-white/50">
                         {(row.body ?? "").length > 180
                           ? `${(row.body ?? "").slice(0, 180)}…`
-                          : row.body ?? <span className="text-white/25 italic">No message body</span>}
+                          : row.body ?? <span className="text-white/25 italic">لا توجد رسالة</span>}
                       </p>
                       {row.ai_summary && (
                         <p className="mt-2 rounded-lg bg-sky-500/[0.08] px-2 py-1 text-xs text-sky-200/70">
@@ -208,20 +208,20 @@ export default async function SupportPage() {
                           defaultValue={row.status ?? "open"}
                           className="h-9 rounded-lg border border-white/[0.10] bg-black/30 px-2 text-xs text-white/70 outline-none"
                         >
-                          <option value="open">Open</option>
-                          <option value="in_progress">In Progress</option>
-                          <option value="resolved">Resolved</option>
-                          <option value="closed">Closed</option>
+                          <option value="open">مفتوحة</option>
+                          <option value="in_progress">قيد المعالجة</option>
+                          <option value="resolved">محلولة</option>
+                          <option value="closed">مغلقة</option>
                         </select>
                         <select
                           name="priority"
                           defaultValue={row.priority ?? "normal"}
                           className="h-9 rounded-lg border border-white/[0.10] bg-black/30 px-2 text-xs text-white/70 outline-none"
                         >
-                          <option value="low">Low</option>
-                          <option value="normal">Normal</option>
-                          <option value="high">High</option>
-                          <option value="urgent">Urgent</option>
+                          <option value="low">منخفضة</option>
+                          <option value="normal">عادية</option>
+                          <option value="high">عالية</option>
+                          <option value="urgent">عاجلة</option>
                         </select>
                         <input
                           name="ai_summary"

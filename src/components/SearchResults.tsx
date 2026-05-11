@@ -257,12 +257,12 @@ function ReadyState({
               <SearchCTA
                 isAr={isAr}
                 icon={<HotelIcon className="h-4 w-4" />}
-                title={isAr ? "عرض أسعار الفنادق المباشرة" : "View Live Hotel Prices"}
+                title={isAr ? "عروض الفنادق المباشرة قريباً" : "Direct Hotel Offers Coming Soon"}
                 desc={isAr
-                  ? `آلاف الفنادق في ${data.intent.destination} بضمان أفضل سعر — انقر للعرض الفوري`
-                  : `Thousands of hotels in ${data.intent.destination} with best price guarantee — click to view live`}
+                  ? `مزود الفنادق لم يفعّل الربط بعد. افتح ريا لتحديد أفضل مناطق السكن في ${data.intent.destination}.`
+                  : `The hotel provider integration is not active yet. Ask Raya for the best stay areas in ${data.intent.destination}.`}
                 url={hotelSearchUrl}
-                btnLabel={isAr ? "عرض أسعار الفنادق" : "View Hotel Prices"}
+                btnLabel={isAr ? "دليل السكن" : "Stay Guide"}
                 accent="mint"
                 destination={data.intent.destination ?? ""}
               />

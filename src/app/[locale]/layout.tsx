@@ -44,22 +44,22 @@ export function generateMetadata({
 
   const title = isAr
     ? "GoTripza — رفيقك الذكي للسفر | AI Travel Companion"
-    : "GoTripza — Your AI Travel Companion | Flights & Hotels";
+    : "GoTripza — Your AI Travel Companion | Flights & Trip Planning";
 
   const description = isAr
-    ? "احجز أرخص تذاكر الطيران وأفضل فنادق مكة، دبي، لندن، وباريس. عروض طيران ناس وطيران أديل وسواها. حجز فنادق بأفضل الأسعار من السعودية."
-    : "Book cheap flights and top-rated hotels in Dubai, London, Paris, and beyond. Compare 180+ airlines and thousands of hotels with GoTripza's free AI travel advisor.";
+    ? "خطط رحلتك مع ريا: قارن الطيران، افهم التأشيرة والميزانية، واختر خدماتك من تأمين وشرائح وأنشطة وسيارات."
+    : "Plan your trip with Raya: compare flights, understand visa and budget needs, and choose essentials like insurance, eSIMs, activities, and cars.";
 
   const keywords: string[] = isAr
     ? [
         "أرخص طيران",
         "أرخص طيران بتمارا",
-        "حجز فنادق مكة",
+        "دليل سكن مكة",
         "عروض طيران ناس",
         "رحلات طيران رخيصة من السعودية",
         "حجز طيران من الرياض",
         "حجز طيران من جدة",
-        "فنادق دبي رخيصة",
+        "مناطق السكن في دبي",
         "تذاكر طيران مكة",
         "عروض سفر السعودية",
         "أسعار تذاكر الطيران",
@@ -67,18 +67,18 @@ export function generateMetadata({
         "طيران ناس",
         "السعودية للطيران",
         "فلاي ناس",
-        "حجز فندق بالتقسيط",
+        "دليل اختيار الفندق",
         "GoTripza",
       ]
     : [
         "cheap flights",
         "book flights online",
-        "hotel deals",
+        "hotel area guide",
         "AI travel advisor",
         "flight search",
         "compare flights",
-        "Dubai hotels",
-        "Mecca hotels",
+        "Dubai stay guide",
+        "Mecca stay guide",
         "Riyadh to London flights",
         "cheap flights from Saudi Arabia",
         "travel booking",
@@ -89,12 +89,12 @@ export function generateMetadata({
       ];
 
   const ogTitle = isAr
-    ? "GoTripza — أرخص طيران وفنادق | AI Travel Companion"
-    : "GoTripza — Cheap Flights & Hotels | AI Travel Companion";
+    ? "GoTripza — ريا مستشارة السفر الذكية"
+    : "GoTripza — Raya AI Travel Advisor";
 
   const ogDescription = isAr
-    ? "احجز أرخص تذاكر الطيران وأفضل الفنادق. عروض طيران ناس وأديل من السعودية."
-    : "Find cheap flights and great hotels worldwide. Powered by AI — completely free.";
+    ? "قارن الطيران وخطط ميزانيتك واختر خدمات الرحلة مع ريا."
+    : "Compare flights, plan your budget, and choose trip essentials with Raya.";
 
   return {
     title: {

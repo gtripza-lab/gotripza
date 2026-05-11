@@ -9,11 +9,11 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
   const isAr = params.locale === "ar";
   return {
     title: isAr
-      ? "احتياجات المسافر — تأمين · شريحة إنترنت · أنشطة · قطارات"
-      : "Traveler Services — Insurance · eSIM · Activities · Trains",
+      ? "خدمات المسافر — تأمين · شرائح · أنشطة · سيارات · قطارات"
+      : "Traveler Services — Insurance · eSIM · Activities · Cars · Trains",
     description: isAr
-      ? "كل ما يحتاجه المسافر في مكان واحد: تأمين السفر، شرائح إنترنت عالمية، أنشطة وجولات، ومزيد."
-      : "Everything you need for your trip: travel insurance, global eSIMs, tours, and more.",
+      ? "كل ما يحتاجه المسافر في مكان واحد: تأمين السفر، شرائح إنترنت عالمية، أنشطة وجولات، تأجير سيارات، تعويض رحلات، وقطارات."
+      : "Everything you need for your trip: travel insurance, global eSIMs, tours, car rental, flight compensation, and trains.",
   };
 }
 
@@ -190,6 +190,19 @@ const SERVICES: ServiceCard[] = [
     url: "https://qeeq.tpm.li/xODdj69U",
     accentBg: "bg-emerald-500/[0.08]", accentText: "text-emerald-300", accentBorder: "border-emerald-500/20", accentButton: "bg-emerald-600",
   },
+  {
+    icon: "🚄",
+    name_ar: "Rail Europe — قطارات أوروبا",
+    name_en: "Rail Europe — Europe Trains",
+    tagline_ar: "تنقل بين المدن الأوروبية بسهولة",
+    tagline_en: "City-to-city train travel across Europe",
+    desc_ar: "خيار ممتاز إذا كانت رحلتك بين باريس، لندن، أمستردام، روما أو برشلونة. القطار أحياناً أوفر وأسهل من الطيران الداخلي.",
+    desc_en: "Great for trips between Paris, London, Amsterdam, Rome, or Barcelona. Trains can be easier and better value than short flights.",
+    cta_ar: "استكشف القطارات",
+    cta_en: "Explore Trains",
+    url: "https://www.raileurope.com/",
+    accentBg: "bg-lime-500/[0.08]", accentText: "text-lime-300", accentBorder: "border-lime-500/20", accentButton: "bg-lime-700",
+  },
 ];
 
 export default async function ServicesPage({
@@ -220,9 +233,33 @@ export default async function ServicesPage({
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-base text-white/55 leading-relaxed">
               {isAr
-                ? "كل ما تحتاجه قبل وأثناء وبعد رحلتك — في مكان واحد: تأمين، شرائح إنترنت، أنشطة، وأكثر."
-                : "Everything you need before, during, and after your trip — in one place: insurance, eSIMs, tours, and more."}
+                ? "كل ما تحتاجه قبل وأثناء وبعد رحلتك — في مكان واحد: تأمين، شرائح إنترنت، أنشطة، سيارات، قطارات، وتعويض رحلات."
+                : "Everything you need before, during, and after your trip — in one place: insurance, eSIMs, tours, cars, trains, and flight compensation."}
             </p>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pt-10 sm:px-6">
+          <div className="grid gap-3 md:grid-cols-3">
+            {[
+              {
+                title: isAr ? "قبل السفر" : "Before Travel",
+                body: isAr ? "تأمين السفر، eSIM، VPN، وخطة أنشطة أولية." : "Insurance, eSIM, VPN, and an initial activities plan.",
+              },
+              {
+                title: isAr ? "أثناء الرحلة" : "During The Trip",
+                body: isAr ? "أنشطة، تذاكر معالم، سيارات، قطارات، وتنقلات أسهل." : "Activities, attraction tickets, cars, trains, and easier movement.",
+              },
+              {
+                title: isAr ? "بعد المشكلة" : "After Disruption",
+                body: isAr ? "تعويض الرحلات المتأخرة أو الملغاة عبر شركاء مختصين." : "Compensation support for delayed or cancelled flights.",
+              },
+            ].map((item) => (
+              <div key={item.title} className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+                <h2 className="font-semibold text-white/90">{item.title}</h2>
+                <p className="mt-2 text-sm leading-6 text-white/50">{item.body}</p>
+              </div>
+            ))}
           </div>
         </section>
 

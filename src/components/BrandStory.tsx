@@ -14,7 +14,7 @@ const STEPS_AR = [
     icon: BarChart3,
     num: "٢",
     title: "نقارن المئات",
-    desc: "GoTripza يفحص أسعار +١٨٠ شركة طيران وآلاف الفنادق في الوقت الفعلي.",
+    desc: "GoTripza يقارن الطيران فوراً، ويقترح مناطق السكن المناسبة إلى أن يكتمل ربط الفنادق.",
   },
   {
     icon: ArrowUpRight,
@@ -35,7 +35,7 @@ const STEPS_EN = [
     icon: BarChart3,
     num: "2",
     title: "We compare hundreds",
-    desc: "GoTripza scans 180+ airlines and thousands of hotels in real time.",
+    desc: "GoTripza compares flights instantly and suggests the right stay areas while hotel offers are being connected.",
   },
   {
     icon: ArrowUpRight,

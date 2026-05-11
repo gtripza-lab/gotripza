@@ -78,18 +78,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       : `Book the cheapest flights from ${orig} to ${dest}. Exclusive fares, instant booking, best deals on GoTripza.`;
   } else if (type === "hotel") {
     title = isAr
-      ? `أفضل فنادق ${dest} بأرخص الأسعار`
-      : `Best Hotels in ${dest} — Best Price Guaranteed`;
+      ? `دليل السكن والفنادق في ${dest}`
+      : `${dest} Stay and Hotel Guide`;
     description = isAr
-      ? `احجز أفضل فنادق ${dest} بأسعار لا تقبل المنافسة. دفع بتمارا وتابي وأبل باي عبر GoTripza.`
-      : `Discover the best hotels in ${dest} with guaranteed lowest prices. Book instantly on GoTripza.`;
+      ? `دليل لاختيار منطقة السكن والفندق المناسب في ${dest}. عروض الفنادق المباشرة ستظهر بعد اكتمال ربط مزود الفنادق.`
+      : `A guide to choosing the right stay area and hotel in ${dest}. Direct hotel offers will appear after the provider integration is complete.`;
   } else {
     title = isAr
-      ? `سفر إلى ${dest} — طيران وفنادق بأفضل الأسعار`
-      : `${dest} Travel — Flights & Hotels`;
+      ? `سفر إلى ${dest} — طيران وخطة سكن`
+      : `${dest} Travel — Flights & Stay Planning`;
     description = isAr
-      ? `احجز رحلتك إلى ${dest}: أرخص طيران وأفضل فنادق. عروض حصرية من GoTripza للمسافرين من السعودية.`
-      : `Plan your trip to ${dest}: cheap flights and top-rated hotels. Exclusive deals on GoTripza.`;
+      ? `خطط رحلتك إلى ${dest}: طيران مناسب، ميزانية واضحة، ودليل سكن مؤقت إلى أن يكتمل ربط الفنادق.`
+      : `Plan your trip to ${dest}: flights, budget guidance, and stay planning while direct hotel offers are being connected.`;
   }
 
   const pageUrl = `${APP_URL}/${locale}/trip/${params.slug}`;
@@ -373,7 +373,7 @@ export default async function TripPage({ params }: PageProps) {
                     <HotelIcon className="h-4 w-4" />
                   </div>
                   <h2 className="font-semibold">
-                    {isAr ? "أفضل الفنادق" : "Top Hotels"}
+                    {isAr ? "دليل السكن" : "Stay Guide"}
                   </h2>
                   <span className="ms-auto text-xs text-white/50">{dest}</span>
                 </header>
@@ -382,12 +382,12 @@ export default async function TripPage({ params }: PageProps) {
                     <HotelIcon className="h-8 w-8 text-brand-mint/60" />
                     <div>
                       <p className="text-sm font-medium text-white/80">
-                        {isAr ? "ابحث عن أفضل فندق" : "Find the best hotel"}
+                        {isAr ? "عروض الفنادق المباشرة قريباً" : "Direct hotel offers coming soon"}
                       </p>
                       <p className="mt-1 text-xs text-white/45">
                         {isAr
-                          ? `آلاف الفنادق في ${dest} بأسعار مضمونة`
-                          : `Thousands of hotels in ${dest} with guaranteed prices`}
+                          ? `مزود الفنادق لم يفعّل الربط بعد. استخدم ريا لاختيار أفضل منطقة سكن في ${dest}.`
+                          : `The hotel provider integration is not active yet. Use Raya to choose the best stay area in ${dest}.`}
                       </p>
                     </div>
                     <a
@@ -396,7 +396,7 @@ export default async function TripPage({ params }: PageProps) {
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-brand-mint to-brand-deep px-5 py-2 text-sm font-semibold text-white transition hover:scale-[1.02]"
                     >
-                      {isAr ? "ابحث الآن" : "Search Hotels"}
+                      {isAr ? "افتح دليل السكن" : "Open Stay Guide"}
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   </div>

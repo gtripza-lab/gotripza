@@ -19,7 +19,7 @@ export async function generateMetadata({
       ? "ريا — مستشارة السفر الذكية"
       : "Raya — AI Travel Advisor",
     description: isAr
-      ? "تحدث مع ريا، أول مساعد سفر ذكي مجاني يفهمك ويخطط رحلتك معك خطوة بخطوة. طيران · فنادق · تأمين · أنشطة."
+      ? "تحدث مع ريا، مساعد السفر الذكي الذي يفهمك ويخطط رحلتك خطوة بخطوة. طيران · مناطق سكن · تأمين · أنشطة."
       : "Chat with Raya, the first free AI travel assistant that actually understands your trip and plans it step by step.",
     alternates: {
       canonical: isAr
