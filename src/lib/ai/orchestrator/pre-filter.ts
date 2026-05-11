@@ -112,6 +112,7 @@ function extractFragmentAnswer(
 function mergeIntoContext(
   base: TravelContext,
   add: Partial<TripIntent>,
+  inferred?: Partial<TravelContext>,
 ): TravelContext {
   return {
     destination: add.destination ?? base.destination,
@@ -122,6 +123,74 @@ function mergeIntoContext(
     budget_usd: add.budget_usd ?? base.budget_usd,
     trip_type: add.trip_type ?? base.trip_type,
     cabin_class: add.cabin_class ?? base.cabin_class,
+    traveler_type: inferred?.traveler_type ?? base.traveler_type ?? null,
+    hotel_preferences: Array.from(new Set([
+      ...(base.hotel_preferences ?? []),
+      ...(inferred?.hotel_preferences ?? []),
+    ])).slice(0, 8),
+    service_interests: Array.from(new Set([
+      ...(base.service_interests ?? []),
+      ...(inferred?.service_interests ?? []),
+    ])) as TravelContext["service_interests"],
+    booking_stage: inferred?.booking_stage ?? base.booking_stage ?? null,
+    concerns: Array.from(new Set([
+      ...(base.concerns ?? []),
+      ...(inferred?.concerns ?? []),
+    ])).slice(0, 8),
+  };
+}
+
+function inferCompanionContext(query: string, transcript: string): Partial<TravelContext> {
+  const q = query.toLowerCase();
+  const all = transcript.toLowerCase();
+  const service_interests: NonNullable<TravelContext["service_interests"]> = [];
+  const hotel_preferences: string[] = [];
+  const concerns: string[] = [];
+
+  if (/تأمين|insurance|medical cover|شنغن/i.test(all)) service_interests.push("insurance");
+  if (/esim|e-sim|شريحة|شرائح|انترنت|إنترنت|airalo|yesim/i.test(all)) service_interests.push("esim");
+  if (/أنشطة|نشاط|جولات|تذاكر|activities|tours|tickets|klook|tiqets|kkday/i.test(all)) service_interests.push("activities");
+  if (/سيارة|تأجير|car rental|rent a car|drive/i.test(all)) service_interests.push("cars");
+  if (/قطار|قطارات|train|rail/i.test(all)) service_interests.push("trains");
+  if (/تعويض|تأخرت الرحلة|تأخير رحلة|flight compensation|airhelp|delayed flight/i.test(all)) service_interests.push("compensation");
+
+  if (/عائلة|أطفال|اطفال|kids|children|family/i.test(all)) {
+    concerns.push("family-friendly");
+  }
+  if (/زوج|زوجتي|زوجي|شهر عسل|honeymoon|couple|romantic/i.test(all)) {
+    concerns.push("romantic");
+  }
+  if (/لوحدي|solo|alone|وحدي/i.test(all)) concerns.push("solo-comfort");
+  if (/آمن|أمان|safe|safety|scam|نصب|احتيال/i.test(all)) concerns.push("safety");
+  if (/ميزانية|رخيص|اقتصادي|budget|cheap|affordable/i.test(all)) concerns.push("budget");
+
+  if (/قريب من|near|قريب|وسط|center|downtown/i.test(all)) hotel_preferences.push("central");
+  if (/بحر|شاطئ|beach|sea view|اطلالة/i.test(all)) hotel_preferences.push("beach");
+  if (/هادئ|quiet|calm/i.test(all)) hotel_preferences.push("quiet");
+  if (/فخم|luxury|5 نجوم|five star/i.test(all)) hotel_preferences.push("luxury");
+  if (/اقتصادي|budget|cheap|رخيص/i.test(all)) hotel_preferences.push("budget");
+
+  const traveler_type: TravelContext["traveler_type"] =
+    /business|عمل|دوام|مؤتمر/i.test(all) ? "business" :
+    /عائلة|أطفال|اطفال|kids|children|family/i.test(all) ? "family" :
+    /شهر عسل|زوج|زوجتي|زوجي|honeymoon|couple|romantic/i.test(all) ? "couple" :
+    /اصدقاء|أصدقاء|friends/i.test(all) ? "friends" :
+    /لوحدي|solo|alone|وحدي/i.test(all) ? "solo" :
+    null;
+
+  const booking_stage: TravelContext["booking_stage"] =
+    /دعم|مشكلة|شكوى|support|refund|not working/i.test(q) ? "support" :
+    /احجز|احجزلي|ابحث|أرخص|سعر|عروض|تذاكر|book|booking|search|deal|price|ready/i.test(q) ? "ready_to_book" :
+    /خطة|خطط|برنامج|جدول|itinerary|plan|schedule|budget/i.test(q) ? "planning" :
+    /أفضل|هل|كيف|متى|قارن|compare|best|should|what|when|how|is it/i.test(q) ? "browsing" :
+    null;
+
+  return {
+    traveler_type,
+    hotel_preferences,
+    service_interests,
+    booking_stage,
+    concerns,
   };
 }
 
@@ -156,7 +225,8 @@ export function runPreFilter(
   //    Current-turn extractions outrank stored context for contradictable
   //    slots (origin/destination) so corrections propagate.
   const newlyExtracted: Partial<TripIntent> = { ...parsed, ...fragment };
-  const merged = mergeIntoContext(context, newlyExtracted);
+  const inferred = inferCompanionContext(query, transcript);
+  const merged = mergeIntoContext(context, newlyExtracted, inferred);
 
   // 4. First-turn detection
   const isFirstUserTurn = !history.some((t) => t.role === "user");

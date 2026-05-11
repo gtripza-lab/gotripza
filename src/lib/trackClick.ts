@@ -1,4 +1,6 @@
 "use server";
+import { cookies } from "next/headers";
+import { getCurrentUser } from "./auth/session";
 import { createSupabaseService } from "./supabase/service";
 
 export type ResultType =
@@ -35,11 +37,14 @@ export type TrackClickResult =
 export async function trackClick(input: TrackClickInput): Promise<TrackClickResult> {
   try {
     const sb = createSupabaseService();
+    const user = await getCurrentUser().catch(() => null);
+    const cookieSid = cookies().get("gtz_sid")?.value ?? null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (sb as any)
       .from("booking_clicks")
       .insert({
-        session_id:    input.sessionId ?? null,
+        user_id:       user?.id ?? null,
+        session_id:    input.sessionId ?? cookieSid,
         locale:        input.locale ?? null,
         result_type:   input.resultType,
         provider:      input.provider,

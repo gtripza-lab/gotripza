@@ -457,6 +457,7 @@ export async function POST(req: NextRequest) {
       query?: string;
       history?: IncomingTurn[];
       context?: TravelContext;
+      clientMemory?: { summary?: string | null; knownFacts?: string[] };
     };
     query = body.query?.trim() ?? "";
     history = Array.isArray(body.history)
@@ -502,6 +503,11 @@ export async function POST(req: NextRequest) {
       budget_usd: null,
       trip_type: null,
       cabin_class: null,
+      traveler_type: null,
+      hotel_preferences: [],
+      service_interests: [],
+      booking_stage: null,
+      concerns: [],
     };
 
     // Identity: signed-in user (for memory) + anon session id (for cross-turn

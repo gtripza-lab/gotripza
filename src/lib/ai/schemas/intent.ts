@@ -50,6 +50,11 @@ export type TravelContext = {
   budget_usd: number | null;
   trip_type: TripIntent["trip_type"];
   cabin_class: TripIntent["cabin_class"];
+  traveler_type?: "solo" | "couple" | "family" | "friends" | "business" | null;
+  hotel_preferences?: string[];
+  service_interests?: Array<"insurance" | "esim" | "activities" | "cars" | "trains" | "compensation">;
+  booking_stage?: "browsing" | "planning" | "ready_to_book" | "support" | null;
+  concerns?: string[];
 };
 
 export const EMPTY_TRAVEL_CONTEXT: TravelContext = {
@@ -61,4 +66,9 @@ export const EMPTY_TRAVEL_CONTEXT: TravelContext = {
   budget_usd: null,
   trip_type: null,
   cabin_class: null,
+  traveler_type: null,
+  hotel_preferences: [],
+  service_interests: [],
+  booking_stage: null,
+  concerns: [],
 };

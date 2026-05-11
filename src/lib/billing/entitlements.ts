@@ -15,6 +15,7 @@ import "server-only";
  * flip gating on, we can keep launch users premium without changing rows.
  */
 import { getSubscription, ensureLaunchFreeSubscription } from "@/lib/ai/memory/store";
+import { createSupabaseService } from "@/lib/supabase/service";
 
 const GATING_ON = process.env.RIA_PLUS_GATING_ENABLED === "true";
 
@@ -65,4 +66,20 @@ export async function ensurePremium(userId: string | null | undefined) {
     throw new Error(`payment_required: ${ent.reason}`);
   }
   return ent;
+}
+
+export async function hasGoTripzaAffiliateBookingSignal(userId: string | null | undefined) {
+  if (!userId) return false;
+  try {
+    const db = createSupabaseService();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { count } = await (db as any)
+      .from("booking_clicks")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .in("result_type", ["flight", "hotel", "insurance", "esim", "activities", "car_rental", "trains", "compensation", "partner"]);
+    return (count ?? 0) > 0;
+  } catch {
+    return false;
+  }
 }

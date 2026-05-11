@@ -36,6 +36,11 @@ const EMPTY_CONTEXT: TravelContext = {
   budget_usd: null,
   trip_type: null,
   cabin_class: null,
+  traveler_type: null,
+  hotel_preferences: [],
+  service_interests: [],
+  booking_stage: null,
+  concerns: [],
 };
 
 // Merge: new non-null values override old values; nulls don't erase known values
@@ -49,8 +54,18 @@ function mergeContext(current: TravelContext, intent: TripIntent): TravelContext
     budget_usd: intent.budget_usd ?? current.budget_usd,
     trip_type: intent.trip_type ?? current.trip_type,
     cabin_class: intent.cabin_class ?? current.cabin_class,
+    traveler_type: current.traveler_type ?? null,
+    hotel_preferences: current.hotel_preferences ?? [],
+    service_interests: current.service_interests ?? [],
+    booking_stage: current.booking_stage ?? null,
+    concerns: current.concerns ?? [],
   };
 }
+
+type CompanionMemory = {
+  summary: string | null;
+  knownFacts: string[];
+};
 
 export type ChatSearchData = {
   intent: TripIntent;
@@ -85,6 +100,7 @@ type ChatContextValue = {
   locale: Locale;
   currency: Currency;
   travelContext: TravelContext;
+  companionMemory: CompanionMemory;
   sendMessage: (text: string) => Promise<void>;
   clearChat: () => void;
   revealSide: (messageId: string, side: "flights" | "hotels") => void;
@@ -143,12 +159,40 @@ export function ChatProvider({
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMsg]);
   const [isThinking, setIsThinking] = useState(false);
   const [travelContext, setTravelContext] = useState<TravelContext>(EMPTY_CONTEXT);
+  const [companionMemory, setCompanionMemory] = useState<CompanionMemory>({
+    summary: null,
+    knownFacts: [],
+  });
   const abortRef = useRef<AbortController | null>(null);
 
   // Keep a ref in sync so sendMessage can read latest messages without
   // being re-created on every state update (avoids stale-closure & perf issues).
   const messagesRef = useRef(messages);
   useEffect(() => { messagesRef.current = messages; }, [messages]);
+  const companionMemoryRef = useRef(companionMemory);
+  useEffect(() => { companionMemoryRef.current = companionMemory; }, [companionMemory]);
+
+  function updateCompanionMemory(userText: string, aiText: string, context: TravelContext) {
+    const facts = [
+      context.destination ? `destination:${context.destination}` : null,
+      context.origin ? `origin:${context.origin}` : null,
+      context.departure_date ? `date:${context.departure_date}` : null,
+      context.return_date ? `return:${context.return_date}` : null,
+      context.budget_usd ? `budget:$${context.budget_usd}` : null,
+      context.trip_type ? `style:${context.trip_type}` : null,
+      context.traveler_type ? `traveler:${context.traveler_type}` : null,
+      context.booking_stage ? `stage:${context.booking_stage}` : null,
+      ...(context.service_interests ?? []).map((interest) => `service:${interest}`),
+      ...(context.concerns ?? []).slice(0, 3).map((concern) => `concern:${concern}`),
+    ].filter(Boolean) as string[];
+
+    const prior = companionMemoryRef.current.summary;
+    const fresh = `${userText.trim()} → ${aiText.trim()}`.replace(/\s+/g, " ").slice(0, 260);
+    setCompanionMemory({
+      summary: [prior, fresh].filter(Boolean).join(" / ").slice(-900),
+      knownFacts: Array.from(new Set(facts)).slice(0, 16),
+    });
+  }
 
   // Auto-send initial message from URL ?q= param (homepage suggestion chips)
   const sentInitial = useRef(false);
@@ -198,7 +242,7 @@ export function ChatProvider({
       // own state and never re-clarifies after searching.
       const historySnap: ChatTurn[] = messagesRef.current
         .filter((m) => !m.isLoading && m.text.trim())
-        .slice(-12)
+        .slice(-6)
         .map((m) => ({
           role: m.role === "user" ? "user" : "assistant",
           text: m.text,
@@ -209,7 +253,12 @@ export function ChatProvider({
       const parseRes = await fetch("/api/parse", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: text, history: historySnap, context: travelContext }),
+        body: JSON.stringify({
+          query: text,
+          history: historySnap,
+          context: travelContext,
+          clientMemory: companionMemoryRef.current,
+        }),
         signal: abort.signal,
       });
 
@@ -249,6 +298,7 @@ export function ChatProvider({
       // Accumulate context. Prefer server's authoritative merged context
       // (Phase 3 orchestrator); fall back to client-side merge for older
       // server builds that don't echo `context` yet.
+      const nextContext = parsedJson.context ?? mergeContext(travelContext, intent);
       if (parsedJson.context) {
         setTravelContext(parsedJson.context);
       } else {
@@ -265,6 +315,7 @@ export function ChatProvider({
               : m,
           ),
         );
+        updateCompanionMemory(text, aiMessage, nextContext);
 
         logEvent("chat_message_sent", { mode, destination: intent.destination, locale: aiLocale });
 
@@ -322,6 +373,7 @@ export function ChatProvider({
             : m,
         ),
       );
+      updateCompanionMemory(text, aiMessage, nextContext);
 
       logEvent("chat_results_ready", {
         destination: intent.destination,
@@ -357,6 +409,7 @@ export function ChatProvider({
     setMessages([welcomeMsg]);
     setIsThinking(false);
     setTravelContext(EMPTY_CONTEXT);
+    setCompanionMemory({ summary: null, knownFacts: [] });
     abortRef.current?.abort();
   }, [welcomeMsg]);
 
@@ -378,8 +431,8 @@ export function ChatProvider({
   }, []);
 
   const value = useMemo<ChatContextValue>(
-    () => ({ messages, isThinking, locale, currency, travelContext, sendMessage, clearChat, revealSide }),
-    [messages, isThinking, locale, currency, travelContext, sendMessage, clearChat, revealSide],
+    () => ({ messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, clearChat, revealSide }),
+    [messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, clearChat, revealSide],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

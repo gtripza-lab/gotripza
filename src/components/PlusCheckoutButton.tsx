@@ -30,7 +30,7 @@ export function PlusCheckoutButton({
         return;
       }
       if (res.status === 503 || json.error === "stripe_not_configured") {
-        setMessage(isAr ? "التجربة المجانية غير متاحة للحسابات الجديدة الآن. اترك لنا رسالة من صفحة التواصل ونفعّلها لك يدوياً." : "The free trial is not available for new accounts right now. Contact us and we'll activate it manually.");
+        setMessage(isAr ? "Rya Companion غير متاح للدفع الآن. تواصل معنا ونفعّله لك يدوياً عند الإطلاق." : "Rya Companion checkout is not available right now. Contact us and we'll activate it manually at launch.");
         return;
       }
       if (!res.ok || !json.url) {
@@ -52,7 +52,7 @@ export function PlusCheckoutButton({
         className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-primary to-violet-600 text-sm font-semibold text-white transition hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-60"
       >
         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-        {isAr ? "ابدأ تجربة ريا 3 أشهر مجاناً" : "Start Raya 3-month free trial"}
+        {isAr ? "ابدأ مع Rya Companion" : "Start Rya Companion"}
       </button>
       {message && <p className="mt-2 text-xs leading-5 text-amber-300/80">{message}</p>}
     </div>

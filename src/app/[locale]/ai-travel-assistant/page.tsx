@@ -14,11 +14,11 @@ export function generateMetadata({
 }): Metadata {
   const isAr = params.locale === "ar";
   const title = isAr
-    ? "أول مساعد سفر ذكي مجاني في العالم"
-    : "First Free AI Travel Assistant";
+    ? "Rya — رفيق السفر الذكي"
+    : "Rya — AI Travel Companion";
   const description = isAr
-    ? "ريا هي مساعدة السفر الذكية المجانية التي تفهم رحلتك، تسألك الأسئلة الصحيحة، وتقدم لك نتائج مخصصة — لا مجرد بحث."
-    : "Raya is the first free AI travel assistant that understands your trip, asks the right questions, and delivers personalized results — not just search.";
+    ? "Rya تفهم رحلتك، تتذكر تفضيلاتك، وتساعدك قبل السفر وأثناءه بطريقة هادئة وطبيعية — ليست مجرد محرك بحث."
+    : "Rya understands your trip, remembers your preferences, and helps before and during travel — not just another search tool.";
   const url = `${BASE}/${params.locale}/ai-travel-assistant`;
 
   return {

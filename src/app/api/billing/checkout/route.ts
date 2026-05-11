@@ -1,14 +1,16 @@
 /**
- * /api/billing/checkout — Create a Checkout Session for Raya Travel Advisor.
+ * /api/billing/checkout — Create a Checkout Session for Rya Companion.
  *
  * Activate paid plans by:
- *   1. Setting STRIPE_SECRET_KEY + STRIPE_PRICE_RIA_PLUS_MONTHLY in env
+ *   1. Setting STRIPE_SECRET_KEY + STRIPE_PRICE_RYA_COMPANION_MONTHLY in env
+ *      Optional discount price: STRIPE_PRICE_RYA_COMPANION_DISCOUNT_MONTHLY
  *   2. Setting RIA_PLUS_GATING_ENABLED=true (in entitlements check)
  *
- * Launch offer: 90-day free trial for Raya Travel Advisor.
+ * Rya Companion is travel help during the trip, not an AI subscription.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe, STRIPE_CONFIGURED, RIA_PLUS_PRICES } from "@/lib/billing/stripe";
+import { hasGoTripzaAffiliateBookingSignal } from "@/lib/billing/entitlements";
 import { getCurrentUser } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
@@ -33,7 +35,10 @@ export async function POST(req: NextRequest) {
     /* allow empty body */
   }
   const interval = body.interval === "yearly" ? "yearly" : "monthly";
-  const priceId = RIA_PLUS_PRICES[interval];
+  const hasDiscount = await hasGoTripzaAffiliateBookingSignal(user.id);
+  const priceId = hasDiscount && interval === "monthly" && RIA_PLUS_PRICES.discountedMonthly
+    ? RIA_PLUS_PRICES.discountedMonthly
+    : RIA_PLUS_PRICES[interval];
   if (!priceId) {
     return NextResponse.json(
       { error: `price_not_configured: ${interval}` },
@@ -51,14 +56,13 @@ export async function POST(req: NextRequest) {
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 90,
-        metadata: { user_id: user.id, plan: "plus", interval, trial_days: "90" },
+        metadata: { user_id: user.id, plan: "companion", interval, discounted: String(hasDiscount) },
       },
       customer_email: user.email ?? undefined,
       client_reference_id: user.id,
-      success_url: `${origin}/${locale}/plus?trial=success`,
-      cancel_url: `${origin}/${locale}/plus?trial=cancel`,
-      metadata: { user_id: user.id, plan: "plus", interval, trial_days: "90" },
+      success_url: `${origin}/${locale}/plus?companion=success`,
+      cancel_url: `${origin}/${locale}/plus?companion=cancel`,
+      metadata: { user_id: user.id, plan: "companion", interval, discounted: String(hasDiscount) },
       allow_promotion_codes: true,
     });
     return NextResponse.json({ url: session.url });

@@ -25,6 +25,11 @@ export function getStripe(): Stripe {
 export const STRIPE_CONFIGURED = !!process.env.STRIPE_SECRET_KEY;
 
 export const RIA_PLUS_PRICES = {
-  monthly: process.env.STRIPE_PRICE_RIA_PLUS_MONTHLY ?? "",
-  yearly: process.env.STRIPE_PRICE_RIA_PLUS_YEARLY ?? "",
+  monthly: process.env.STRIPE_PRICE_RYA_COMPANION_MONTHLY
+    ?? process.env.STRIPE_PRICE_RIA_PLUS_MONTHLY
+    ?? "",
+  yearly: process.env.STRIPE_PRICE_RYA_COMPANION_YEARLY
+    ?? process.env.STRIPE_PRICE_RIA_PLUS_YEARLY
+    ?? "",
+  discountedMonthly: process.env.STRIPE_PRICE_RYA_COMPANION_DISCOUNT_MONTHLY ?? "",
 };

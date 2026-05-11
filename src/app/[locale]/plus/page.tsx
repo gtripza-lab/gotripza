@@ -11,10 +11,10 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
 export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
   const isAr = params.locale === "ar";
-  const title = isAr ? "ريا مستشارة السفر — تجربة مجانية 3 أشهر" : "Raya Travel Advisor — 3-Month Free Trial";
+  const title = isAr ? "Rya Companion — رفيقك الذكي أثناء السفر" : "Rya Companion — Your Smart Travel Companion";
   const description = isAr
-    ? "جرّب ريا مستشارة السفر مجاناً لمدة 3 أشهر: خطط سفر مفصلة، حفظ الرحلات، ومساعدة سفر ذكية."
-    : "Try Raya Travel Advisor free for 3 months: detailed itineraries, saved trips, and smarter travel assistance.";
+    ? "مساعدة سفر مستمرة أثناء رحلتك: ترجمة، فهم صور، ميزانية، أمان، مطارات، واقتراحات ذكية طوال الرحلة."
+    : "Trip-long travel help: translation, image help, budgeting, safety guidance, airport support, and smarter suggestions throughout your trip.";
   return {
     title,
     description,
@@ -30,19 +30,21 @@ export function generateMetadata({ params }: { params: { locale: string } }): Me
 }
 
 const FEATURES_AR = [
-  "خطط سفر مفصلة حسب الميزانية",
-  "حفظ الرحلات والمحادثات المهمة",
-  "توصيات أعمق للفنادق عند اكتمال الربط",
-  "متابعة تكلفة الرحلة وتنبيهات ذكية",
-  "أولوية في الدعم والردود",
+  "مساعدة مستمرة طوال الرحلة",
+  "ذاكرة سفر تحفظ خطتك وتفضيلاتك",
+  "فهم صور القوائم واللوحات والتذاكر",
+  "ترجمة مباشرة للمواقف اليومية",
+  "تنبيهات ميزانية ونصائح أمان وتجنب الاحتيال",
+  "مساعدة المطار والتنقلات والأنشطة",
 ];
 
 const FEATURES_EN = [
-  "Detailed trip plans by budget",
-  "Saved trips and important conversations",
-  "Deeper hotel recommendations when inventory is connected",
-  "Trip cost tracking and smart alerts",
-  "Priority support and responses",
+  "Help throughout your actual trip",
+  "Travel memory for your plan and preferences",
+  "Image help for menus, signs, and tickets",
+  "Live translation for everyday moments",
+  "Budget nudges, safety tips, and scam guidance",
+  "Airport, transport, and activity assistance",
 ];
 
 export default async function PlusPage({ params }: { params: { locale: string } }) {
@@ -60,15 +62,15 @@ export default async function PlusPage({ params }: { params: { locale: string } 
           <div className="text-center">
             <p className="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-brand-primary/[0.08] px-4 py-2 text-sm text-brand-primary">
               <Crown className="h-4 w-4" />
-              {isAr ? "عرض الإطلاق: 3 أشهر مجاناً" : "Launch offer: 3 months free"}
+              {isAr ? "رفيق سفر ذكي، وليس اشتراك ذكاء اصطناعي" : "A travel companion, not an AI subscription"}
             </p>
             <h1 className="mt-5 font-display text-3xl font-bold text-white sm:text-5xl">
-              {isAr ? "جرّب ريا مستشارة السفر مجاناً" : "Try Raya Travel Advisor free"}
+              {isAr ? "Rya Companion معك أثناء الرحلة" : "Rya Companion Travels With You"}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/50 sm:text-base">
               {isAr
-                ? "احصل على تجربة مجانية لمدة 3 أشهر تشمل تخطيط رحلات أعمق، حفظ الخطط، ومزايا ريا المتقدمة. لا يتم تحصيل أي مبلغ خلال فترة التجربة."
-                : "Get a 3-month free trial with deeper trip planning, saved plans, and advanced Raya features. No charge during the trial period."}
+                ? "قبل السفر وأثناءه، ريا تتذكر خطتك وتساعدك في المواقف اليومية: من المطار، إلى الترجمة، إلى الميزانية، إلى تجنب الأخطاء السياحية."
+                : "Before and during your trip, Rya remembers your plan and helps with real travel moments: airports, translation, budgeting, and avoiding tourist traps."}
             </p>
           </div>
 
@@ -77,18 +79,19 @@ export default async function PlusPage({ params }: { params: { locale: string } 
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-white">
-                    {isAr ? "ريا مستشارة السفر" : "Raya Travel Advisor"}
+                    {isAr ? "Rya Companion" : "Rya Companion"}
                   </h2>
                   <p className="mt-1 text-sm text-white/40">
-                    {isAr ? "للخطط المفصلة والمتابعة" : "For detailed planning and follow-up"}
+                    {isAr ? "مساعدة سفر طوال الرحلة" : "Travel help throughout the trip"}
                   </p>
                 </div>
                 <Sparkles className="h-8 w-8 text-brand-primary" />
               </div>
               <div className="mt-6">
-                <span className="text-4xl font-bold text-white">{isAr ? "3 أشهر مجاناً" : "3 months free"}</span>
+                <span className="text-4xl font-bold text-white">$49.99</span>
+                <span className="ms-2 text-sm text-white/35">{isAr ? "للرحلة" : "per trip"}</span>
                 <p className="mt-2 text-sm text-white/40">
-                  {isAr ? "بعد انتهاء التجربة، تستطيع الاستمرار على الباقة المدفوعة أو إلغاؤها." : "After the trial, you can continue on the paid plan or cancel."}
+                  {isAr ? "أو $29.99 إذا حجزت أي خدمة عبر GoTripza: طيران، تأمين، شريحة، أنشطة، أو غيرها." : "Or $29.99 if you book any service through GoTripza: flights, insurance, eSIM, activities, or more."}
                 </p>
               </div>
               <ul className="mt-6 space-y-3">
@@ -106,21 +109,21 @@ export default async function PlusPage({ params }: { params: { locale: string } 
 
             <div className="rounded-2xl border border-brand-mint/20 bg-brand-mint/[0.06] p-6">
               <h2 className="text-xl font-semibold text-white">
-                {isAr ? "ماذا يحصل بعد 3 أشهر؟" : "What happens after 3 months?"}
+                {isAr ? "متى تحصل على الخصم؟" : "How the discount works"}
               </h2>
               <p className="mt-3 text-sm leading-7 text-white/55">
                 {isAr
-                  ? "قبل نهاية التجربة نذكّرك. تستطيع الإلغاء، أو الاستمرار مع ريا مستشارة السفر للحصول على خطط مفصلة وحفظ رحلات ومزايا أولوية."
-                  : "Before the trial ends, we remind you. You can cancel or continue with Raya Travel Advisor for detailed plans, saved trips, and priority features."}
+                  ? "إذا ضغطت أو حجزت أي خدمة عبر روابط GoTripza مثل الطيران أو التأمين أو eSIM أو الأنشطة، يتم تفعيل سعر $29.99 عند الدفع بدلاً من $49.99."
+                  : "If you click or book any service through GoTripza links such as flights, insurance, eSIMs, or activities, checkout uses the $29.99 price instead of $49.99."}
               </p>
               <div className="mt-5 rounded-xl bg-black/20 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-mint">
-                  {isAr ? "يشمل العرض" : "Included in the offer"}
+                  {isAr ? "مصمم للمواقف الحقيقية" : "Built for real travel moments"}
                 </p>
                 <div className="mt-3 space-y-2 text-sm text-white/55">
-                  <p>{isAr ? "تجربة مجانية لمدة 90 يوماً" : "90-day free trial"}</p>
-                  <p>{isAr ? "إلغاء في أي وقت" : "Cancel anytime"}</p>
-                  <p>{isAr ? "مزايا الإطلاق للمستخدمين الأوائل" : "Launch benefits for early users"}</p>
+                  <p>{isAr ? "افهم قائمة طعام أو لوحة في الشارع بصورة" : "Understand a menu, sign, or ticket from an image"}</p>
+                  <p>{isAr ? "اسأل عن منطقة، احتيال شائع، أو موقف في المطار" : "Ask about an area, common scam, or airport situation"}</p>
+                  <p>{isAr ? "احصل على توصيات هادئة حسب خطتك وميزانيتك" : "Get calm suggestions based on your plan and budget"}</p>
                 </div>
               </div>
             </div>

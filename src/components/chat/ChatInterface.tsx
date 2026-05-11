@@ -82,7 +82,7 @@ const SUGGESTIONS_EN = [
 // ── Main Chat Interface ───────────────────────────────────────────────────
 
 export function ChatInterface({ dict }: { dict: Dictionary }) {
-  const { messages, isThinking, locale, currency, sendMessage, clearChat } = useChat();
+  const { messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, clearChat } = useChat();
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
@@ -198,6 +198,12 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       <RayaAgentModal locale={locale} open={agentOpen} onClose={() => setAgentOpen(false)} />
 
+      <CompanionMemoryStrip
+        locale={locale}
+        context={travelContext}
+        facts={companionMemory.knownFacts}
+      />
+
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
         className="chat-viewport-lock flex-1 min-h-0 min-w-0 overflow-y-auto px-2.5 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
@@ -264,7 +270,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             }
             disabled={isThinking}
             rows={1}
-            className="min-h-[40px] sm:min-h-[44px] flex-1 min-w-0 resize-none rounded-xl sm:rounded-2xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 sm:px-4 sm:py-3 text-sm text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50"
+            className="min-h-[40px] sm:min-h-[44px] flex-1 min-w-0 resize-none rounded-xl sm:rounded-2xl border border-white/[0.12] bg-white/[0.06] px-3 py-2 sm:px-4 sm:py-3 text-base sm:text-sm text-white/90 placeholder:text-white/30 focus:border-violet-400/50 focus:bg-white/[0.09] focus:outline-none focus:ring-2 focus:ring-violet-400/[0.15] disabled:opacity-50"
             style={{ maxHeight: "100px" }}
             onInput={(e) => {
               const t = e.currentTarget;
@@ -303,6 +309,62 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
       </div>
     </div>
   );
+}
+
+function CompanionMemoryStrip({
+  locale,
+  context,
+  facts,
+}: {
+  locale: import("@/i18n/config").Locale;
+  context: import("./ChatContext").TravelContext;
+  facts: string[];
+}) {
+  const isAr = locale === "ar";
+  const chips = [
+    context.destination ? (isAr ? `الوجهة ${context.destination}` : `Destination ${context.destination}`) : null,
+    context.origin ? (isAr ? `من ${context.origin}` : `From ${context.origin}`) : null,
+    context.departure_date ? (isAr ? `موعد ${context.departure_date}` : `Date ${context.departure_date}`) : null,
+    context.budget_usd ? (isAr ? `ميزانية $${context.budget_usd.toLocaleString()}` : `Budget $${context.budget_usd.toLocaleString()}`) : null,
+    context.traveler_type ? (isAr ? travelerLabelAr(context.traveler_type) : travelerLabelEn(context.traveler_type)) : null,
+    context.booking_stage ? (isAr ? stageLabelAr(context.booking_stage) : stageLabelEn(context.booking_stage)) : null,
+  ].filter(Boolean) as string[];
+
+  if (chips.length === 0 && facts.length === 0) return null;
+
+  return (
+    <div className="shrink-0 border-b border-white/[0.05] bg-black/20 px-3 py-2">
+      <div className="flex max-w-full items-center gap-2 overflow-x-auto scroll-hide">
+        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/25">
+          {isAr ? "تتذكر" : "Memory"}
+        </span>
+        {chips.slice(0, 6).map((chip) => (
+          <span
+            key={chip}
+            className="shrink-0 rounded-full border border-white/[0.08] bg-white/[0.04] px-2.5 py-1 text-[11px] text-white/45"
+          >
+            {chip}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function travelerLabelAr(value: string) {
+  return value === "family" ? "رحلة عائلية" : value === "couple" ? "زوجين" : value === "solo" ? "منفرد" : value === "business" ? "عمل" : "أصدقاء";
+}
+
+function travelerLabelEn(value: string) {
+  return value === "family" ? "Family" : value === "couple" ? "Couple" : value === "solo" ? "Solo" : value === "business" ? "Business" : "Friends";
+}
+
+function stageLabelAr(value: string) {
+  return value === "ready_to_book" ? "جاهز للحجز" : value === "planning" ? "تخطيط" : value === "support" ? "دعم" : "استكشاف";
+}
+
+function stageLabelEn(value: string) {
+  return value === "ready_to_book" ? "Ready to book" : value === "planning" ? "Planning" : value === "support" ? "Support" : "Browsing";
 }
 
 // ── Typing Indicator ──────────────────────────────────────────────────────
@@ -1062,7 +1124,7 @@ function SmartChatPartners({
     subid: "ai_chat",
   };
 
-  const recs = getPartnerRecommendations(intent, urlParams, 8);
+  const recs = getPartnerRecommendations(intent, urlParams, 4);
   if (!recs.length) return null;
 
   // Split into priority groups: essentials (eSIM + insurance) vs extras
@@ -1085,7 +1147,7 @@ function SmartChatPartners({
       <div className="flex items-center gap-1.5">
         <div className="h-px flex-1 bg-white/[0.07]" />
         <span className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
-          {isAr ? "✨ أكمل رحلتك مع" : "✨ Complete your trip with"}
+          {isAr ? "اقتراحات قد تفيدك" : "Helpful next steps"}
         </span>
         <div className="h-px flex-1 bg-white/[0.07]" />
       </div>
@@ -1094,10 +1156,10 @@ function SmartChatPartners({
       {essentials.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
-            {isAr ? "إضافات أساسية" : "Essential add-ons"}
+            {isAr ? "قبل السفر" : "Before you go"}
           </p>
           <div className="grid grid-cols-2 gap-2">
-            {essentials.slice(0, 4).map((rec) => (
+            {essentials.slice(0, 2).map((rec) => (
               <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination ?? undefined} />
             ))}
           </div>
@@ -1108,10 +1170,10 @@ function SmartChatPartners({
       {extras.length > 0 && (
         <div className="space-y-1.5">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
-            {isAr ? "أنشطة وخدمات إضافية" : "Activities & more"}
+            {isAr ? "حسب رحلتك" : "For this trip"}
           </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {extras.slice(0, 6).map((rec) => (
+            {extras.slice(0, 2).map((rec) => (
               <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination ?? undefined} />
             ))}
           </div>
@@ -1148,13 +1210,35 @@ function UpsellCard({
   destination?: string;
 }) {
   const c = UPSELL_ACCENT[rec.partner.accentColor] ?? UPSELL_ACCENT.blue;
+  const resultType = rec.partner.category === "car_rental"
+    ? "car_rental"
+    : rec.partner.category === "activities"
+      ? "activities"
+      : rec.partner.category === "insurance"
+        ? "insurance"
+        : rec.partner.category === "esim"
+          ? "esim"
+          : rec.partner.category === "trains"
+            ? "trains"
+            : rec.partner.id === "airhelp"
+              ? "compensation"
+              : "partner";
 
   return (
     <a
       href={rec.url}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={() => logEvent("affiliate_upsell_clicked", { type: rec.partner.category, partner: rec.partner.id, destination: destination ?? "" })}
+      onClick={() => {
+        logEvent("affiliate_upsell_clicked", { type: rec.partner.category, partner: rec.partner.id, destination: destination ?? "" });
+        void trackClick({
+          resultType,
+          provider: rec.partner.id,
+          destination: destination ?? "trip",
+          affiliateUrl: rec.url,
+          locale: isAr ? "ar" : "en",
+        });
+      }}
       className={`group flex items-center gap-2 rounded-xl border p-2.5 transition hover:brightness-110 ${c.border} ${c.bg}`}
     >
       <span className="text-base shrink-0">{rec.partner.icon}</span>

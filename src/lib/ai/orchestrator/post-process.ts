@@ -35,6 +35,11 @@ function mergeContextWithIntent(
     budget_usd: i.budget_usd ?? ctx.budget_usd,
     trip_type: i.trip_type ?? ctx.trip_type,
     cabin_class: i.cabin_class ?? ctx.cabin_class,
+    traveler_type: ctx.traveler_type ?? null,
+    hotel_preferences: ctx.hotel_preferences ?? [],
+    service_interests: ctx.service_interests ?? [],
+    booking_stage: ctx.booking_stage ?? null,
+    concerns: ctx.concerns ?? [],
   };
 }
 
@@ -67,6 +72,7 @@ export function postProcess(
   ctx: TravelContext,
 ): { intel: TravelIntelligence; mergedContext: TravelContext } {
   const mergedContext = mergeContextWithIntent(ctx, intel);
+  const isAr = intel.locale === "ar";
 
   // Advice: always honor.
   if (intel.mode === "advice") {
@@ -126,6 +132,15 @@ export function postProcess(
   const hasOrigin = !!(intel.intent.origin || mergedContext.origin);
 
   if (hasDest && hasDate && (!wantsFlights || hasOrigin)) {
+    if (mergedContext.booking_stage === "planning" || mergedContext.booking_stage === "browsing") {
+      intel.mode = "advice";
+      if (/جاري البحث|searching|بحث/i.test(intel.message)) {
+        intel.message = isAr
+          ? "تمام، عندي أساس الرحلة واضح. خلّيني أبدأها كمستشارة سفر: أرتّب لك الفكرة أولاً، وبعدها إذا قلت لي إنك جاهز للحجز أفتح لك أفضل الخيارات بدون زحمة بطاقات."
+          : "Got it — I have the trip shape. I’ll treat this as planning first, then I’ll bring booking options only when you say you’re ready.";
+      }
+      return { intel, mergedContext };
+    }
     // All required slots present — search is appropriate. Honor LLM message.
     return { intel, mergedContext };
   }
