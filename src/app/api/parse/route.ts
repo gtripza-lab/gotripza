@@ -314,6 +314,23 @@ function isAdviceQuery(query: string): boolean {
   return /هل\s|كيف\s|ما\s+أفضل|متى\s+أفضل|أيها\s+أفضل|ايهما|أيهما|مقارنة|قارن|الفرق\s+بين|أفضل\s+وقت|تأشيرة|فيزا|آمن|امن\s|الطقس|الجو\s+في|ماذا\s+ألبس|ماذا\s+نلبس|هل\s+يحتاج|هل\s+تحتاج|نصائح|توصي|اقترح|ماذا\s+أفعل|ما\s+رأيك|تنصحني\s+بـ|is\s+it\s+safe|is\s+\w+\s+safe|how\s+|what\s+is\s+|when\s+is\s+best|best\s+time|compare\s+|which\s+is\s+better|visa\s+|do\s+i\s+need\s+|tips\s+for|should\s+i\s+|weather\s+in|what\s+should\s+i/i.test(query);
 }
 
+type ServiceInterest = NonNullable<TravelContext["service_interests"]>[number];
+
+function mergeServiceInterests(
+  current: TravelContext["service_interests"],
+  add: ServiceInterest[],
+): NonNullable<TravelContext["service_interests"]> {
+  return Array.from(new Set([...(current ?? []), ...add])) as NonNullable<TravelContext["service_interests"]>;
+}
+
+function serviceInterestsFromQuery(query: string): ServiceInterest[] {
+  const interests: ServiceInterest[] = [];
+  if (/تأمين|insurance|medical cover|coverage|شنغن|schengen/i.test(query)) interests.push("insurance");
+  if (/esim|e-sim|شريحة|شرائح|انترنت|إنترنت|roaming|data/i.test(query)) interests.push("esim");
+  if (/أنشطة|نشاط|جولات|تذاكر|activities|tours|tickets|klook|getyourguide/i.test(query)) interests.push("activities");
+  return interests;
+}
+
 function heuristicFallback(query: string, notice: string, history: ChatTurn[], context?: TravelContext) {
   // Detect locale from the most recent user input (most reliable)
   const locale = detectLocale(query);
@@ -329,6 +346,21 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   const normalizedQuery = normalizeDigits(query);
   const moneyMatch = normalizedQuery.match(/(\d{2,6})\s*(?:\$|دولار|usd|ريال|sar)?/i);
   const daysMatch = normalizedQuery.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days|day)/i);
+  const baseContext: TravelContext = {
+    destination: context?.destination ?? (hasIstanbul ? "Istanbul" : null),
+    origin: context?.origin ?? null,
+    departure_date: context?.departure_date ?? null,
+    return_date: context?.return_date ?? null,
+    adults: context?.adults ?? 2,
+    budget_usd: context?.budget_usd ?? null,
+    trip_type: context?.trip_type ?? null,
+    cabin_class: context?.cabin_class ?? null,
+    traveler_type: context?.traveler_type ?? (hasFamily ? "family" : null),
+    hotel_preferences: context?.hotel_preferences ?? [],
+    service_interests: context?.service_interests ?? [],
+    booking_stage: context?.booking_stage ?? null,
+    concerns: context?.concerns ?? [],
+  };
 
   if (/ترجم|ترجمة|translate|translation|phrase|عبارة|لغة/i.test(query)) {
     const phrase = query
@@ -354,6 +386,10 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       locale,
       mode: "advice",
       message: directTranslation,
+      context: {
+        ...baseContext,
+        booking_stage: "planning",
+      },
       wants: ["flights", "hotels"],
       followup: hasPhrase ? null : isAr ? "أرسل العبارة هنا." : "Send the phrase here.",
       tips: null,
@@ -381,6 +417,12 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       locale,
       mode: "advice",
       message: airportMessage,
+      context: {
+        ...baseContext,
+        service_interests: mergeServiceInterests(baseContext.service_interests, ["esim", "insurance"]),
+        booking_stage: "planning",
+        concerns: Array.from(new Set([...(baseContext.concerns ?? []), "airport"])).slice(0, 8),
+      },
       wants: ["flights", "hotels"],
       followup: isAr ? "ما اسم المطار أو أرسل صورة الشاشة." : "What airport are you in, or send a photo of the screen.",
       tips: null,
@@ -408,6 +450,12 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       locale,
       mode: "advice",
       message: safetyMessage,
+      context: {
+        ...baseContext,
+        service_interests: mergeServiceInterests(baseContext.service_interests, ["insurance"]),
+        booking_stage: "planning",
+        concerns: Array.from(new Set([...(baseContext.concerns ?? []), "safety"])).slice(0, 8),
+      },
       wants: ["flights", "hotels"],
       followup: hasTaksim ? null : isAr ? "ما الوجهة أو الحي؟" : "Which destination or neighborhood?",
       tips: null,
@@ -437,8 +485,98 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       locale,
       mode: "advice",
       message: budgetMessage,
+      context: {
+        ...baseContext,
+        destination: context?.destination ?? (hasIstanbul ? "Istanbul" : null),
+        budget_usd: budgetAmount ? Number(budgetAmount) : baseContext.budget_usd,
+        service_interests: mergeServiceInterests(baseContext.service_interests, ["esim"]),
+        booking_stage: "planning",
+        concerns: Array.from(new Set([...(baseContext.concerns ?? []), "budget"])).slice(0, 8),
+      },
       wants: ["flights", "hotels"],
       followup: budgetAmount && days ? null : isAr ? "ما الوجهة وعدد الأيام؟" : "What destination and how many days?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/تأمين|insurance|medical cover|coverage|شنغن|schengen/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, serviceInterestsFromQuery(query)),
+      booking_stage: "planning",
+      concerns: Array.from(new Set([...(baseContext.concerns ?? []), "insurance"])).slice(0, 8),
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "insurance" },
+      context: nextContext,
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "التأمين يفيد أكثر إذا رحلتك دولية، فيها عائلة، فيزا، رحلات طويلة، أو حجوزات غير قابلة للاسترداد. راجع 4 أشياء قبل الشراء: التغطية الطبية، إلغاء/تأخير الرحلة، الأمتعة، والاستثناءات. إذا أعطيتني الوجهة ومدة السفر أقول لك هل هو ضروري أو اختياري."
+        : "Travel insurance matters most for international trips, families, visa requirements, long trips, or non-refundable bookings. Check four things before buying: medical coverage, cancellation/delay, baggage, and exclusions. Tell me destination and duration and I’ll say if it is essential or optional.",
+      wants: ["flights", "hotels"],
+      followup: nextContext.destination ? null : isAr ? "ما الوجهة ومدة السفر؟" : "What destination and trip length?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/esim|e-sim|شريحة|شرائح|انترنت|إنترنت|roaming|data/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, serviceInterestsFromQuery(query)),
+      booking_stage: "planning",
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "esim" },
+      context: nextContext,
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "الشريحة الإلكترونية ممتازة إذا تريد تصل والإنترنت جاهز بدون تجوال. الأفضل تشتريها قبل السفر، تتأكد أن جوالك يدعم eSIM، وتختار باقة حسب الأيام واستخدام الخرائط. إذا الوجهة فيها إنترنت عام ضعيف أو تنقل كثير، خذ باقة أكبر قليلاً."
+        : "An eSIM is useful when you want data ready on arrival without roaming. Buy it before travel, confirm your phone supports eSIM, and choose data by trip length and map usage. If public Wi-Fi is weak or you move around a lot, choose a slightly larger plan.",
+      wants: ["flights", "hotels"],
+      followup: nextContext.destination ? null : isAr ? "ما الوجهة ومدة السفر؟" : "What destination and trip length?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/أنشطة|نشاط|جولات|تذاكر|activities|tours|tickets|klook|getyourguide/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, serviceInterestsFromQuery(query)),
+      booking_stage: "planning",
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "activities" },
+      context: nextContext,
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "أفضل الأنشطة تعتمد على أسلوب الرحلة: عائلية، ثقافية، مغامرة، أو هادئة. لا أنصح بحجز كل شيء دفعة واحدة؛ اختر نشاطاً رئيسياً كل يوم واترك مساحة للراحة. أعطني الوجهة وعدد الأيام وأرتب لك ترشيحات خفيفة."
+        : "The best activities depend on travel style: family, culture, adventure, or calm. Don’t book everything at once; choose one anchor activity per day and leave breathing room. Tell me destination and days and I’ll suggest a light plan.",
+      wants: ["flights", "hotels"],
+      followup: nextContext.destination ? null : isAr ? "ما الوجهة وعدد الأيام؟" : "What destination and how many days?",
       tips: null,
       budget_verdict: null,
       confidence: null,
@@ -654,7 +792,7 @@ export async function POST(req: NextRequest) {
 
     // Ria orchestrator: pre-filter + LLM + post-process (Phase 3 + 4).
     // Replaces the legacy enforceConversationalMode override layer.
-    const { intelligence: intel, mergedContext, telemetry } =
+    const { conversationId, intelligence: intel, mergedContext, telemetry } =
       await runRayaOrchestrator(query, history, ctx, {
         userId: user?.id ?? null,
         sessionId: anonSid,
@@ -676,6 +814,7 @@ export async function POST(req: NextRequest) {
     const tips = await tipsPromise;
 
     const response = NextResponse.json({
+      conversation_id: conversationId,
       intent: intel.intent,
       // Echo back the merged context so the client can update its store
       // from the server's authoritative view (instead of merging client-side).

@@ -37,6 +37,8 @@ export type OrchestratorOptions = {
 };
 
 export type OrchestratorResult = {
+  /** Persisted conversation row, when the request has a user/session identity. */
+  conversationId: string | null;
   intelligence: TravelIntelligence;
   /** Merged context after both pre-filter and LLM extraction. Send back to client. */
   mergedContext: TravelContext;
@@ -251,6 +253,7 @@ export async function runRayaOrchestrator(
   };
 
   return {
+    conversationId: conv?.id ?? null,
     intelligence: finalIntel,
     mergedContext,
     telemetry: {

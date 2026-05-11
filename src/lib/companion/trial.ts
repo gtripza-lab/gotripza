@@ -1,5 +1,5 @@
 export const RYA_TRIAL_COOKIE = "ria_companion_trial_start";
-export const RYA_TRIAL_DAYS = Number(process.env.RYA_COMPANION_TRIAL_DAYS ?? "14");
+export const RYA_TRIAL_DAYS = Number(process.env.RYA_COMPANION_TRIAL_DAYS ?? "90");
 
 export type RyaTrialState = {
   active: boolean;

@@ -1,5 +1,6 @@
 import { ExternalLink } from "lucide-react";
 import { getAgentWorkflowStatuses } from "@/lib/openai/agent-workflows";
+import { RYA_TRIAL_DAYS } from "@/lib/companion/trial";
 
 export const metadata = { title: "الإعدادات" };
 
@@ -62,7 +63,14 @@ export default function SettingsPage() {
   const tpWebhookSecret = process.env.TP_WEBHOOK_SECRET ?? "";
   const sentryDsn = process.env.SENTRY_DSN ?? "";
   const openaiApiKey = process.env.OPENAI_API_KEY ?? "";
+  const travelpayoutsToken = process.env.TRAVELPAYOUTS_TOKEN ?? "";
+  const travelpayoutsMarker = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
   const agentWorkflows = getAgentWorkflowStatuses();
+  const companionImageReady = Boolean(openaiApiKey);
+  const productionReady =
+    Boolean(openaiApiKey) &&
+    Boolean(travelpayoutsMarker) &&
+    agentWorkflows.every((workflow) => workflow.configured);
 
   return (
     <div className="space-y-8 p-6">
@@ -73,6 +81,28 @@ export default function SettingsPage() {
       </div>
 
       {/* Section 1: AI Configuration */}
+      <div className={`rounded-2xl border p-5 ${
+        productionReady
+          ? "border-emerald-500/20 bg-emerald-500/[0.05]"
+          : "border-amber-500/20 bg-amber-500/[0.05]"
+      }`}>
+        <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
+          جاهزية ريا للإنتاج
+        </p>
+        <p className={productionReady ? "text-sm text-emerald-300" : "text-sm text-amber-300"}>
+          {productionReady
+            ? "ريا جاهزة: مفتاح OpenAI ومعرفات Agent Builder الأساسية موجودة."
+            : "ريا تعمل، لكن توجد إعدادات تحتاج مراجعة قبل الاعتماد الكامل في الإنتاج."}
+        </p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+          <FlagRow label="محرك ريا الكامل" status={openaiApiKey ? "جاهز" : "يعمل على fallback"} variant={openaiApiKey ? "ok" : "warn"} />
+          <FlagRow label="فهم الصور في Rya Companion" status={companionImageReady ? "جاهز" : "غير جاهز"} variant={companionImageReady ? "ok" : "warn"} />
+          <FlagRow label="مدة تجربة Rya Companion" status={`${RYA_TRIAL_DAYS} يوم`} variant="ok" />
+          <FlagRow label="Agent Builder Workflows" status={agentWorkflows.every((workflow) => workflow.configured) ? "مكتملة" : "ناقصة"} variant={agentWorkflows.every((workflow) => workflow.configured) ? "ok" : "warn"} />
+        </div>
+      </div>
+
+      {/* Section 2: AI Configuration */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           إعدادات الذكاء الاصطناعي
@@ -90,9 +120,13 @@ export default function SettingsPage() {
           label="تفعيل باقة ريا التجريبية (RIA_PLUS_GATING_ENABLED)"
           value={riaPlusGating || "غير مضبوط"}
         />
+        <ConfigRow
+          label="مدة تجربة Rya Companion"
+          value={`${RYA_TRIAL_DAYS} يوم`}
+        />
       </div>
 
-      {/* Section 2: Feature Flags */}
+      {/* Section 3: Feature Flags */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           مفاتيح التشغيل
@@ -119,9 +153,14 @@ export default function SettingsPage() {
           status={openaiApiKey ? "موجود" : "غير مضبوط"}
           variant={openaiApiKey ? "ok" : "warn"}
         />
+        <FlagRow
+          label="TRAVELPAYOUTS_TOKEN"
+          status={travelpayoutsToken ? "موجود" : "غير مضبوط"}
+          variant={travelpayoutsToken ? "ok" : "warn"}
+        />
       </div>
 
-      {/* Section 3: OpenAI Agent Builder Workflows */}
+      {/* Section 4: OpenAI Agent Builder Workflows */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           OpenAI Agent Builder
@@ -137,7 +176,7 @@ export default function SettingsPage() {
         ))}
       </div>
 
-      {/* Section 4: Affiliate Configuration */}
+      {/* Section 5: Affiliate Configuration */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-1 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           إعدادات الشراكات
@@ -146,15 +185,31 @@ export default function SettingsPage() {
 
         <div className="flex items-center justify-between py-3 border-b border-white/[0.04]">
           <span className="text-sm text-white/60">NEXT_PUBLIC_TRAVELPAYOUTS_MARKER</span>
-          <span className="font-mono text-xs text-white/80">522867</span>
+          <span className="font-mono text-xs text-white/80">{travelpayoutsMarker}</span>
         </div>
 
+        {[
+          ["NEXT_PUBLIC_TP_PROMO_AIRALO", process.env.NEXT_PUBLIC_TP_PROMO_AIRALO ?? ""],
+          ["NEXT_PUBLIC_TP_PROMO_YESIM", process.env.NEXT_PUBLIC_TP_PROMO_YESIM ?? ""],
+          ["NEXT_PUBLIC_TP_PROMO_VC", process.env.NEXT_PUBLIC_TP_PROMO_VC ?? ""],
+          ["NEXT_PUBLIC_TP_PROMO_EKTA", process.env.NEXT_PUBLIC_TP_PROMO_EKTA ?? ""],
+          ["NEXT_PUBLIC_TP_PROMO_GYG", process.env.NEXT_PUBLIC_TP_PROMO_GYG ?? ""],
+          ["NEXT_PUBLIC_TP_PROMO_KLOOK", process.env.NEXT_PUBLIC_TP_PROMO_KLOOK ?? ""],
+        ].map(([label, value]) => (
+          <FlagRow
+            key={label}
+            label={label}
+            status={value ? "موجود" : "رابط مباشر مؤقت"}
+            variant={value ? "ok" : "neutral"}
+          />
+        ))}
+
         <p className="mt-4 text-xs text-white/25 italic">
-          مفاتيح API والأسرار لا تظهر هنا أبداً. إدارتها تكون من لوحة Vercel.
+          مفاتيح API والأسرار لا تظهر هنا أبداً. الخدمات غير المضبوطة تبقى برابط مباشر مؤقت ولا تكسر تجربة ريا.
         </p>
       </div>
 
-      {/* Section 5: Quick Links */}
+      {/* Section 6: Quick Links */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
         <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
           روابط سريعة

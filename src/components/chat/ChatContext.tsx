@@ -285,6 +285,7 @@ export function ChatProvider({
       });
 
       type ParseResponse = {
+        conversation_id?: string | null;
         intent?: TripIntent;
         // Server-authoritative merged context (Phase 3). When present,
         // we trust this over any client-side merge.
@@ -312,6 +313,7 @@ export function ChatProvider({
       const aiLocale = parsedJson.locale ?? locale;
       const aiMessage = parsedJson.message ?? "";
       const mode: ChatMode = parsedJson.mode ?? "search";
+      const shouldPersistFallbackConversation = !parsedJson.conversation_id;
 
       const wants: ("flights" | "hotels")[] = Array.isArray(parsedJson.wants) && parsedJson.wants.length
         ? parsedJson.wants.filter((w) => w === "flights" || w === "hotels") as ("flights" | "hotels")[]
@@ -344,7 +346,16 @@ export function ChatProvider({
         fetch("/api/history", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ query: text, destination: intent.destination, locale }),
+          body: JSON.stringify({
+            query: text,
+            response: aiMessage,
+            destination: intent.destination,
+            locale: aiLocale,
+            mode,
+            intent,
+            context: nextContext,
+            persistConversation: shouldPersistFallbackConversation,
+          }),
         }).catch(() => null);
 
         return;
@@ -407,7 +418,16 @@ export function ChatProvider({
       fetch("/api/history", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query: text, destination: intent.destination, locale }),
+        body: JSON.stringify({
+          query: text,
+          response: aiMessage,
+          destination: intent.destination,
+          locale: aiLocale,
+          mode,
+          intent,
+          context: nextContext,
+          persistConversation: shouldPersistFallbackConversation,
+        }),
       }).catch(() => null);
 
     } catch (err) {

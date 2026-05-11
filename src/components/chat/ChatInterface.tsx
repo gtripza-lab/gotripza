@@ -532,7 +532,7 @@ function MessageBubble({
 }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
-  const { sendMessage, isThinking } = useChat();
+  const { sendMessage, isThinking, travelContext } = useChat();
 
   if (message.isLoading) return null; // handled by TypingIndicator
 
@@ -599,6 +599,14 @@ function MessageBubble({
             message={message}
             disabled={isThinking}
             onAction={(text) => void sendMessage(text)}
+          />
+        )}
+
+        {!isUser && message.id !== "welcome" && !message.error && message.mode !== "search" && (
+          <AdviceServiceNudges
+            locale={locale}
+            message={message}
+            context={travelContext}
           />
         )}
 
@@ -697,6 +705,28 @@ function QuickActionBar({
         : `Give me practical safety and travel scam alerts for ${destinationLabel} without exaggeration, with short next steps.`,
     },
     {
+      icon: ShieldCheck,
+      label: isAr ? "تأمين" : "Insurance",
+      prompt: destination
+        ? isAr
+          ? `هل أحتاج تأمين سفر إلى ${destination}؟ اشرح لي متى يفيد وما الذي أراجعه قبل الشراء.`
+          : `Do I need travel insurance for ${destination}? Explain when it helps and what to check before buying.`
+        : isAr
+          ? "هل أحتاج تأمين سفر؟ اشرح لي متى يفيد وما الذي أراجعه قبل الشراء."
+          : "Do I need travel insurance? Explain when it helps and what to check before buying.",
+    },
+    {
+      icon: Zap,
+      label: isAr ? "شريحة eSIM" : "eSIM",
+      prompt: destination
+        ? isAr
+          ? `هل أحتاج شريحة eSIM في ${destination}؟ اقترح لي أفضل طريقة أجهز الإنترنت قبل الوصول.`
+          : `Do I need an eSIM for ${destination}? Suggest the best way to prepare mobile data before arrival.`
+        : isAr
+          ? "هل أحتاج شريحة eSIM للسفر؟ اقترح لي أفضل طريقة أجهز الإنترنت قبل الوصول."
+          : "Do I need a travel eSIM? Suggest the best way to prepare mobile data before arrival.",
+    },
+    {
       icon: hasHotelGap ? HotelIcon : Sparkles,
       label: hasHotelGap
         ? isAr ? "مناطق السكن" : "Stay areas"
@@ -743,6 +773,93 @@ function QuickActionBar({
 
 function contextStageFromMessage(message: ChatMessage) {
   return message.mode ?? null;
+}
+
+function AdviceServiceNudges({
+  locale,
+  message,
+  context,
+}: {
+  locale: import("@/i18n/config").Locale;
+  message: ChatMessage;
+  context: import("@/lib/ai/schemas/intent").TravelContext;
+}) {
+  const isAr = locale === "ar";
+  const inferredServices = inferServicesFromText(message.text);
+  const mergedContext = {
+    ...context,
+    service_interests: Array.from(new Set([
+      ...(context.service_interests ?? []),
+      ...inferredServices,
+    ])) as import("@/lib/ai/schemas/intent").TravelContext["service_interests"],
+  };
+
+  const shouldShow =
+    (mergedContext.service_interests?.length ?? 0) > 0 ||
+    Boolean(mergedContext.destination && (mergedContext.booking_stage === "planning" || mergedContext.booking_stage === "ready_to_book"));
+  if (!shouldShow) return null;
+
+  const intent = {
+    origin: mergedContext.origin,
+    destination: mergedContext.destination,
+    departure_date: mergedContext.departure_date,
+    return_date: mergedContext.return_date,
+    adults: mergedContext.adults,
+    budget_usd: mergedContext.budget_usd,
+    trip_type: mergedContext.trip_type,
+    cabin_class: mergedContext.cabin_class,
+    notes: mergedContext.concerns?.join(" ") ?? null,
+  };
+
+  const recs = getPartnerRecommendations(
+    intent,
+    {
+      destination: mergedContext.destination ?? undefined,
+      origin: mergedContext.origin ?? undefined,
+      departure_date: mergedContext.departure_date,
+      return_date: mergedContext.return_date,
+      adults: mergedContext.adults,
+      locale,
+      subid: "ria_advice",
+    },
+    6,
+    mergedContext,
+  ).filter((rec) => rec.partner.category !== "hotels" && rec.partner.category !== "flights");
+
+  if (!recs.length) return null;
+
+  return (
+    <div className="w-full max-w-full space-y-2">
+      <div className="flex items-center gap-1.5">
+        <div className="h-px flex-1 bg-white/[0.06]" />
+        <span className="text-[10px] font-semibold uppercase tracking-widest text-white/28">
+          {isAr ? "خدمات مفيدة عند الحاجة" : "Useful when needed"}
+        </span>
+        <div className="h-px flex-1 bg-white/[0.06]" />
+      </div>
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {recs.slice(0, 3).map((rec) => (
+          <UpsellCard
+            key={rec.partner.id}
+            rec={rec}
+            isAr={isAr}
+            destination={mergedContext.destination ?? undefined}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function inferServicesFromText(text: string): NonNullable<import("@/lib/ai/schemas/intent").TravelContext["service_interests"]> {
+  const services: NonNullable<import("@/lib/ai/schemas/intent").TravelContext["service_interests"]> = [];
+  if (/تأمين|insurance|medical|coverage|visa/i.test(text)) services.push("insurance");
+  if (/esim|e-sim|شريحة|شرائح|انترنت|إنترنت|roaming|data/i.test(text)) services.push("esim");
+  if (/أنشطة|نشاط|جولات|تذاكر|activities|tours|tickets/i.test(text)) services.push("activities");
+  if (/سيارة|تأجير|car rental|rent a car|drive/i.test(text)) services.push("cars");
+  if (/قطار|قطارات|train|rail/i.test(text)) services.push("trains");
+  if (/تعويض|تأخير|تأخرت|delayed|cancelled|compensation/i.test(text)) services.push("compensation");
+  return services;
 }
 
 // ── Chat Search Results ───────────────────────────────────────────────────

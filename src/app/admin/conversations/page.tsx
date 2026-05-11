@@ -54,6 +54,29 @@ function truncate(text: string | null | undefined, max: number): string {
   return text.length > max ? text.slice(0, max) + "…" : text;
 }
 
+function labelService(value: string): string {
+  const labels: Record<string, string> = {
+    insurance: "تأمين",
+    esim: "شريحة",
+    activities: "أنشطة",
+    airport: "مطار",
+    translation: "ترجمة",
+    safety: "أمان",
+    budget: "ميزانية",
+  };
+  return labels[value] ?? value;
+}
+
+function contextChips(row: ConversationRow): string[] {
+  const context = row.context;
+  const chips = [
+    context?.destination ? `وجهة: ${context.destination}` : null,
+    context?.booking_stage ? `مرحلة: ${context.booking_stage}` : null,
+    ...(context?.service_interests ?? []).slice(0, 3).map((item) => labelService(item)),
+  ].filter(Boolean) as string[];
+  return chips;
+}
+
 export default async function ConversationsPage() {
   const { rows, total } = await getConversations();
 
@@ -112,8 +135,10 @@ export default async function ConversationsPage() {
               <col className="w-28" />
               <col className="w-24" />
               <col className="w-20" />
+              <col className="w-20" />
               <col className="w-44" />
               <col className="w-44" />
+              <col className="w-60" />
               <col /> {/* Summary gets remaining space */}
             </colgroup>
             <thead>
@@ -128,10 +153,16 @@ export default async function ConversationsPage() {
                   الرسائل
                 </th>
                 <th className="text-left px-5 py-3 text-white/40 font-medium">
+                  اللغة
+                </th>
+                <th className="text-left px-5 py-3 text-white/40 font-medium">
                   البداية
                 </th>
                 <th className="text-left px-5 py-3 text-white/40 font-medium">
                   آخر نشاط
+                </th>
+                <th className="text-left px-5 py-3 text-white/40 font-medium">
+                  سياق ريا
                 </th>
                 <th className="text-left px-5 py-3 text-white/40 font-medium">
                   الملخص
@@ -142,7 +173,7 @@ export default async function ConversationsPage() {
               {rows.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={8}
                     className="px-5 py-10 text-center text-white/40"
                   >
                     لا توجد محادثات حتى الآن.
@@ -180,11 +211,27 @@ export default async function ConversationsPage() {
                     <td className="px-5 py-3 text-right text-white/60 tabular-nums">
                       {row.message_count ?? "—"}
                     </td>
+                    <td className="px-5 py-3 text-white/50">
+                      {row.locale === "en" ? "EN" : "AR"}
+                    </td>
                     <td className="px-5 py-3 text-white/50 whitespace-nowrap">
                       {formatDate(row.started_at)}
                     </td>
                     <td className="px-5 py-3 text-white/50 whitespace-nowrap">
-                      {formatDate(row.last_message_at)}
+                      {formatDate(row.last_at)}
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="flex flex-wrap gap-1.5">
+                        {contextChips(row).length === 0 ? (
+                          <span className="text-white/25">—</span>
+                        ) : (
+                          contextChips(row).map((chip) => (
+                            <span key={chip} className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[11px] text-white/55">
+                              {chip}
+                            </span>
+                          ))
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-3 text-white/40 truncate">
                       {truncate(row.summary, 60)}

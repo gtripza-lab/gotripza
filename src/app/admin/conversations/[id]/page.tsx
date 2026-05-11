@@ -90,6 +90,64 @@ function TypeBadge({ hasUser }: { hasUser: boolean }) {
   );
 }
 
+function labelService(value: string): string {
+  const labels: Record<string, string> = {
+    insurance: "تأمين السفر",
+    esim: "شريحة eSIM",
+    activities: "أنشطة وجولات",
+    airport: "مساعدة المطار",
+    translation: "ترجمة",
+    safety: "إرشادات أمان",
+    budget: "ميزانية",
+  };
+  return labels[value] ?? value;
+}
+
+function ContextPanel({ conversation }: { conversation: ConversationDetail }) {
+  const context = conversation.context ?? {};
+  const intent = conversation.last_intent ?? {};
+  const items = [
+    { label: "الوجهة", value: context.destination ?? intent.destination },
+    { label: "من", value: context.origin ?? intent.origin },
+    { label: "المسافر", value: context.traveler_type },
+    { label: "نوع الرحلة", value: context.trip_type ?? intent.trip_type },
+    { label: "الميزانية", value: context.budget_usd ? `$${context.budget_usd}` : null },
+    { label: "مرحلة الحجز", value: context.booking_stage },
+  ].filter((item) => item.value != null && item.value !== "");
+  const services = (context.service_interests ?? []).map(labelService);
+  const concerns = context.concerns ?? [];
+
+  if (items.length === 0 && services.length === 0 && concerns.length === 0) return null;
+
+  return (
+    <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-5 py-4 space-y-4">
+      <div>
+        <h2 className="text-white text-sm font-semibold">سياق ريا لهذه المحادثة</h2>
+        <p className="text-white/35 text-xs mt-1">هذا يساعدك تعرف ماذا فهمت ريا عن المستخدم.</p>
+      </div>
+      {items.length > 0 && (
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {items.map((item) => (
+            <div key={item.label} className="rounded-xl border border-white/10 bg-white/[0.03] px-3 py-2">
+              <p className="text-[11px] text-white/35">{item.label}</p>
+              <p className="mt-1 text-sm text-white/75 break-words">{String(item.value)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {(services.length > 0 || concerns.length > 0) && (
+        <div className="flex flex-wrap gap-2">
+          {[...services, ...concerns].map((chip) => (
+            <span key={chip} className="rounded-full border border-brand-primary/20 bg-brand-primary/10 px-3 py-1 text-xs text-brand-mint">
+              {chip}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MessageBubble({ msg }: { msg: MessageRow }) {
   const isUser = msg.role === "user";
 
@@ -117,6 +175,9 @@ function MessageBubble({ msg }: { msg: MessageRow }) {
         {/* Assistant-only metadata */}
         {!isUser && (
           <>
+            {msg.mode != null && msg.mode !== "" && (
+              <span>{msg.mode}</span>
+            )}
             {msg.latency_ms != null && (
               <span>{msg.latency_ms.toLocaleString()} ms</span>
             )}
@@ -196,14 +257,20 @@ export default async function ConversationDetailPage({
               {conversation.message_count ?? conversation.messages.length}
             </span>
           </span>
-          {conversation.last_message_at != null && (
+          {conversation.last_at != null && (
             <span>
               آخر نشاط{" "}
               <span className="text-white/60">
-                {formatDate(conversation.last_message_at)}
+                {formatDate(conversation.last_at)}
               </span>
             </span>
           )}
+          <span>
+            اللغة{" "}
+            <span className="text-white/60">
+              {conversation.locale === "en" ? "English" : "العربية"}
+            </span>
+          </span>
         </div>
 
         {/* Summary box */}
@@ -214,6 +281,8 @@ export default async function ConversationDetailPage({
           </div>
         )}
       </div>
+
+      <ContextPanel conversation={conversation} />
 
       {/* ── Chat replay ── */}
       <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] px-6 py-6">

@@ -11,7 +11,7 @@ const BarChartCard = dynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.BarChartCard })),
   { ssr: false },
 );
-import { MousePointerClick, Plane, Hotel, LayoutGrid, DollarSign } from "lucide-react";
+import { MousePointerClick, Plane, Hotel, LayoutGrid, DollarSign, ShieldCheck } from "lucide-react";
 
 export const metadata = { title: "البحث والنقرات" };
 
@@ -33,11 +33,31 @@ function typeBadge(resultType: string) {
       </span>
     );
   }
+  if (["insurance", "esim", "activities", "car_rental", "trains", "compensation"].includes(t)) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-violet-300">
+        <ShieldCheck className="h-2.5 w-2.5" />
+        {serviceTypeLabel(t)}
+      </span>
+    );
+  }
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white/50">
       {resultType ?? "—"}
     </span>
   );
+}
+
+function serviceTypeLabel(type: string) {
+  const labels: Record<string, string> = {
+    insurance: "تأمين",
+    esim: "eSIM",
+    activities: "أنشطة",
+    car_rental: "سيارات",
+    trains: "قطارات",
+    compensation: "تعويض",
+  };
+  return labels[type] ?? type;
 }
 
 function formatTime(iso: string) {
@@ -83,7 +103,7 @@ export default async function SearchPage() {
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
         <MetricCard
           label="إجمالي النقرات 30 يوم"
           value={stats.total.toLocaleString()}
@@ -102,6 +122,12 @@ export default async function SearchPage() {
           color="green"
         />
         <MetricCard
+          label="خدمات السفر"
+          value={stats.serviceClicks.toLocaleString()}
+          icon={ShieldCheck}
+          color="blue"
+        />
+        <MetricCard
           label="أخرى"
           value={stats.others.toLocaleString()}
           icon={LayoutGrid}
@@ -114,6 +140,22 @@ export default async function SearchPage() {
           color="green"
         />
       </div>
+
+      {stats.byService.length > 0 && (
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+          <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
+            تسويق خدمات السفر
+          </p>
+          <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-6">
+            {stats.byService.map((row) => (
+              <div key={row.type} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <p className="text-xs text-white/35">{serviceTypeLabel(row.type)}</p>
+                <p className="mt-1 text-2xl font-semibold text-white">{row.clicks.toLocaleString("ar-SA")}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Daily Clicks Area Chart */}
       {stats.daily.length > 0 && (

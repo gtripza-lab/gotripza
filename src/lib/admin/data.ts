@@ -1,5 +1,6 @@
 import "server-only";
 import { createSupabaseService } from "@/lib/supabase/service";
+import type { TravelContext, TripIntent } from "@/lib/ai/schemas/intent";
 
 // Supabase generated types do not include all production tables yet.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -298,10 +299,13 @@ export type ConversationRow = {
   id: string;
   user_id: string | null;
   session_id: string | null;
+  locale: string | null;
   message_count: number | null;
   started_at: string;
-  last_message_at: string | null;
+  last_at: string | null;
   summary?: string | null;
+  context?: Partial<TravelContext> | null;
+  last_intent?: Partial<TripIntent> | null;
 };
 
 export type ConversationDetail = ConversationRow & {
@@ -310,9 +314,14 @@ export type ConversationDetail = ConversationRow & {
 
 export type MessageRow = {
   id: string;
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system" | "tool";
   content: string;
   created_at: string;
+  mode?: string | null;
+  intent?: Partial<TripIntent> | null;
+  tokens_in?: number | null;
+  tokens_out?: number | null;
+  model?: string | null;
   latency_ms?: number | null;
   provider?: string | null;
 };
@@ -330,8 +339,8 @@ export async function getConversations(opts?: {
 
     let q = db
       .from("conversations")
-      .select("id,user_id,session_id,message_count,started_at,last_message_at,summary", { count: "exact" })
-      .order("started_at", { ascending: false })
+      .select("id,user_id,session_id,locale,message_count,started_at,last_at,summary,context,last_intent", { count: "exact" })
+      .order("last_at", { ascending: false })
       .range(from, from + limit - 1);
 
     if (opts?.userId) q = q.eq("user_id", opts.userId);
@@ -349,8 +358,8 @@ export async function getConversationDetail(id: string): Promise<ConversationDet
     type SingleResult = { data: ConversationRow | null; error: unknown };
     type ListResult   = { data: MessageRow[] | null; error: unknown };
     const [convRes, msgsRes] = await Promise.all([
-      db.from("conversations").select("*").eq("id", id).single() as unknown as Promise<SingleResult>,
-      db.from("messages").select("id,role,content,created_at,latency_ms,provider").eq("conversation_id", id).order("created_at") as unknown as Promise<ListResult>,
+      db.from("conversations").select("id,user_id,session_id,locale,message_count,started_at,last_at,summary,context,last_intent").eq("id", id).single() as unknown as Promise<SingleResult>,
+      db.from("messages").select("id,role,content,created_at,mode,intent,tokens_in,tokens_out,model,latency_ms,provider").eq("conversation_id", id).order("created_at") as unknown as Promise<ListResult>,
     ]);
     if (!convRes.data) return null;
     return { ...convRes.data, messages: msgsRes.data ?? [] };
@@ -366,8 +375,10 @@ export type BookingStats = {
   total: number;
   flights: number;
   hotels: number;
+  serviceClicks: number;
   others: number;
   estRevTotal: number;
+  byService: { type: string; clicks: number }[];
   byProvider: { provider: string; clicks: number; rev_est: number }[];
   byDestination: { destination: string; clicks: number }[];
   daily: { date: string; clicks: number }[];
@@ -398,12 +409,26 @@ export async function getBookingStats(): Promise<BookingStats | null> {
 
     const flights = rows.filter((r) => r.result_type === "flight").length;
     const hotels  = rows.filter((r) => r.result_type === "hotel").length;
-    const others  = rows.length - flights - hotels;
+    const serviceTypes = new Set(["insurance", "esim", "activities", "car_rental", "trains", "compensation"]);
+    const serviceClicks = rows.filter((r) => serviceTypes.has(r.result_type)).length;
+    const others  = rows.length - flights - hotels - serviceClicks;
 
     const estRevTotal = rows.reduce((s, r) => {
       if (!r.price) return s;
-      return s + (r.result_type === "hotel" ? r.price * 0.05 : r.price * 0.03);
+      if (r.result_type === "hotel") return s + r.price * 0.05;
+      if (r.result_type === "insurance" || r.result_type === "esim") return s + r.price * 0.10;
+      return s + r.price * 0.03;
     }, 0);
+
+    const serviceMap = new Map<string, number>();
+    for (const r of rows) {
+      if (serviceTypes.has(r.result_type)) {
+        serviceMap.set(r.result_type, (serviceMap.get(r.result_type) ?? 0) + 1);
+      }
+    }
+    const byService = Array.from(serviceMap.entries())
+      .map(([type, clicks]) => ({ type, clicks }))
+      .sort((a, b) => b.clicks - a.clicks);
 
     const provMap = new Map<string, { clicks: number; rev_est: number }>();
     for (const r of rows) {
@@ -431,7 +456,7 @@ export async function getBookingStats(): Promise<BookingStats | null> {
     }
     const daily = Array.from(dailyMap.entries()).map(([date, clicks]) => ({ date, clicks }));
 
-    return { total: rows.length, flights, hotels, others, estRevTotal, byProvider, byDestination, daily, recentClicks: (recentRes.data ?? []) as ClickRow[] };
+    return { total: rows.length, flights, hotels, serviceClicks, others, estRevTotal, byService, byProvider, byDestination, daily, recentClicks: (recentRes.data ?? []) as ClickRow[] };
   } catch (err) {
     console.error("[admin/data] getBookingStats:", err);
     return null;
@@ -469,7 +494,7 @@ export async function getUserStats(): Promise<UserStat | null> {
       db.from("conversations").select("user_id").not("user_id", "is", null),
       db.from("conversations").select("session_id").is("user_id", null).gte("started_at", d7),
       db.from("conversations").select("user_id").not("user_id", "is", null).gte("started_at", d7),
-      db.from("conversations").select("user_id").not("user_id", "is", null).gte("last_message_at", d7),
+      db.from("conversations").select("user_id").not("user_id", "is", null).gte("last_at", d7),
       db.from("conversations").select("user_id,started_at").not("user_id", "is", null),
       db.from("events")
         .select("name,payload,locale,created_at")
