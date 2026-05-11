@@ -65,6 +65,7 @@ export function TripPlanner({ locale }: { locale: Locale }) {
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveMessage, setSaveMessage] = useState("");
   const currency = isAr ? "SAR" : "USD";
 
   const canSubmit = useMemo(
@@ -76,6 +77,7 @@ export function TripPlanner({ locale }: { locale: Locale }) {
     if (!canSubmit || loading) return;
     setLoading(true);
     setSaved(false);
+    setSaveMessage("");
     try {
       const res = await fetch("/api/plan", {
         method: "POST",
@@ -90,10 +92,28 @@ export function TripPlanner({ locale }: { locale: Locale }) {
     }
   }
 
-  function savePlan() {
+  async function savePlan() {
     if (!plan) return;
     localStorage.setItem("gotripza_saved_trip_plan", JSON.stringify(plan));
-    setSaved(true);
+    setSaveMessage("");
+    try {
+      const res = await fetch("/api/trip-plans", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ plan }),
+      });
+      if (res.status === 401) {
+        setSaved(true);
+        setSaveMessage(isAr ? "حفظناها على هذا الجهاز. سجّل الدخول لحفظها في حسابك." : "Saved on this device. Sign in to save it to your account.");
+        return;
+      }
+      if (!res.ok) throw new Error("save_failed");
+      setSaved(true);
+      setSaveMessage(isAr ? "تم حفظ الخطة في حسابك." : "Saved to your account.");
+    } catch {
+      setSaved(true);
+      setSaveMessage(isAr ? "حفظناها على هذا الجهاز فقط مؤقتاً." : "Saved on this device only for now.");
+    }
   }
 
   function printPlan() {
@@ -215,7 +235,7 @@ export function TripPlanner({ locale }: { locale: Locale }) {
           </div>
         ) : (
           <div id="trip-plan-print" className="space-y-6">
-            <div className="flex flex-col gap-3 border-b border-white/[0.08] pb-5 print:border-black/10 sm:flex-row sm:items-start sm:justify-between">
+            <div className="grid gap-3 border-b border-white/[0.08] pb-5 print:border-black/10 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-start">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-primary">
                   GoTripza
@@ -245,6 +265,11 @@ export function TripPlanner({ locale }: { locale: Locale }) {
                   PDF
                 </button>
               </div>
+              {saveMessage && (
+                <p className="text-xs text-brand-mint print:hidden sm:col-span-2 sm:text-end">
+                  {saveMessage}
+                </p>
+              )}
             </div>
 
             <div className="grid gap-3 sm:grid-cols-3">

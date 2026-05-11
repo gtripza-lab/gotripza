@@ -22,6 +22,7 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
     { label: isAr ? "الوجهات" : "Destinations", href: `/${locale}/destinations` },
     { label: isAr ? "احتياجات المسافر" : "Traveler Services", href: `/${locale}/services` },
     { label: isAr ? "ريا المستشارة" : "Raya Advisor", href: `/${locale}/plus` },
+    { label: isAr ? "حسابي" : "Account", href: `/${locale}/account` },
     { label: dict.nav.blog,     href: `/${locale}/blog`            },
   ];
 
@@ -88,8 +89,8 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
                   : "text-ink-950/70 hover:text-ink-950 hover:bg-ink-950/5",
               )}
             >
-              {dict.nav.signin}
-            </button>
+                {dict.nav.signin}
+              </button>
             <button
               onClick={() => router.push(`/${locale}/search`)}
               className="btn-primary !py-2 !text-sm hidden md:inline-flex"
