@@ -1,8 +1,26 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CalendarDays, Download, Loader2, MapPinned, Plane, Save, Sparkles, WalletCards } from "lucide-react";
+import {
+  CalendarDays,
+  Car,
+  CloudSun,
+  Download,
+  Hotel,
+  Loader2,
+  MapPinned,
+  MessageCircle,
+  Plane,
+  Route,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
+  WalletCards,
+} from "lucide-react";
 import type { Locale } from "@/i18n/config";
+import { logEvent } from "@/lib/events";
 import type { PlannerTripType, TripPlan } from "@/lib/trip-planner";
 
 type FormState = {
@@ -66,6 +84,7 @@ export function TripPlanner({ locale }: { locale: Locale }) {
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
+  const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const currency = isAr ? "SAR" : "USD";
 
   const canSubmit = useMemo(
@@ -77,6 +96,7 @@ export function TripPlanner({ locale }: { locale: Locale }) {
     if (!canSubmit || loading) return;
     setLoading(true);
     setSaved(false);
+    setFeedback(null);
     setSaveMessage("");
     try {
       const res = await fetch("/api/plan", {
@@ -87,9 +107,33 @@ export function TripPlanner({ locale }: { locale: Locale }) {
       const json = (await res.json()) as { plan?: TripPlan; error?: string };
       if (!res.ok || !json.plan) throw new Error(json.error ?? "plan_failed");
       setPlan(json.plan);
+      logEvent("trip_plan_generated", {
+        origin: form.origin,
+        destination: form.destination,
+        days: form.days,
+        travelers: form.travelers,
+        tripType: form.tripType,
+        budget: form.budget,
+      });
     } finally {
       setLoading(false);
     }
+  }
+
+  function sendFeedback(value: "up" | "down") {
+    if (!plan) return;
+    setFeedback(value);
+    logEvent("trip_plan_feedback", {
+      value,
+      destination: plan.destinationName,
+      days: plan.days,
+      tripType: plan.tripType,
+      budgetLevel: plan.budgetLevel,
+    });
+  }
+
+  function ryaUrl(prompt: string) {
+    return `/${locale}/search?q=${encodeURIComponent(prompt)}`;
   }
 
   async function savePlan() {
@@ -278,10 +322,36 @@ export function TripPlanner({ locale }: { locale: Locale }) {
               <PlanMetric label={isAr ? "نوع الرحلة" : "Trip type"} value={typeLabel(plan.tripType, isAr)} />
             </div>
 
+            {plan.bestStayAreas.length > 0 && (
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4 print:border-black/10 print:bg-white">
+                <div className="flex items-center gap-2">
+                  <Hotel className="h-4 w-4 text-brand-primary" />
+                  <h3 className="text-sm font-semibold text-white/80 print:text-black">
+                    {isAr ? "أفضل مناطق السكن لهذه الخطة" : "Best stay areas for this plan"}
+                  </h3>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                  {plan.bestStayAreas.map((area) => (
+                    <p
+                      key={area}
+                      className="rounded-lg border border-white/[0.06] bg-white/[0.04] px-3 py-2 text-xs leading-5 text-white/60 print:border-black/10 print:bg-black/5 print:text-black/65"
+                    >
+                      {area}
+                    </p>
+                  ))}
+                </div>
+                <p className="mt-3 rounded-lg bg-brand-primary/[0.08] px-3 py-2 text-xs leading-5 text-white/55 print:bg-black/5 print:text-black/65">
+                  {plan.hotelDisclosure}
+                </p>
+              </div>
+            )}
+
             <div className="grid gap-4 lg:grid-cols-2">
-              <InfoBlock title={isAr ? "السكن" : "Stay"} body={plan.stayAdvice} />
-              <InfoBlock title={isAr ? "الطيران" : "Flights"} body={plan.flightAdvice} />
-              <InfoBlock title={isAr ? "التأشيرة" : "Visa"} body={plan.visaAdvice} />
+              <InfoBlock icon={<Hotel className="h-4 w-4" />} title={isAr ? "السكن" : "Stay"} body={plan.stayAdvice} />
+              <InfoBlock icon={<Plane className="h-4 w-4" />} title={isAr ? "الطيران" : "Flights"} body={plan.flightAdvice} />
+              <InfoBlock icon={<ShieldCheck className="h-4 w-4" />} title={isAr ? "التأشيرة" : "Visa"} body={plan.visaAdvice} />
+              <InfoBlock icon={<Car className="h-4 w-4" />} title={isAr ? "التنقل داخل الوجهة" : "Local transport"} body={plan.localTransportAdvice} />
+              <InfoBlock icon={<CloudSun className="h-4 w-4" />} title={isAr ? "الطقس وتوقيت الأنشطة" : "Weather timing"} body={plan.weatherAdvice} />
               <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4 print:border-black/10 print:bg-white">
                 <h3 className="text-sm font-semibold text-white/80 print:text-black">
                   {isAr ? "توزيع الميزانية" : "Budget split"}
@@ -304,25 +374,86 @@ export function TripPlanner({ locale }: { locale: Locale }) {
               <div className="space-y-3">
                 {plan.daysPlan.map((day) => (
                   <div key={day.day} className="rounded-xl border border-white/[0.06] bg-black/20 p-4 print:border-black/10 print:bg-white">
-                    <p className="text-sm font-semibold text-white/85 print:text-black">
-                      {day.title}
-                    </p>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div>
+                        <p className="text-sm font-semibold text-white/85 print:text-black">
+                          {day.title}
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-white/40 print:text-black/55">
+                          {day.area} · {day.focus}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/55 print:bg-black/5 print:text-black/60">
+                          <WalletCards className="h-3.5 w-3.5" />
+                          {day.estimatedCost.toLocaleString()} {plan.currency}
+                        </span>
+                        <span className="inline-flex items-center gap-1 rounded-full bg-white/[0.05] px-2.5 py-1 text-xs text-white/55 print:bg-black/5 print:text-black/60">
+                          <Route className="h-3.5 w-3.5" />
+                          {day.area}
+                        </span>
+                      </div>
+                    </div>
                     <div className="mt-3 grid gap-3 text-sm sm:grid-cols-3">
                       <PlanStep label={isAr ? "الصباح" : "Morning"} value={day.morning} />
                       <PlanStep label={isAr ? "العصر" : "Afternoon"} value={day.afternoon} />
                       <PlanStep label={isAr ? "المساء" : "Evening"} value={day.evening} />
                     </div>
-                    <p className="mt-3 rounded-lg bg-brand-primary/[0.08] px-3 py-2 text-xs text-white/50 print:bg-black/5 print:text-black/65">
-                      {day.tip}
-                    </p>
+                    <div className="mt-3 grid gap-2 text-xs sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                      <div className="space-y-2">
+                        <p className="rounded-lg bg-white/[0.04] px-3 py-2 leading-5 text-white/50 print:bg-black/5 print:text-black/65">
+                          {day.transit}
+                        </p>
+                        <p className="rounded-lg bg-brand-primary/[0.08] px-3 py-2 leading-5 text-white/55 print:bg-black/5 print:text-black/65">
+                          {day.tip}
+                        </p>
+                      </div>
+                      <a
+                        href={ryaUrl(day.ryaPrompt)}
+                        onClick={() => logEvent("trip_plan_rya_followup_clicked", { destination: plan.destinationName, day: day.day })}
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-brand-primary/30 px-3 font-semibold text-brand-primary transition hover:bg-brand-primary/[0.10] print:hidden"
+                      >
+                        <MessageCircle className="h-4 w-4" />
+                        {isAr ? "عدّليه مع ريا" : "Tune with Rya"}
+                      </a>
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
+              <ListBlock title={isAr ? "خدمات مناسبة لهذه الرحلة" : "Useful services for this trip"} items={plan.serviceAdvice} />
               <ListBlock title={isAr ? "تجهيزات مهمة" : "Packing notes"} items={plan.packingAdvice} />
               <ListBlock title={isAr ? "الخطوات التالية" : "Next steps"} items={plan.nextSteps} />
+              <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4 print:hidden">
+                <h3 className="text-sm font-semibold text-white/80">
+                  {isAr ? "هل الخطة مفيدة؟" : "Was this plan useful?"}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-white/45">
+                  {isAr
+                    ? "تقييمك يساعدنا نعرف هل الخطة أصبحت عملية أم ما زالت عامة."
+                    : "Your feedback tells us whether the plan feels practical or still too generic."}
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => sendFeedback("up")}
+                    className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs ${feedback === "up" ? "border-brand-mint/50 bg-brand-mint/10 text-brand-mint" : "border-white/[0.10] text-white/60 hover:bg-white/[0.06]"}`}
+                  >
+                    <ThumbsUp className="h-3.5 w-3.5" />
+                    {isAr ? "مفيدة" : "Useful"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => sendFeedback("down")}
+                    className={`inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-xs ${feedback === "down" ? "border-amber-300/50 bg-amber-300/10 text-amber-200" : "border-white/[0.10] text-white/60 hover:bg-white/[0.06]"}`}
+                  >
+                    <ThumbsDown className="h-3.5 w-3.5" />
+                    {isAr ? "تحتاج تحسين" : "Needs work"}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -352,10 +483,13 @@ function PlanMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function InfoBlock({ title, body }: { title: string; body: string }) {
+function InfoBlock({ title, body, icon }: { title: string; body: string; icon?: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4 print:border-black/10 print:bg-white">
-      <h3 className="text-sm font-semibold text-white/80 print:text-black">{title}</h3>
+      <div className="flex items-center gap-2">
+        {icon ? <span className="text-brand-primary print:text-black/55">{icon}</span> : null}
+        <h3 className="text-sm font-semibold text-white/80 print:text-black">{title}</h3>
+      </div>
       <p className="mt-2 text-sm leading-6 text-white/50 print:text-black/65">{body}</p>
     </div>
   );

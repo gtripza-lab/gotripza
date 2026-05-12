@@ -19,7 +19,10 @@ export type EventName =
   | "pwa_standalone_opened"
   | "ria_quick_action_clicked"
   | "traveler_service_clicked"
-  | "ria_response_feedback";
+  | "ria_response_feedback"
+  | "trip_plan_generated"
+  | "trip_plan_feedback"
+  | "trip_plan_rya_followup_clicked";
 
 export type EventPayload = Record<string, unknown>;
 

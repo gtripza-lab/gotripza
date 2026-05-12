@@ -394,6 +394,24 @@ function PlanDetailsModal({
           <DetailBlock title={isAr ? "السكن" : "Stay"} body={plan.plan.stayAdvice} />
           <DetailBlock title={isAr ? "الطيران" : "Flights"} body={plan.plan.flightAdvice} />
           <DetailBlock title={isAr ? "التأشيرة" : "Visa"} body={plan.plan.visaAdvice} />
+          {plan.plan.localTransportAdvice && (
+            <DetailBlock title={isAr ? "التنقل داخل الوجهة" : "Local transport"} body={plan.plan.localTransportAdvice} />
+          )}
+          {plan.plan.weatherAdvice && (
+            <DetailBlock title={isAr ? "الطقس" : "Weather"} body={plan.plan.weatherAdvice} />
+          )}
+          {plan.plan.bestStayAreas?.length > 0 && (
+            <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+              <h4 className="text-sm font-semibold text-white/80">{isAr ? "مناطق السكن المقترحة" : "Suggested stay areas"}</h4>
+              <div className="mt-3 space-y-2">
+                {plan.plan.bestStayAreas.map((area) => (
+                  <p key={area} className="rounded-lg bg-white/[0.04] px-3 py-2 text-xs leading-5 text-white/55">
+                    {area}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
             <h4 className="text-sm font-semibold text-white/80">{isAr ? "توزيع الميزانية" : "Budget split"}</h4>
             <div className="mt-3 space-y-2">
@@ -413,11 +431,19 @@ function PlanDetailsModal({
             {plan.plan.daysPlan.map((day) => (
               <div key={day.day} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
                 <p className="text-sm font-semibold text-white/85">{day.title}</p>
+                {(day.area || day.focus || day.estimatedCost) && (
+                  <p className="mt-1 text-xs leading-5 text-white/40">
+                    {[day.area, day.focus, day.estimatedCost ? `${day.estimatedCost.toLocaleString()} ${plan.plan.currency}` : ""]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                )}
                 <div className="mt-3 grid gap-3 text-sm md:grid-cols-3">
                   <MiniStep label={isAr ? "الصباح" : "Morning"} value={day.morning} />
                   <MiniStep label={isAr ? "العصر" : "Afternoon"} value={day.afternoon} />
                   <MiniStep label={isAr ? "المساء" : "Evening"} value={day.evening} />
                 </div>
+                {day.transit && <p className="mt-3 rounded-lg bg-white/[0.04] px-3 py-2 text-xs leading-5 text-white/45">{day.transit}</p>}
                 <p className="mt-3 rounded-lg bg-brand-primary/[0.08] px-3 py-2 text-xs text-white/50">{day.tip}</p>
               </div>
             ))}
