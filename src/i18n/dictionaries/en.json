@@ -10,13 +10,18 @@
   },
   "hero": {
     "badge": "Rya — your AI travel companion",
-    "title1": "Travel smarter with",
-    "title2": "Rya",
-    "subtitle": "Talk to Rya like a travel advisor who knows you: planning, budgeting, safety, translation, airports, and trip services when you need them.",
+    "title1": "A travel companion",
+    "title2": "that understands you",
+    "subtitle": "Rya understands your destination, budget, concerns, and travel style, then helps with planning, booking, and trip services inside one calm conversation.",
     "placeholder": "Tell Rya about your trip or travel moment...",
     "cta": "Talk to Rya",
     "voice": "Voice search",
     "tagline": "Your calm companion before and during travel.",
+    "proof": [
+      "Remembers your trip context",
+      "Natural recommendations, no pressure",
+      "Trusted travel services when useful"
+    ],
     "suggestions": {
       "title": "Try:",
       "items": [

@@ -34,6 +34,14 @@ export type OrchestratorOptions = {
   userId?: string | null;
   /** Optional anonymous session id for cross-turn continuity without auth. */
   sessionId?: string | null;
+  /** Short-lived client-side conversation memory, used before DB summary catches up. */
+  clientMemory?: {
+    summary?: string | null;
+    knownFacts?: string[];
+    askedSlots?: string[];
+    turnCount?: number;
+    lastUserIntent?: string | null;
+  };
 };
 
 export type OrchestratorResult = {
@@ -83,7 +91,7 @@ export async function runRayaOrchestrator(
   options: OrchestratorOptions = {},
 ): Promise<OrchestratorResult> {
   const t0 = Date.now();
-  const { userId = null, sessionId = null } = options;
+  const { userId = null, sessionId = null, clientMemory = null } = options;
 
   if (!HAS_OPENAI_KEY) throw new Error("[orchestrator] OPENAI_API_KEY not set");
 
@@ -141,7 +149,7 @@ export async function runRayaOrchestrator(
       query,
       truncatedHistory,
       pre.context,
-      { userId, sessionId, summary },
+      { userId, sessionId, summary, clientMemory },
     );
     intelligence = r.intelligence;
     usage = r.usage;

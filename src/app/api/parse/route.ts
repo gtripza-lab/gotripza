@@ -273,6 +273,13 @@ const IATA_TO_NAME_EN: Record<string, string> = {
   CMB: "Sri Lanka", DEL: "Delhi", ICN: "Seoul", MCT: "Muscat",
 };
 
+function displayDestinationName(destination: string | null, locale: "ar" | "en"): string | null {
+  if (!destination) return null;
+  const normalized = destination.toUpperCase();
+  if (locale === "ar") return IATA_TO_NAME_AR[normalized] ?? destination;
+  return IATA_TO_NAME_EN[normalized] ?? destination;
+}
+
 /**
  * Build a unified context string from full conversation history + current query.
  * This lets the heuristic parser extract destination/dates/origin even when the
@@ -472,29 +479,37 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   if (/ميزاني|ميزانية|budget|تكلفة|cost|وفر|أوفر|cheap|رخيص/i.test(lower)) {
     const budgetAmount = moneyMatch?.[1] ?? null;
     const days = daysMatch?.[1] ?? null;
+    const knownDestination = baseContext.destination ?? (hasIstanbul ? "Istanbul" : null);
+    const destinationLabel = displayDestinationName(knownDestination, locale);
+    const knownDays = days ?? null;
+    const hasBudgetContext = !!knownDestination || !!baseContext.departure_date || !!baseContext.traveler_type;
     const budgetMessage = isAr
       ? budgetAmount && days && hasIstanbul
         ? `${budgetAmount} دولار لمدة ${days} أيام في إسطنبول ممكنة إذا كان السفر اقتصادي إلى متوسط. التقسيم الأقرب: سكن بسيط 45-80 دولار لليلة، أكل 20-35 دولار يومياً للشخص، مواصلات 5-12 دولار يومياً، وأنشطة 15-40 دولار يومياً حسب الاختيارات. وفر أكثر بالسكن قرب المترو، استخدام Istanbulkart، وتقليل التاكسي. إذا عدد المسافرين أكثر من شخص قل لي العدد وأحسبها بدقة.`
-        : "أحسبها لك كمسافر، مو كجدول جامد. أعطني الوجهة، عدد الأيام، وعدد الأشخاص، وسأقسمها إلى: سكن، أكل، مواصلات، أنشطة، إنترنت/شريحة، واحتياط. إذا عندك رقم ميزانية قل لي إياه وأقول لك هل يكفي وأين نوفر."
+        : hasBudgetContext
+          ? `أحسبها لك على أساس ${destinationLabel ?? "رحلتك"} بدون ما نعيد البداية: نحتاج فقط رقم الميزانية أو عدد الأيام لأقسمها بدقة. كبداية، خل الميزانية موزعة على السكن، الأكل، المواصلات، الأنشطة، شريحة الإنترنت، واحتياط بسيط للطوارئ.`
+          : "أحسبها لك كمسافر، مو كجدول جامد. أعطني الوجهة، عدد الأيام، وعدد الأشخاص، وسأقسمها إلى: سكن، أكل، مواصلات، أنشطة، إنترنت/شريحة، واحتياط. إذا عندك رقم ميزانية قل لي إياه وأقول لك هل يكفي وأين نوفر."
       : budgetAmount && days && hasIstanbul
         ? `$${budgetAmount} for ${days} days in Istanbul can work on an economy to mid-range style. Rough split: simple stay $45-80/night, food $20-35/day per person, transport $5-12/day, activities $15-40/day. Save by staying near metro, using Istanbulkart, and limiting taxis. Tell me traveler count and I’ll calculate it tighter.`
-        : "I’ll calculate it like a traveler, not a spreadsheet. Tell me destination, days, and travelers, and I’ll split it into stay, food, transport, activities, data/eSIM, and buffer. If you have a budget number, send it and I’ll tell you if it works and where to save.";
+        : hasBudgetContext
+          ? `I’ll calculate this around ${destinationLabel ?? "your trip"} without restarting the intake. I only need your budget number or trip length to make it precise. A useful first split is stay, food, transport, activities, data/eSIM, and a small safety buffer.`
+          : "I’ll calculate it like a traveler, not a spreadsheet. Tell me destination, days, and travelers, and I’ll split it into stay, food, transport, activities, data/eSIM, and buffer. If you have a budget number, send it and I’ll tell you if it works and where to save.";
 
     return NextResponse.json({
-      intent: { origin: null, destination: context?.destination ?? (hasIstanbul ? "Istanbul" : null), departure_date: null, return_date: null, adults: 2, budget_usd: budgetAmount ? Number(budgetAmount) : null, trip_type: null, cabin_class: null, notes: null },
+      intent: { origin: baseContext.origin, destination: knownDestination, departure_date: baseContext.departure_date, return_date: baseContext.return_date, adults: baseContext.adults, budget_usd: budgetAmount ? Number(budgetAmount) : baseContext.budget_usd, trip_type: baseContext.trip_type, cabin_class: baseContext.cabin_class, notes: "budget" },
       locale,
       mode: "advice",
       message: budgetMessage,
       context: {
         ...baseContext,
-        destination: context?.destination ?? (hasIstanbul ? "Istanbul" : null),
+        destination: knownDestination,
         budget_usd: budgetAmount ? Number(budgetAmount) : baseContext.budget_usd,
         service_interests: mergeServiceInterests(baseContext.service_interests, ["esim"]),
         booking_stage: "planning",
         concerns: Array.from(new Set([...(baseContext.concerns ?? []), "budget"])).slice(0, 8),
       },
       wants: ["flights", "hotels"],
-      followup: budgetAmount && days ? null : isAr ? "ما الوجهة وعدد الأيام؟" : "What destination and how many days?",
+      followup: budgetAmount && knownDays ? null : isAr ? "كم ميزانيتك أو كم يوم مدة الرحلة؟" : "What is your budget or trip length?",
       tips: null,
       budget_verdict: null,
       confidence: null,
@@ -720,13 +735,22 @@ export async function POST(req: NextRequest) {
   let query = "";
   let history: ChatTurn[] = [];
   let context: TravelContext | undefined;
+  let clientMemory:
+    | {
+        summary?: string | null;
+        knownFacts?: string[];
+        askedSlots?: string[];
+        turnCount?: number;
+        lastUserIntent?: string | null;
+      }
+    | undefined;
   try {
     type IncomingTurn = { role?: string; text?: string; mode?: string };
     const body = (await req.json()) as {
       query?: string;
       history?: IncomingTurn[];
       context?: TravelContext;
-      clientMemory?: { summary?: string | null; knownFacts?: string[] };
+      clientMemory?: typeof clientMemory;
     };
     query = body.query?.trim() ?? "";
     history = Array.isArray(body.history)
@@ -743,6 +767,7 @@ export async function POST(req: NextRequest) {
         })
       : [];
     context = body.context;
+    clientMemory = body.clientMemory;
     if (!query || query.length < 2) {
       return NextResponse.json({ error: "Empty query" }, { status: 400 });
     }
@@ -796,6 +821,7 @@ export async function POST(req: NextRequest) {
       await runRayaOrchestrator(query, history, ctx, {
         userId: user?.id ?? null,
         sessionId: anonSid,
+        clientMemory,
       });
 
     console.log(

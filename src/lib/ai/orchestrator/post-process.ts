@@ -66,6 +66,60 @@ function lastAskWasAbout(
   return false;
 }
 
+type ClarifyField = "destination" | "origin" | "date" | "budget" | "traveler_type" | null;
+
+function askedFieldFromText(text: string): ClarifyField {
+  const t = text.toLowerCase();
+  if (/from where|from which|which city|flying from|من أي|من اي|تنطلق|تسافر من/i.test(t)) {
+    return "origin";
+  }
+  if (/when|which month|dates|متى|أي شهر|اي شهر|التواريخ|تاريخ/i.test(t)) {
+    return "date";
+  }
+  if (/where|destination|going|إلى أين|الى اين|وجهة|تفكر تسافر/i.test(t)) {
+    return "destination";
+  }
+  if (/budget|spend|ميزانية|كم ميزانيتك|كم تبغى/i.test(t)) {
+    return "budget";
+  }
+  if (/family|couple|solo|business|عائلة|زوج|لوحدك|عمل|مين مسافر/i.test(t)) {
+    return "traveler_type";
+  }
+  return null;
+}
+
+function missingBookingField(ctx: TravelContext, wantsFlights: boolean): "destination" | "date" | "origin" | null {
+  if (!ctx.destination) return "destination";
+  if (!ctx.departure_date) return "date";
+  if (wantsFlights && !ctx.origin) return "origin";
+  return null;
+}
+
+function hasKnownField(ctx: TravelContext, field: ClarifyField): boolean {
+  if (field === "destination") return !!ctx.destination;
+  if (field === "origin") return !!ctx.origin;
+  if (field === "date") return !!ctx.departure_date;
+  if (field === "budget") return !!ctx.budget_usd;
+  if (field === "traveler_type") return !!ctx.traveler_type;
+  return false;
+}
+
+function clarifyFor(field: "destination" | "date" | "origin", isAr: boolean): string {
+  if (field === "destination") {
+    return isAr
+      ? "أعطني الوجهة التي في بالك، حتى لو كانت مدينة واحدة أو خيارين محتار بينهم، وأرتّب لك القرار بهدوء."
+      : "Tell me the destination you have in mind, even if it is just one city or two options, and I’ll help narrow it down calmly.";
+  }
+  if (field === "date") {
+    return isAr
+      ? "متى تقريباً تفكر تسافر؟ الشهر يكفيني كبداية حتى أوازن لك بين الطقس والسعر والزحمة."
+      : "Roughly when are you thinking of traveling? A month is enough to balance weather, price, and crowds.";
+  }
+  return isAr
+    ? "من أي مدينة ستنطلق؟ بعدها أقدر أرتّب لك الخيارات بدون ما أعيد نفس الأسئلة."
+    : "Which city are you flying from? After that I can move forward without repeating the same questions.";
+}
+
 export function postProcess(
   intel: TravelIntelligence,
   history: ChatTurn[],
@@ -98,6 +152,8 @@ export function postProcess(
     const hasDate = !!mergedContext.departure_date;
     const hasOrigin = !!mergedContext.origin;
     const allSatisfied = hasDest && hasDate && (!wantsFlights || hasOrigin);
+    const askedNow = askedFieldFromText(intel.message);
+    const repeatedKnownSlot = askedNow && hasKnownField(mergedContext, askedNow);
 
     const repeats = {
       destination: hasDest && lastAskWasAbout("destination", history),
@@ -105,16 +161,17 @@ export function postProcess(
       origin: hasOrigin && lastAskWasAbout("origin", history),
     };
 
-    if (repeats.destination || repeats.date || repeats.origin) {
+    if (repeatedKnownSlot || repeats.destination || repeats.date || repeats.origin) {
       if (allSatisfied) {
-        // Everything is already filled — promote to search.
-        intel.mode = "search";
-      } else if (!hasDest) {
-        // Need destination — let the LLM's pivot stand (or generic question).
-      } else if (!hasDate) {
-        // Need date — keep clarify but at least the question must be about date.
-      } else if (wantsFlights && !hasOrigin) {
-        // Need origin — keep clarify.
+        intel.mode = mergedContext.booking_stage === "ready_to_book" ? "search" : "advice";
+        if (intel.mode === "advice") {
+          intel.message = isAr
+            ? "واضح عندي أساس الرحلة. خلّيني أكمّل معك كمستشارة سفر: أعطيك الآن أفضل خطوة عملية بناءً على اللي قلتَه، وبعدها إذا أصبحت جاهزاً للحجز أظهر لك الخيارات المناسبة بدون إزعاج."
+            : "I have the trip shape now. I’ll move forward as your travel advisor: first the best practical next step, then booking options only when you’re ready.";
+        }
+      } else {
+        const missing = missingBookingField(mergedContext, wantsFlights);
+        if (missing) intel.message = clarifyFor(missing, isAr);
       }
     }
 

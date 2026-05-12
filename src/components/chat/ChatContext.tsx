@@ -65,6 +65,9 @@ function mergeContext(current: TravelContext, intent: TripIntent): TravelContext
 type CompanionMemory = {
   summary: string | null;
   knownFacts: string[];
+  askedSlots: string[];
+  turnCount: number;
+  lastUserIntent: string | null;
 };
 
 export type ChatSearchData = {
@@ -131,6 +134,34 @@ function friendlyError(raw: string, locale: string): string {
     : "Something went wrong. Please try again.";
 }
 
+function detectAskedSlot(text: string): string | null {
+  const t = text.toLowerCase();
+  if (/from where|from which|which city|flying from|من أي|من اي|تنطلق|تسافر من/i.test(t)) {
+    return "origin";
+  }
+  if (/when|which month|dates|متى|أي شهر|اي شهر|التواريخ|تاريخ/i.test(t)) {
+    return "dates";
+  }
+  if (/where|destination|going|إلى أين|الى اين|وجهة|تفكر تسافر/i.test(t)) {
+    return "destination";
+  }
+  if (/budget|ميزانية|كم ميزانيتك|spend/i.test(t)) {
+    return "budget";
+  }
+  if (/family|couple|solo|business|عائلة|زوج|لوحدك|عمل/i.test(t)) {
+    return "traveler_type";
+  }
+  return null;
+}
+
+function inferMemoryIntent(text: string): string {
+  if (/دعم|مشكلة|شكوى|support|refund|not working/i.test(text)) return "support";
+  if (/احجز|سعر|أرخص|ابحث|book|price|deal|ready/i.test(text)) return "ready_to_book";
+  if (/خطة|برنامج|جدول|ميزانية|plan|itinerary|budget/i.test(text)) return "planning";
+  if (/تأمين|insurance|esim|شريحة|activities|أنشطة|visa|فيزا/i.test(text)) return "trip_service";
+  return "browsing";
+}
+
 
 // ── Provider ───────────────────────────────────────────────────────────────
 
@@ -164,6 +195,9 @@ export function ChatProvider({
   const [companionMemory, setCompanionMemory] = useState<CompanionMemory>({
     summary: null,
     knownFacts: [],
+    askedSlots: [],
+    turnCount: 0,
+    lastUserIntent: null,
   });
   const abortRef = useRef<AbortController | null>(null);
   const processingRef = useRef(false);
@@ -179,6 +213,7 @@ export function ChatProvider({
   useEffect(() => { travelContextRef.current = travelContext; }, [travelContext]);
 
   function updateCompanionMemory(userText: string, aiText: string, context: TravelContext) {
+    const askedSlot = detectAskedSlot(aiText);
     const facts = [
       context.destination ? `destination:${context.destination}` : null,
       context.origin ? `origin:${context.origin}` : null,
@@ -194,9 +229,13 @@ export function ChatProvider({
 
     const prior = companionMemoryRef.current.summary;
     const fresh = `${userText.trim()} → ${aiText.trim()}`.replace(/\s+/g, " ").slice(0, 260);
+    const priorSlots = companionMemoryRef.current.askedSlots ?? [];
     setCompanionMemory({
       summary: [prior, fresh].filter(Boolean).join(" / ").slice(-900),
-      knownFacts: Array.from(new Set(facts)).slice(0, 16),
+      knownFacts: Array.from(new Set([...(companionMemoryRef.current.knownFacts ?? []), ...facts])).slice(-20),
+      askedSlots: Array.from(new Set([...priorSlots, ...(askedSlot ? [askedSlot] : [])])).slice(-12),
+      turnCount: (companionMemoryRef.current.turnCount ?? 0) + 1,
+      lastUserIntent: inferMemoryIntent(userText),
     });
   }
 
@@ -496,7 +535,13 @@ export function ChatProvider({
     setMessages([welcomeMsg]);
     setIsThinking(false);
     setTravelContext(EMPTY_CONTEXT);
-    setCompanionMemory({ summary: null, knownFacts: [] });
+    setCompanionMemory({
+      summary: null,
+      knownFacts: [],
+      askedSlots: [],
+      turnCount: 0,
+      lastUserIntent: null,
+    });
     queuedMessagesRef.current = [];
     processingRef.current = false;
     abortRef.current?.abort();

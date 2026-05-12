@@ -1,11 +1,13 @@
 "use client";
 import { motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
+import { Brain, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
 import { AISearchBar } from "./AISearchBar";
 import { HeroBackdrop } from "./HeroBackdrop";
 import type { Dictionary } from "@/i18n/get-dictionary";
 
 export function Hero({ dict }: { dict: Dictionary }) {
+  const proofIcons = [Brain, MessageCircle, ShieldCheck];
+
   return (
     <section className="relative overflow-hidden">
       <HeroBackdrop />
@@ -41,6 +43,26 @@ export function Hero({ dict }: { dict: Dictionary }) {
           >
             {dict.hero.subtitle}
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.22 }}
+            className="mx-auto mt-5 grid max-w-3xl gap-2 text-start sm:grid-cols-3 sm:text-center"
+          >
+            {dict.hero.proof.map((item, index) => {
+              const Icon = proofIcons[index] ?? Sparkles;
+              return (
+                <div
+                  key={item}
+                  className="flex min-h-12 items-center gap-2 rounded-full border border-white/65 bg-white/55 px-3 py-2 text-xs font-medium text-ink-950/70 shadow-sm backdrop-blur-md sm:justify-center"
+                >
+                  <Icon className="h-3.5 w-3.5 shrink-0 text-brand-deep" />
+                  <span>{item}</span>
+                </div>
+              );
+            })}
+          </motion.div>
 
           <div className="mx-auto mt-6 max-w-3xl sm:mt-10">
             <AISearchBar dict={dict} theme="light" />

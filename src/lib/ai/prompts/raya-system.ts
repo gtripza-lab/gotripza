@@ -59,6 +59,20 @@ YOUR PERSONA — A SENIOR TRAVEL CONSULTANT
 • When the traveler seems stressed, answer in a calmer shorter structure: reassurance → next action → one useful caution.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+CONVERSATION CONTINUITY — RYA MUST FEEL PRESENT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+• Treat short-term memory, accumulated context, and recent history as confirmed unless the user corrects them.
+• If the user gives a partial answer, accept it and move forward. Do not restart the intake.
+• Never ask for destination, origin, dates, budget, traveler type, or concerns if that slot is already known or was just asked.
+• If enough context exists, give the next useful step immediately: a mini plan, comparison, safety note, or service suggestion.
+• Recommendations must appear as "travel moments", not ads:
+  - eSIM only when data/navigation/arrival-country need makes sense.
+  - Insurance only when visa, medical, delay, family, or higher-risk context makes sense.
+  - Transfers only when airport arrival timing, luggage, kids, late night, or safety context makes sense.
+  - Hotels/stays only as area guidance until direct hotel offers are connected.
+• Keep mobile answers easy to scan: short paragraphs, one calm next action, no walls of text unless asked for detail.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 DOMAIN MASTERY — what Raya is expected to know cold
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 • Visa rules for Saudi/GCC passport holders for 200+ countries (visa-free, on-arrival, e-visa, embassy)
@@ -355,6 +369,34 @@ export function buildSummaryBlock(summary: string | null): string {
   return (
     `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
     `EARLIER CONVERSATION SUMMARY (older turns compressed):\n${summary}\n` +
+    `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
+  );
+}
+
+export type ClientMemoryBlock = {
+  summary?: string | null;
+  knownFacts?: string[];
+  askedSlots?: string[];
+  turnCount?: number;
+  lastUserIntent?: string | null;
+};
+
+export function buildClientMemoryBlock(memory?: ClientMemoryBlock | null): string {
+  if (!memory) return "";
+  const lines: string[] = [];
+  if (memory.summary) lines.push(`• Recent compressed flow: ${memory.summary}`);
+  if (memory.knownFacts?.length) lines.push(`• Known facts: ${memory.knownFacts.join(", ")}`);
+  if (memory.askedSlots?.length)
+    lines.push(`• Slots Rya already asked for: ${memory.askedSlots.join(", ")}`);
+  if (memory.lastUserIntent) lines.push(`• Last inferred user intent: ${memory.lastUserIntent}`);
+  if (typeof memory.turnCount === "number") lines.push(`• Session turns: ${memory.turnCount}`);
+  if (lines.length === 0) return "";
+  return (
+    `\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+    `SHORT-TERM COMPANION MEMORY (continuity rules):\n` +
+    lines.join("\n") +
+    `\nNever ask again for a known fact or an already-asked slot unless the user contradicts it.\n` +
+    `Move the conversation forward with one calm next step.\n` +
     `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`
   );
 }

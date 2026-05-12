@@ -163,9 +163,16 @@ function inferCompanionContext(query: string, transcript: string): Partial<Trave
   if (/لوحدي|solo|alone|وحدي/i.test(all)) concerns.push("solo-comfort");
   if (/آمن|أمان|safe|safety|scam|نصب|احتيال/i.test(all)) concerns.push("safety");
   if (/ميزانية|رخيص|اقتصادي|budget|cheap|affordable/i.test(all)) concerns.push("budget");
+  if (/فيزا|تأشيرة|visa|entry requirement/i.test(all)) concerns.push("visa");
+  if (/طقس|حر|برد|مطر|weather|rain|hot|cold/i.test(all)) concerns.push("weather");
+  if (/لغة|ترجم|ترجمة|translation|translate|menu|sign|ticket|منيو|لافتة|تذكرة/i.test(all)) concerns.push("language-help");
+  if (/مطار|ترانزيت|بوابة|airport|terminal|gate|layover|connection/i.test(all)) concerns.push("airport-help");
+  if (/متردد|محتار|مو متأكد|unsure|confused|hesitant|not sure/i.test(all)) concerns.push("uncertain");
 
   if (/قريب من|near|قريب|وسط|center|downtown/i.test(all)) hotel_preferences.push("central");
+  if (/مترو|metro|subway|underground|train station|محطة/i.test(all)) hotel_preferences.push("near-transit");
   if (/بحر|شاطئ|beach|sea view|اطلالة/i.test(all)) hotel_preferences.push("beach");
+  if (/عائلة|أطفال|اطفال|kids|children|family/i.test(all)) hotel_preferences.push("family-friendly");
   if (/هادئ|quiet|calm/i.test(all)) hotel_preferences.push("quiet");
   if (/فخم|luxury|5 نجوم|five star/i.test(all)) hotel_preferences.push("luxury");
   if (/اقتصادي|budget|cheap|رخيص/i.test(all)) hotel_preferences.push("budget");

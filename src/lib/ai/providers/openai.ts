@@ -8,6 +8,7 @@ import {
 import type { TravelContext } from "../schemas/intent";
 import {
   buildContextBlock,
+  buildClientMemoryBlock,
   buildHistoryBlock,
   buildSummaryBlock,
   buildSystemPrompt,
@@ -105,7 +106,12 @@ export async function getTravelIntelligenceOpenAI(
   query: string,
   history: ChatTurn[] = [],
   context: TravelContext,
-  options: { userId?: string | null; sessionId?: string | null; summary?: string | null } = {},
+  options: {
+    userId?: string | null;
+    sessionId?: string | null;
+    summary?: string | null;
+    clientMemory?: Parameters<typeof buildClientMemoryBlock>[0];
+  } = {},
 ): Promise<TravelIntelligence> {
   const r = await getTravelIntelligenceWithUsage(query, history, context, options);
   return r.intelligence;
@@ -115,18 +121,24 @@ export async function getTravelIntelligenceWithUsage(
   query: string,
   history: ChatTurn[] = [],
   context: TravelContext,
-  options: { userId?: string | null; sessionId?: string | null; summary?: string | null } = {},
+  options: {
+    userId?: string | null;
+    sessionId?: string | null;
+    summary?: string | null;
+    clientMemory?: Parameters<typeof buildClientMemoryBlock>[0];
+  } = {},
 ): Promise<IntelligenceWithUsage> {
   const t0 = Date.now();
   const system = buildSystemPrompt();
   const memoryBlock = await buildMemoryBlock(options.userId, options.sessionId);
   const summaryBlock = buildSummaryBlock(options.summary ?? null);
+  const clientMemoryBlock = buildClientMemoryBlock(options.clientMemory ?? null);
   const ctxBlock = buildContextBlock(context);
   const historyBlock = buildHistoryBlock(history);
 
   // M4: Wrap user content in tagged delimiters. The system prompt instructs
   // the model to treat anything inside as untrusted data.
-  const userPrompt = `${memoryBlock}${summaryBlock}${ctxBlock}${historyBlock}\n\n<user_message>\n${query}\n</user_message>`;
+  const userPrompt = `${memoryBlock}${summaryBlock}${clientMemoryBlock}${ctxBlock}${historyBlock}\n\n<user_message>\n${query}\n</user_message>`;
 
   const fallbackLocale: "ar" | "en" = /[؀-ۿ]/.test(query) ? "ar" : "en";
 
