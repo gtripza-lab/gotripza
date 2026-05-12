@@ -143,6 +143,7 @@ export type RiaFeedbackStats = {
     hasSearchData: boolean;
     created_at: string;
   }[];
+  topUnhelpful: { excerpt: string; count: number; destination: string | null; mode: string }[];
 };
 
 // GPT-4o pricing (per 1K tokens, as of 2025)
@@ -275,11 +276,26 @@ export async function getRiaFeedbackStats(): Promise<RiaFeedbackStats> {
     const helpful = rows.filter((row) => row.payload?.value === "up").length;
     const unhelpful = rows.length - helpful;
     const modeMap = new Map<string, { helpful: number; unhelpful: number; total: number }>();
+    const weakMap = new Map<string, { excerpt: string; count: number; destination: string | null; mode: string }>();
     for (const row of rows) {
       const mode = row.payload?.mode || "unknown";
       const cur = modeMap.get(mode) ?? { helpful: 0, unhelpful: 0, total: 0 };
       if (row.payload?.value === "up") cur.helpful++;
-      else cur.unhelpful++;
+      else {
+        cur.unhelpful++;
+        const excerpt = (row.payload?.messageExcerpt ?? "").trim();
+        if (excerpt) {
+          const key = excerpt.slice(0, 120).toLowerCase();
+          const weak = weakMap.get(key) ?? {
+            excerpt: excerpt.length > 180 ? `${excerpt.slice(0, 180)}…` : excerpt,
+            count: 0,
+            destination: row.payload?.destination || null,
+            mode,
+          };
+          weak.count++;
+          weakMap.set(key, weak);
+        }
+      }
       cur.total++;
       modeMap.set(mode, cur);
     }
@@ -290,6 +306,7 @@ export async function getRiaFeedbackStats(): Promise<RiaFeedbackStats> {
       unhelpful,
       helpfulRate: rows.length ? helpful / rows.length : 0,
       byMode: Array.from(modeMap.entries()).map(([mode, value]) => ({ mode, ...value })),
+      topUnhelpful: Array.from(weakMap.values()).sort((a, b) => b.count - a.count).slice(0, 8),
       recent: rows.slice(0, 25).map((row) => ({
         id: row.id,
         value: row.payload?.value as "up" | "down",
@@ -303,7 +320,7 @@ export async function getRiaFeedbackStats(): Promise<RiaFeedbackStats> {
       })),
     };
   } catch {
-    return { total: 0, helpful: 0, unhelpful: 0, helpfulRate: 0, byMode: [], recent: [] };
+    return { total: 0, helpful: 0, unhelpful: 0, helpfulRate: 0, byMode: [], recent: [], topUnhelpful: [] };
   }
 }
 

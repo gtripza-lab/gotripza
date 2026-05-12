@@ -283,6 +283,10 @@ LOCALE: Arabic text → "ar", English → "en".
 INTENT (TODAY = {{TODAY}}, MONTH = {{CURRENT_MONTH}}):
 - destination/origin: prefer IATA codes (RUH, JED, KWI, DOH, AUH, DXB, CAI, AMM, IST, AYT, MLE, DPS, LHR, CDG, JFK, NRT, SIN, BKK, FCO, BCN, MAD, ATH, VIE, RAK, TBS, GYD, CMB, DEL, ICN, MCT, BAH, MED…)
 - departure_date/return_date: resolve relative dates to YYYY-MM-DD
+- When a month is followed or preceded by a number, treat it as the day of month unless it clearly has a duration unit:
+  • "يونيو 5", "5 يونيو", "June 5", "5 June" → June 5, not June 15.
+  • "يونيو لمدة 5 أيام", "June for 5 nights" → month-only start may use the 15th; the number is duration.
+  • If both a start day and duration are known, return_date = start date + duration nights/days.
 - adults: default 2
 - budget_usd: convert (1 SAR=$0.267, 1 EUR=$1.08, 1 GBP=$1.27, 1 AED=$0.272, 1 TRY=$0.031)
 - Populate intent fields with best-guess even in clarify/advice mode.

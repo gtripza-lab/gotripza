@@ -1,5 +1,5 @@
 import {
-  TOP_DESTINATIONS,
+  DESTINATIONS,
   formatBestMonths,
   type Destination,
 } from "@/lib/seo-destinations";
@@ -37,7 +37,7 @@ export function getSeoIntentPages(): SeoIntentPage[] {
   const pages: SeoIntentPage[] = [];
   const countries = new Set<string>();
 
-  for (const destination of TOP_DESTINATIONS) {
+  for (const destination of DESTINATIONS) {
     pages.push(
       {
         slug: `best-time-to-visit-${destination.slug}`,
@@ -184,6 +184,17 @@ export function intentFaq(page: SeoIntentPage, locale: Locale): { q: string; a: 
         ? `لا. ريا تعرض خدمات مثل الطيران أو التأمين أو eSIM فقط عندما تكون مناسبة لسياق رحلتك.`
         : `No. Rya recommends flights, insurance, eSIMs, or other services only when they fit your trip context.`,
     },
+    {
+      q: isAr ? `هل أحتاج تأمين سفر أو eSIM؟` : `Do I need travel insurance or an eSIM?`,
+      a: isAr
+        ? `يعتمد على مدة الرحلة وطبيعتها. ريا تقترح التأمين للرحلات الطويلة أو العائلية أو عالية المخاطر، وتقترح eSIM عندما تحتاج خرائط وترجمة وبيانات عند الوصول.`
+        : `It depends on trip length and risk. Rya suggests insurance for longer, family, or higher-risk trips, and eSIMs when navigation, translation, and arrival data will make the trip easier.`,
+    },
+    {
+      q: isAr ? `كيف أستخدم هذا الدليل للتخطيط؟` : `How should I use this guide for planning?`,
+      a: isAr
+        ? `ابدأ بالموسم والميزانية ومنطقة السكن، ثم افتح ريا واكتب وجهتك وعدد الأيام ومن يسافر معك لتحصل على خطة أدق داخل المحادثة.`
+        : `Start with season, budget, and stay area, then open Rya and share your destination, trip length, and companions for a more precise conversational plan.`,
+    },
   ];
 }
-

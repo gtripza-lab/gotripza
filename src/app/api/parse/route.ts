@@ -352,16 +352,17 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       .replace(/[۰-۹]/g, (digit) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(digit)));
   const normalizedQuery = normalizeDigits(query);
   const moneyMatch = normalizedQuery.match(/(\d{2,6})\s*(?:\$|دولار|usd|ريال|sar)?/i);
-  const daysMatch = normalizedQuery.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|days|day)/i);
+  const daysMatch = normalizedQuery.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|ليال|ليالي|ليلة|days|day|nights|night)/i);
+  const parsedQuery = heuristicParse(query);
   const baseContext: TravelContext = {
-    destination: context?.destination ?? (hasIstanbul ? "Istanbul" : null),
-    origin: context?.origin ?? null,
-    departure_date: context?.departure_date ?? null,
-    return_date: context?.return_date ?? null,
-    adults: context?.adults ?? 2,
-    budget_usd: context?.budget_usd ?? null,
-    trip_type: context?.trip_type ?? null,
-    cabin_class: context?.cabin_class ?? null,
+    destination: context?.destination ?? parsedQuery.destination ?? (hasIstanbul ? "IST" : null),
+    origin: context?.origin ?? parsedQuery.origin ?? null,
+    departure_date: context?.departure_date ?? parsedQuery.departure_date ?? null,
+    return_date: context?.return_date ?? parsedQuery.return_date ?? null,
+    adults: context?.adults ?? parsedQuery.adults ?? 2,
+    budget_usd: context?.budget_usd ?? parsedQuery.budget_usd ?? null,
+    trip_type: context?.trip_type ?? parsedQuery.trip_type ?? null,
+    cabin_class: context?.cabin_class ?? parsedQuery.cabin_class ?? null,
     traveler_type: context?.traveler_type ?? (hasFamily ? "family" : null),
     hotel_preferences: context?.hotel_preferences ?? [],
     service_interests: context?.service_interests ?? [],

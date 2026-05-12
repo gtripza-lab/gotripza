@@ -252,12 +252,14 @@ export async function runRayaOrchestrator(
   // has a single source of truth for what's known.
   finalIntel.intent = {
     ...finalIntel.intent,
-    destination: finalIntel.intent.destination ?? mergedContext.destination,
-    origin: finalIntel.intent.origin ?? mergedContext.origin,
-    departure_date:
-      finalIntel.intent.departure_date ?? mergedContext.departure_date,
-    return_date: finalIntel.intent.return_date ?? mergedContext.return_date,
-    cabin_class: finalIntel.intent.cabin_class ?? mergedContext.cabin_class ?? null,
+    destination: mergedContext.destination ?? finalIntel.intent.destination,
+    origin: mergedContext.origin ?? finalIntel.intent.origin,
+    departure_date: mergedContext.departure_date ?? finalIntel.intent.departure_date,
+    return_date: mergedContext.return_date ?? finalIntel.intent.return_date,
+    adults: mergedContext.adults ?? finalIntel.intent.adults ?? 2,
+    budget_usd: mergedContext.budget_usd ?? finalIntel.intent.budget_usd ?? null,
+    trip_type: mergedContext.trip_type ?? finalIntel.intent.trip_type ?? null,
+    cabin_class: mergedContext.cabin_class ?? finalIntel.intent.cabin_class ?? null,
   };
 
   return {

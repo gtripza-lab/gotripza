@@ -38,7 +38,11 @@ export default async function AiControlCenterPage() {
   const errorCount = stats.byStatus.find((s) => s.status === "error")?.count ?? 0;
   const feedback = stats.feedback;
   const errorAlertLimit = Number(process.env.RAYA_ERROR_ALERT_LIMIT_7D ?? "5");
+  const weeklyCostAlertLimit = Number(process.env.OPENAI_WEEKLY_COST_ALERT_USD ?? "20");
+  const feedbackAlertLimit = Number(process.env.RAYA_UNHELPFUL_ALERT_LIMIT_30D ?? "5");
   const hasErrorAlert = errorCount >= errorAlertLimit;
+  const hasCostAlert = totalCost >= weeklyCostAlertLimit;
+  const hasFeedbackAlert = feedback.unhelpful >= feedbackAlertLimit || (feedback.total >= 5 && feedback.helpfulRate < 0.65);
 
   return (
     <div className="space-y-8 p-6">
@@ -53,6 +57,18 @@ export default async function AiControlCenterPage() {
       {hasErrorAlert && (
         <div className="rounded-lg border border-rose-500/30 bg-rose-500/[0.08] px-4 py-3 text-sm text-rose-300">
           تنبيه أخطاء ريا: يوجد {errorCount.toLocaleString("ar-SA")} أخطاء خلال 7 أيام. راجع “المحادثات الفاشلة” في أسفل الصفحة.
+        </div>
+      )}
+
+      {hasCostAlert && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-300">
+          تنبيه تكلفة OpenAI: تكلفة آخر 7 أيام وصلت إلى ${totalCost.toFixed(2)} والحد الحالي ${weeklyCostAlertLimit.toFixed(2)}.
+        </div>
+      )}
+
+      {hasFeedbackAlert && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/[0.08] px-4 py-3 text-sm text-amber-300">
+          تنبيه جودة ريا: يوجد {feedback.unhelpful.toLocaleString("ar-SA")} تقييم غير مفيد خلال 30 يوم. راجع قائمة “الردود التي تحتاج تحسين”.
         </div>
       )}
 
@@ -197,6 +213,28 @@ export default async function AiControlCenterPage() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+        <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.2em] text-white/35">
+          الردود التي تحتاج تحسين
+        </p>
+        {feedback.topUnhelpful.length === 0 ? (
+          <p className="py-6 text-center text-xs text-white/20">لا توجد ردود ضعيفة كافية للتحليل بعد</p>
+        ) : (
+          <div className="grid gap-3 md:grid-cols-2">
+            {feedback.topUnhelpful.map((row) => (
+              <div key={`${row.mode}-${row.excerpt}`} className="rounded-xl border border-white/[0.06] bg-black/20 p-4">
+                <div className="mb-2 flex items-center justify-between gap-3 text-[11px] text-white/35">
+                  <span>{row.mode}</span>
+                  <span>{row.count.toLocaleString("ar-SA")} مرة</span>
+                </div>
+                <p className="text-sm leading-6 text-white/62">{row.excerpt}</p>
+                <p className="mt-2 text-xs text-white/28">الوجهة: {row.destination ?? "غير محددة"}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Model breakdown table */}

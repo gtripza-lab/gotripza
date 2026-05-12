@@ -27,12 +27,12 @@ function mergeContextWithIntent(
 ): TravelContext {
   const i = intel.intent;
   return {
-    destination: i.destination ?? ctx.destination,
-    origin: i.origin ?? ctx.origin,
-    departure_date: i.departure_date ?? ctx.departure_date,
-    return_date: i.return_date ?? ctx.return_date,
-    adults: i.adults ?? ctx.adults,
-    budget_usd: i.budget_usd ?? ctx.budget_usd,
+    destination: ctx.destination ?? i.destination,
+    origin: ctx.origin ?? i.origin,
+    departure_date: ctx.departure_date ?? i.departure_date,
+    return_date: ctx.return_date ?? i.return_date,
+    adults: ctx.adults ?? i.adults,
+    budget_usd: ctx.budget_usd ?? i.budget_usd,
     trip_type: i.trip_type ?? ctx.trip_type,
     cabin_class: i.cabin_class ?? ctx.cabin_class,
     traveler_type: ctx.traveler_type ?? null,

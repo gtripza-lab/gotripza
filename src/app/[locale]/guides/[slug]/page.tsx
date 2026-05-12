@@ -104,6 +104,9 @@ export default function GuidePage({ params }: Props) {
   const months = formatBestMonths(destination.bestMonths, locale);
   const bullets = guideBullets(page.kind, isAr, subject, months);
   const faqs = intentFaq(page, locale);
+  const relatedGuides = getSeoIntentPages()
+    .filter((item) => item.destination.slug === destination.slug && item.slug !== page.slug)
+    .slice(0, 4);
   const breadcrumbs = [
     { name: isAr ? "الرئيسية" : "Home", url: `${BASE}/${locale}` },
     { name: isAr ? "أدلة السفر الذكية" : "Smart Travel Guides", url: `${BASE}/${locale}/guides/${page.slug}` },
@@ -192,6 +195,37 @@ export default function GuidePage({ params }: Props) {
                   {isAr ? "الفيزا" : "Visa"}
                 </Link>
               </div>
+            </div>
+          </section>
+
+          <section className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <h2 className="font-display text-lg font-semibold">
+              {isAr ? `أدلة مرتبطة بـ ${subject}` : `Related ${subject} guides`}
+            </h2>
+            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              {relatedGuides.map((related) => (
+                <Link
+                  key={related.slug}
+                  href={`/${locale}/guides/${related.slug}`}
+                  className="rounded-xl border border-white/[0.07] bg-black/15 px-4 py-3 text-sm text-white/68 transition hover:border-brand-primary/35 hover:bg-brand-primary/10 hover:text-white"
+                >
+                  {intentTitle(related, locale)}
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-10 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <h2 className="font-display text-lg font-semibold">
+              {isAr ? "أسئلة شائعة" : "Frequently asked questions"}
+            </h2>
+            <div className="mt-4 space-y-3">
+              {faqs.map((faq) => (
+                <div key={faq.q} className="rounded-xl bg-black/15 p-4">
+                  <h3 className="text-sm font-semibold text-white/86">{faq.q}</h3>
+                  <p className="mt-2 text-sm leading-7 text-white/62">{faq.a}</p>
+                </div>
+              ))}
             </div>
           </section>
         </section>

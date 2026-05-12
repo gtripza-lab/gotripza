@@ -156,6 +156,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     const q = input.trim();
     if (!q) return;
     setInput("");
+    requestAnimationFrame(() => {
+      if (inputRef.current) inputRef.current.style.height = "auto";
+    });
     await sendMessage(q);
     if (typeof window === "undefined" || window.innerWidth >= 768) {
       inputRef.current?.focus();
@@ -384,9 +387,15 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
+            onFocus={() => {
+              window.setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 90);
+            }}
             enterKeyHint="send"
+            inputMode="text"
             autoComplete="off"
             autoCorrect="on"
+            spellCheck
+            dir="auto"
             placeholder={
               isAr
                 ? "اسألني عن رحلتك..."
@@ -566,6 +575,8 @@ function TypingIndicator({ isAr }: { isAr: boolean }) {
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
+      role="status"
+      aria-live="polite"
       className="flex w-full min-w-0 items-end gap-2"
     >
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-brand-primary to-violet-600 shadow-md shadow-violet-900/30">

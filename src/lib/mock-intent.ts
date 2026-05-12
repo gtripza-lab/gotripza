@@ -300,21 +300,66 @@ export function findAnyCity(query: string, exclude?: string | null): string | nu
   return null;
 }
 
-function findMonth(query: string): { y: number; m: number } | null {
-  const lower = query.toLowerCase();
+function normalizeDigits(value: string): string {
+  return value
+    .replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+    .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function monthYear(monthNumber: number): number {
+  const today = new Date();
+  return monthNumber < today.getMonth() + 1 ? today.getFullYear() + 1 : today.getFullYear();
+}
+
+function findMonth(query: string): { y: number; m: number; name?: string } | null {
+  const lower = normalizeDigits(query).toLowerCase();
   for (const [name, m] of Object.entries({ ...AR_MONTHS, ...EN_MONTHS })) {
     if (lower.includes(name.toLowerCase())) {
-      const today = new Date();
-      const y = m < today.getMonth() + 1 ? today.getFullYear() + 1 : today.getFullYear();
-      return { y, m };
+      return { y: monthYear(m), m, name };
     }
   }
-  if (/الشهر القادم|next month/i.test(query)) {
+  if (/الشهر القادم|next month/i.test(lower)) {
     const t = new Date();
     t.setMonth(t.getMonth() + 1);
     return { y: t.getFullYear(), m: t.getMonth() + 1 };
   }
   return null;
+}
+
+function findExplicitDayForMonth(query: string, monthName: string | undefined): number | null {
+  if (!monthName) return null;
+  const q = normalizeDigits(query).toLowerCase();
+  const m = escapeRegExp(monthName.toLowerCase());
+  const durationUnit = String.raw`(?:أيام|ايام|يوم|ليال|ليالي|ليلة|days?|nights?)`;
+
+  // "June 5", "يونيو 5", "يونيو يوم 5" => day 5.
+  const monthThenDay = q.match(new RegExp(`${m}\\s*(?:-|/|،|,)?\\s*(?:يوم\\s+|day\\s+)?(\\d{1,2})(?!\\s*${durationUnit})`, "i"));
+  if (monthThenDay) {
+    const day = Number(monthThenDay[1]);
+    if (day >= 1 && day <= 31) return day;
+  }
+
+  // "5 June", "5 يونيو" => day 5. The negative look-behind by pattern
+  // avoids "لمدة 5 أيام في يونيو" being misread as June 5.
+  const dayThenMonth = q.match(new RegExp(`(?:^|[\\s,،])(?:يوم\\s+|day\\s+)?(\\d{1,2})\\s*(?:-|/|،|,)?\\s*${m}`, "i"));
+  if (dayThenMonth) {
+    const day = Number(dayThenMonth[1]);
+    if (day >= 1 && day <= 31) return day;
+  }
+
+  return null;
+}
+
+function findTripDurationDays(query: string): number | null {
+  const q = normalizeDigits(query);
+  const match = q.match(/(?:لمدة|مدة|for)?\s*(\d{1,2})\s*(ليال|ليالي|ليلة|أيام|ايام|يوم|days?|nights?)/i);
+  if (!match) return null;
+  const days = Number(match[1]);
+  return days >= 1 && days <= 45 ? days : null;
 }
 
 function pad(n: number) {
@@ -383,8 +428,11 @@ export function heuristicParse(query: string): TripIntent {
   let departure_date: string | null = null;
   let return_date: string | null = null;
   if (month) {
-    departure_date = `${month.y}-${pad(month.m)}-15`;
-    const ret = new Date(month.y, month.m - 1, 20);
+    const explicitDay = findExplicitDayForMonth(query, month.name);
+    const startDay = explicitDay ?? 15;
+    const durationDays = findTripDurationDays(query) ?? 5;
+    departure_date = `${month.y}-${pad(month.m)}-${pad(startDay)}`;
+    const ret = new Date(month.y, month.m - 1, startDay + durationDays);
     return_date = `${ret.getFullYear()}-${pad(ret.getMonth() + 1)}-${pad(ret.getDate())}`;
   }
 

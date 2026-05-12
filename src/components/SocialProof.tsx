@@ -4,46 +4,41 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 
-type Entry = { name: string; city: string; destination: string; price: string };
+type TrustSignal = { textAr: string; textEn: string };
 
-const AR_ENTRIES: Entry[] = [
-  { name: "نورة",  city: "الرياض",  destination: "المالديف",   price: "٣,٨٠٠ ريال" },
-  { name: "خالد",  city: "دبي",     destination: "أنطاليا",    price: "١,١٥٠ ريال" },
-  { name: "سارة",  city: "القاهرة", destination: "دبي",        price: "٧٨٠ ريال"   },
-  { name: "أحمد",  city: "عمّان",   destination: "إسطنبول",   price: "١,٤٥٠ ريال" },
-  { name: "ريم",   city: "أبوظبي",  destination: "باريس",      price: "٢,٩٥٠ ريال" },
-  { name: "فهد",   city: "الكويت",  destination: "لندن",       price: "٢,٢٠٠ ريال" },
-  { name: "ليلى",  city: "الدوحة",  destination: "بالي",       price: "٣,٣٠٠ ريال" },
-  { name: "ياسمين",city: "بيروت",   destination: "مدريد",      price: "١,٨٠٠ ريال" },
-  { name: "طارق",  city: "الدار البيضاء", destination: "روما",  price: "٢,١٠٠ ريال" },
-];
-
-const EN_ENTRIES: Entry[] = [
-  { name: "Sarah", city: "London",   destination: "Maldives",  price: "$890" },
-  { name: "Daniel", city: "New York", destination: "Tokyo",    price: "$760" },
-  { name: "Emma", city: "Paris",     destination: "Bali",      price: "$640" },
-  { name: "James", city: "Sydney",   destination: "Santorini", price: "$720" },
-  { name: "Sofia", city: "Madrid",   destination: "Dubai",     price: "$310" },
-  { name: "Lucas", city: "Amsterdam",destination: "Istanbul",  price: "$195" },
-  { name: "Yuki",  city: "Singapore",destination: "Barcelona", price: "$530" },
-  { name: "Maria", city: "Berlin",   destination: "Antalya",   price: "$290" },
-  { name: "Omar",  city: "Cairo",    destination: "Paris",     price: "$480" },
+const TRUST_SIGNALS: TrustSignal[] = [
+  {
+    textAr: "ريا تحفظ سياق رحلتك داخل المحادثة ولا تعيد الأسئلة المعروفة.",
+    textEn: "Rya keeps trip context in the conversation and avoids repeated questions.",
+  },
+  {
+    textAr: "روابط الشركاء قد تمنح GoTripza عمولة بدون زيادة السعر عليك.",
+    textEn: "Partner links may earn GoTripza a commission without increasing your price.",
+  },
+  {
+    textAr: "اقتراحات التأمين و eSIM تظهر فقط عندما تخدم سياق الرحلة.",
+    textEn: "Insurance and eSIM suggestions appear only when they fit the trip context.",
+  },
+  {
+    textAr: "الفنادق حالياً تُعرض كإرشاد مناطق سكن إلى أن يكتمل ربط العروض.",
+    textEn: "Hotels currently focus on stay-area guidance until direct offers are connected.",
+  },
+  {
+    textAr: "تقييمات ريا تظهر في لوحة الأدمن حتى نعرف الردود التي تحتاج تحسين.",
+    textEn: "Rya ratings surface in admin so weak replies can be improved.",
+  },
 ];
 
 export function SocialProof({ locale }: { locale: Locale }) {
-  const list = locale === "ar" ? AR_ENTRIES : EN_ENTRIES;
   const [i, setI] = useState(0);
 
   useEffect(() => {
-    const id = setInterval(() => setI((v) => (v + 1) % list.length), 4500);
+    const id = setInterval(() => setI((v) => (v + 1) % TRUST_SIGNALS.length), 5200);
     return () => clearInterval(id);
-  }, [list.length]);
+  }, []);
 
-  const e = list[i];
-  const text =
-    locale === "ar"
-      ? `${e.name} من ${e.city} حجز ${e.destination} بـ ${e.price}`
-      : `${e.name} from ${e.city} booked ${e.destination} for ${e.price}`;
+  const signal = TRUST_SIGNALS[i];
+  const text = locale === "ar" ? signal.textAr : signal.textEn;
 
   return (
     <div className="pointer-events-none fixed bottom-5 start-5 z-40 hidden sm:block">
