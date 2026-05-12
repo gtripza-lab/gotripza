@@ -10,6 +10,7 @@ import {
 } from "@/lib/seo-destinations";
 import { BreadcrumbJsonLd, FaqJsonLd, HowToJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
+import type { Destination } from "@/lib/seo-destinations";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
@@ -29,13 +30,18 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!dest) return {};
   const isAr = params.locale === "ar";
   const name = isAr ? dest.nameAr : dest.nameEn;
+  const year = "2026";
+  const isTurkey = dest.country === "Turkey";
+  const intentName = isTurkey && params.slug !== "istanbul"
+    ? isAr ? `${name} وتركيا` : `${dest.nameEn} / Turkey`
+    : name;
 
   const title = isAr
-    ? `تأشيرة ${name} — المتطلبات والتطبيق 2025`
-    : `${dest.nameEn} Visa Requirements & How to Apply 2025`;
+    ? `متطلبات تأشيرة ${intentName} ${year} — الوثائق وطريقة التقديم`
+    : `${dest.nameEn} Visa Requirements ${year} — Documents & How to Apply`;
   const description = isAr
-    ? `دليل تأشيرة ${name} الشامل: من يحتاج تأشيرة؟ التأشيرة الإلكترونية، الوثائق المطلوبة، والنصائح العملية.`
-    : `Complete ${dest.nameEn} visa guide: who needs a visa, e-Visa options, required documents, and practical application tips.`;
+    ? `دليل عملي لتأشيرة ${intentName}: هل تحتاج فيزا؟ التأشيرة الإلكترونية، الوثائق المطلوبة، مدة المعالجة، ونصائح ريا قبل السفر.`
+    : `Practical ${dest.nameEn} visa guide: who needs a visa, e-Visa options, required documents, processing time, and Rya's travel tips.`;
 
   return {
     title,
@@ -48,6 +54,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         "x-default": `${BASE}/en/visa/${params.slug}`,
       },
     },
+    keywords: isAr
+      ? `تأشيرة ${name}, متطلبات فيزا ${name}, فيزا ${dest.countryAr}, ${name} visa requirements, ريا`
+      : `${dest.nameEn} visa requirements, ${dest.country} visa, ${dest.nameEn} eVisa, travel documents, Rya travel companion`,
     openGraph: { type: "website", title, description, siteName: "GoTripza" },
   };
 }
@@ -57,6 +66,70 @@ const GCC = ["SA", "AE", "KW", "QA", "BH", "OM"];
 const GCC_LABEL = { en: "GCC nationals", ar: "مواطنو دول الخليج العربي" };
 const EU_LABEL = { en: "EU / Schengen passport holders", ar: "حاملو جوازات الاتحاد الأوروبي" };
 const WEST_LABEL = { en: "US / UK / AUS / CA / NZ", ar: "الولايات المتحدة، بريطانيا، أستراليا، كندا" };
+
+function visaStatusLabel(status: "free" | "onArrival" | "eVisa" | "required", isAr: boolean) {
+  const labels = {
+    free: { ar: "غالباً بدون تأشيرة أو دخول ميسر", en: "often visa-free or very simple entry" },
+    onArrival: { ar: "غالباً تأشيرة عند الوصول", en: "often visa on arrival" },
+    eVisa: { ar: "غالباً تحتاج تأشيرة إلكترونية قبل السفر", en: "often requires an e-Visa before travel" },
+    required: { ar: "غالباً تحتاج تأشيرة قبل السفر", en: "often requires a visa before travel" },
+  };
+  return isAr ? labels[status].ar : labels[status].en;
+}
+
+function destinationVisaContext(dest: Destination, isAr: boolean) {
+  if (dest.country === "Turkey") {
+    return {
+      title: isAr ? `إجابة سريعة: هل كابادوكيا لها تأشيرة خاصة؟` : `Quick answer: does Cappadocia have its own visa?`,
+      body: isAr
+        ? `${dest.nameAr} تتبع تركيا، لذلك لا توجد “فيزا كابادوكيا” منفصلة. تحتاج فقط إلى متطلبات دخول تركيا حسب جنسيتك، وغالباً تكون التأشيرة الإلكترونية مناسبة لكثير من المسافرين.`
+        : `${dest.nameEn} is in Turkey, so there is no separate “Cappadocia visa”. You only need to meet Turkey entry requirements for your nationality, and many travellers use the Turkish e-Visa system.`,
+      tip: isAr
+        ? "إذا كانت رحلتك إلى كابادوكيا عبر إسطنبول أو قيصري أو نفسهير، فمتطلبات الدخول هي نفسها متطلبات دخول تركيا."
+        : "If you reach Cappadocia via Istanbul, Kayseri, or Nevsehir, the same Turkey entry rules apply.",
+    };
+  }
+
+  return {
+    title: isAr ? `إجابة سريعة عن تأشيرة ${dest.nameAr}` : `Quick answer for ${dest.nameEn} visa requirements`,
+    body: isAr
+      ? `متطلبات تأشيرة ${dest.nameAr} تعتمد على جنسيتك ومدة الرحلة. ابدأ من الجدول أدناه، ثم اطلب من ريا فحص حالتك حسب جوازك وتاريخ سفرك.`
+      : `${dest.nameEn} visa requirements depend on nationality and trip length. Start with the table below, then ask Rya to check your case by passport and travel date.`,
+    tip: isAr
+      ? "تأكد دائماً من الموقع الحكومي أو السفارة قبل الحجز النهائي لأن قواعد التأشيرات تتغير."
+      : "Always verify with the official government or embassy website before final booking because visa rules change.",
+  };
+}
+
+function popularVisaQueries(dest: Destination, isAr: boolean) {
+  if (isAr) {
+    return [
+      `متطلبات فيزا ${dest.nameAr}`,
+      `هل ${dest.nameAr} تحتاج فيزا؟`,
+      `تأشيرة ${dest.countryAr} الإلكترونية`,
+      `وثائق السفر إلى ${dest.nameAr}`,
+      `كم تستغرق فيزا ${dest.nameAr}`,
+    ];
+  }
+  return [
+    `${dest.nameEn} visa requirements`,
+    `Do I need a visa for ${dest.nameEn}?`,
+    `${dest.country} eVisa`,
+    `${dest.nameEn} travel documents`,
+    `${dest.nameEn} visa processing time`,
+  ];
+}
+
+function officialCheckSteps(dest: Destination, isAr: boolean) {
+  if (dest.country === "Turkey") {
+    return isAr
+      ? ["افتح موقع evisa.gov.tr الرسمي.", "اختر جنسيتك ونوع جوازك وتاريخ الوصول.", "تأكد أن الاسم ورقم الجواز مطابقان تماماً.", "احفظ نسخة PDF من التأشيرة واحتفظ بصورة على الجوال."]
+      : ["Open the official evisa.gov.tr website.", "Select nationality, passport type, and arrival date.", "Make sure name and passport number match exactly.", "Save the PDF e-Visa and keep a phone copy."];
+  }
+  return isAr
+    ? ["افتح الموقع الحكومي أو موقع السفارة الرسمي.", "اختر جنسيتك ومدة الرحلة والغرض من الزيارة.", "راجع الوثائق والرسوم ومدة المعالجة.", "احتفظ بنسخة رقمية ومطبوعة من الطلب والوثائق."]
+    : ["Open the official government or embassy website.", "Select nationality, trip length, and travel purpose.", "Review documents, fees, and processing time.", "Keep digital and printed copies of the application and documents."];
+}
 
 export default async function VisaPage({ params }: Props) {
   if (!isLocale(params.locale)) notFound();
@@ -74,6 +147,9 @@ export default async function VisaPage({ params }: Props) {
     || dest.visaFree.includes("GCC") || (dest.visaOnArrival.includes("ALL"));
   const gccOnArrival = !gccFree && (dest.visaOnArrival.some((c) => GCC.includes(c)) || dest.visaOnArrival.includes("ALL"));
   const gccStatus = gccFree ? "free" : gccOnArrival ? "onArrival" : dest.eVisa ? "eVisa" : "required";
+  const quick = destinationVisaContext(dest, isAr);
+  const popularQueries = popularVisaQueries(dest, isAr);
+  const officialSteps = officialCheckSteps(dest, isAr);
 
   const visaRows = [
     {
@@ -153,6 +229,10 @@ export default async function VisaPage({ params }: Props) {
       <FaqJsonLd
         items={[
           {
+            q: isAr ? `ما أسرع إجابة عن تأشيرة ${name}؟` : `What is the quick answer for ${dest.nameEn} visa requirements?`,
+            a: quick.body,
+          },
+          {
             q: isAr ? `هل أحتاج تأشيرة لزيارة ${name}؟` : `Do I need a visa to visit ${dest.nameEn}?`,
             a: isAr ? dest.visaNotes.ar : dest.visaNotes.en,
           },
@@ -176,6 +256,12 @@ export default async function VisaPage({ params }: Props) {
               ? `Yes, ${dest.nameEn} offers visa on arrival for many nationalities.`
               : `${dest.nameEn} visa on arrival is not available for all nationalities. Check with the embassy.`,
           },
+          ...(dest.country === "Turkey" ? [{
+            q: isAr ? "هل كابادوكيا تحتاج فيزا منفصلة عن تركيا؟" : "Does Cappadocia require a separate visa from Turkey?",
+            a: isAr
+              ? "لا. كابادوكيا داخل تركيا، لذلك تطبق متطلبات دخول تركيا نفسها ولا توجد تأشيرة منفصلة للمنطقة."
+              : "No. Cappadocia is inside Turkey, so Turkey entry requirements apply and there is no separate regional visa.",
+          }] : []),
           {
             q: isAr ? `كم تكلفة تأشيرة ${name}؟` : `How much does a ${dest.nameEn} visa cost?`,
             a: isAr
@@ -234,6 +320,34 @@ export default async function VisaPage({ params }: Props) {
             )}
           </div>
 
+          <section className="mt-6 rounded-2xl border border-brand-primary/20 bg-brand-primary/[0.08] p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-primary/80">
+              {isAr ? "مختصر مفيد" : "Short answer"}
+            </p>
+            <h2 className="mt-2 font-display text-xl font-bold text-white">
+              {quick.title}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-white/72">
+              {quick.body}
+            </p>
+            <p className="mt-3 rounded-xl bg-black/20 px-3 py-2 text-xs leading-6 text-white/55">
+              {quick.tip}
+            </p>
+          </section>
+
+          <section className="mt-6 glass rounded-2xl p-6">
+            <h2 className="font-display text-lg font-bold">
+              {isAr ? "ما الذي يبحث عنه المسافرون؟" : "Popular searches this page answers"}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {popularQueries.map((query) => (
+                <span key={query} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-white/58">
+                  {query}
+                </span>
+              ))}
+            </div>
+          </section>
+
           {/* Nationality grid */}
           <section className="mt-6 glass rounded-2xl p-6">
             <h2 className="mb-4 font-display text-lg font-bold">
@@ -259,6 +373,11 @@ export default async function VisaPage({ params }: Props) {
                 );
               })}
             </div>
+            <p className="mt-4 text-xs leading-6 text-white/45">
+              {isAr
+                ? `للمسافرين من الخليج: ${visaStatusLabel(gccStatus, true)}. إذا كانت جنسيتك مختلفة، اطلب من ريا فحص الحالة حسب جوازك قبل الحجز.`
+                : `For GCC travellers: ${visaStatusLabel(gccStatus, false)}. If your passport is different, ask Rya to check your exact case before booking.`}
+            </p>
           </section>
 
           {/* How to apply */}
@@ -317,6 +436,45 @@ export default async function VisaPage({ params }: Props) {
                 </li>
               ))}
             </ul>
+          </section>
+
+          <section className="mt-6 glass rounded-2xl p-6">
+            <h2 className="mb-4 font-display text-lg font-bold">
+              {isAr ? "كيف تتحقق من المتطلبات الرسمية؟" : "How to verify official requirements"}
+            </h2>
+            <ol className="space-y-3">
+              {officialSteps.map((step, index) => (
+                <li key={step} className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/[0.07] text-xs font-bold text-white/70">
+                    {index + 1}
+                  </span>
+                  <span className="text-sm leading-6 text-white/68">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </section>
+
+          <section className="mt-6 grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5">
+              <h2 className="font-display text-base font-bold">
+                {isAr ? "قبل الحجز" : "Before booking"}
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-white/58">
+                {isAr
+                  ? `تأكد من صلاحية الجواز، تاريخ الوصول، واسم المسافر قبل شراء تذاكر ${name}. إذا كان عندك توقف في دولة أخرى، افحص متطلبات الترانزيت أيضاً.`
+                  : `Check passport validity, arrival date, and traveller name before buying ${dest.nameEn} tickets. If you transit through another country, check transit rules too.`}
+              </p>
+            </div>
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5">
+              <h2 className="font-display text-base font-bold">
+                {isAr ? "ما الذي تسأله ريا؟" : "What to ask Rya"}
+              </h2>
+              <p className="mt-2 text-sm leading-7 text-white/58">
+                {isAr
+                  ? `اكتب: “أنا أحمل جواز [الجنسية] وأسافر إلى ${name} في [الشهر] لمدة [عدد الأيام]، هل أحتاج فيزا؟”`
+                  : `Write: “I hold a [nationality] passport and travel to ${dest.nameEn} in [month] for [days]. Do I need a visa?”`}
+              </p>
+            </div>
           </section>
 
           {/* Important disclaimer */}
