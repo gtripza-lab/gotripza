@@ -22,7 +22,10 @@ export type EventName =
   | "ria_response_feedback"
   | "trip_plan_generated"
   | "trip_plan_feedback"
-  | "trip_plan_rya_followup_clicked";
+  | "trip_plan_rya_followup_clicked"
+  | "trip_plan_day_removed"
+  | "trip_plan_day_swapped"
+  | "trip_plan_day_lightened";
 
 export type EventPayload = Record<string, unknown>;
 

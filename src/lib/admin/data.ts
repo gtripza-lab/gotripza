@@ -756,9 +756,16 @@ export type AdminTripPlanRow = {
 export type TripPlanAdminStats = {
   total: number;
   createdWeek: number;
+  generatedWeek: number;
   avgBudget: number;
   avgDays: number;
+  feedbackTotal: number;
+  feedbackHelpful: number;
+  feedbackUnhelpful: number;
+  feedbackRate: number;
   topDestinations: { destination: string; count: number }[];
+  feedbackByDestination: { destination: string; helpful: number; unhelpful: number; total: number }[];
+  weakPlans: { destination: string | null; days: number | null; tripType: string | null; path: string | null; created_at: string }[];
   tripTypes: { type: string; count: number }[];
   recent: AdminTripPlanRow[];
 };
@@ -767,13 +774,30 @@ export async function getTripPlanAdminStats(): Promise<TripPlanAdminStats> {
   try {
     const db = createSupabaseService() as AnyTable;
     const d7 = daysAgo(7);
-    const { data, count } = await db
-      .from("trip_plans")
-      .select("id,user_id,title,locale,origin,destination,days,travelers,budget,currency,trip_type,created_at", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .limit(500);
+    const d30 = daysAgo(30);
+    const [plansRes, generatedRes, feedbackRes] = await Promise.all([
+      db
+        .from("trip_plans")
+        .select("id,user_id,title,locale,origin,destination,days,travelers,budget,currency,trip_type,created_at", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .limit(500),
+      db
+        .from("events")
+        .select("id,payload,path,created_at", { count: "exact" })
+        .eq("name", "trip_plan_generated")
+        .gte("created_at", d7)
+        .limit(1000),
+      db
+        .from("events")
+        .select("id,payload,path,created_at")
+        .eq("name", "trip_plan_feedback")
+        .gte("created_at", d30)
+        .order("created_at", { ascending: false })
+        .limit(500),
+    ]);
 
-    const rows = ((data ?? []) as AdminTripPlanRow[]);
+    const rows = ((plansRes.data ?? []) as AdminTripPlanRow[]);
+    const feedbackRows = ((feedbackRes.data ?? []) as { payload?: Record<string, unknown>; path: string | null; created_at: string }[]);
     const createdWeek = rows.filter((row) => row.created_at >= d7).length;
     const budgets = rows.map((row) => Number(row.budget ?? 0)).filter((value) => value > 0);
     const avgBudget = budgets.length ? Math.round(budgets.reduce((sum, value) => sum + value, 0) / budgets.length) : 0;
@@ -781,28 +805,77 @@ export async function getTripPlanAdminStats(): Promise<TripPlanAdminStats> {
 
     const destMap = new Map<string, number>();
     const typeMap = new Map<string, number>();
+    const feedbackDestMap = new Map<string, { helpful: number; unhelpful: number; total: number }>();
+    let feedbackHelpful = 0;
+    let feedbackUnhelpful = 0;
     for (const row of rows) {
       destMap.set(row.destination, (destMap.get(row.destination) ?? 0) + 1);
       const type = row.trip_type ?? "unknown";
       typeMap.set(type, (typeMap.get(type) ?? 0) + 1);
     }
+    for (const row of feedbackRows) {
+      const value = row.payload?.value === "up" ? "up" : "down";
+      if (value === "up") feedbackHelpful++;
+      else feedbackUnhelpful++;
+      const destination = String(row.payload?.destination ?? "غير محددة");
+      const cur = feedbackDestMap.get(destination) ?? { helpful: 0, unhelpful: 0, total: 0 };
+      if (value === "up") cur.helpful++;
+      else cur.unhelpful++;
+      cur.total++;
+      feedbackDestMap.set(destination, cur);
+    }
+    const feedbackTotal = feedbackHelpful + feedbackUnhelpful;
 
     return {
-      total: count ?? rows.length,
+      total: plansRes.count ?? rows.length,
       createdWeek,
+      generatedWeek: generatedRes.count ?? 0,
       avgBudget,
       avgDays,
+      feedbackTotal,
+      feedbackHelpful,
+      feedbackUnhelpful,
+      feedbackRate: feedbackTotal ? feedbackHelpful / feedbackTotal : 0,
       topDestinations: Array.from(destMap.entries())
         .map(([destination, value]) => ({ destination, count: value }))
         .sort((a, b) => b.count - a.count)
         .slice(0, 10),
+      feedbackByDestination: Array.from(feedbackDestMap.entries())
+        .map(([destination, value]) => ({ destination, ...value }))
+        .sort((a, b) => b.unhelpful - a.unhelpful || b.total - a.total)
+        .slice(0, 10),
+      weakPlans: feedbackRows
+        .filter((row) => row.payload?.value !== "up")
+        .slice(0, 12)
+        .map((row) => ({
+          destination: typeof row.payload?.destination === "string" ? row.payload.destination : null,
+          days: typeof row.payload?.days === "number" ? row.payload.days : null,
+          tripType: typeof row.payload?.tripType === "string" ? row.payload.tripType : null,
+          path: row.path,
+          created_at: row.created_at,
+        })),
       tripTypes: Array.from(typeMap.entries())
         .map(([type, value]) => ({ type, count: value }))
         .sort((a, b) => b.count - a.count),
       recent: rows.slice(0, 50),
     };
   } catch {
-    return { total: 0, createdWeek: 0, avgBudget: 0, avgDays: 0, topDestinations: [], tripTypes: [], recent: [] };
+    return {
+      total: 0,
+      createdWeek: 0,
+      generatedWeek: 0,
+      avgBudget: 0,
+      avgDays: 0,
+      feedbackTotal: 0,
+      feedbackHelpful: 0,
+      feedbackUnhelpful: 0,
+      feedbackRate: 0,
+      topDestinations: [],
+      feedbackByDestination: [],
+      weakPlans: [],
+      tripTypes: [],
+      recent: [],
+    };
   }
 }
 

@@ -18,6 +18,16 @@ export type TripPlanInput = {
   tripType: PlannerTripType;
   locale: "ar" | "en";
   currency?: string;
+  interests?: ("nature" | "kids" | "shopping" | "food" | "culture" | "relax")[];
+};
+
+const INTEREST_LABELS: Record<NonNullable<TripPlanInput["interests"]>[number], { ar: string; en: string }> = {
+  nature: { ar: "الطبيعة", en: "nature" },
+  kids: { ar: "الأطفال", en: "kids" },
+  shopping: { ar: "التسوق", en: "shopping" },
+  food: { ar: "المطاعم", en: "food" },
+  culture: { ar: "الثقافة", en: "culture" },
+  relax: { ar: "الراحة", en: "relaxed pacing" },
 };
 
 export type TripPlanDay = {
@@ -432,10 +442,26 @@ function splitCosts(total: number, tripType: PlannerTripType, locale: "ar" | "en
 function pickDayTemplates(
   guide: CityPlannerGuide,
   tripType: PlannerTripType,
+  interests: TripPlanInput["interests"],
   count: number,
 ) {
   const preferred = guide.days.filter((day) => day.tags?.includes(tripType));
-  const pool = preferred.length >= Math.min(count, 2)
+  const interestMatched = guide.days.filter((day) => {
+    const haystack = `${day.title.ar} ${day.focus.ar} ${day.area.ar} ${day.morning.ar} ${day.title.en} ${day.focus.en}`.toLowerCase();
+    return (interests ?? []).some((interest) => {
+      if (interest === "nature") return /طبيعة|السودة|جبل|mountain|nature|beach|desert/i.test(haystack);
+      if (interest === "kids") return day.tags?.includes("family") || /عائل|أطفال|family|kids/i.test(haystack);
+      if (interest === "shopping") return /تسوق|سوق|بازار|mall|shopping|bazaar/i.test(haystack);
+      if (interest === "food") return /طعام|مطعم|غداء|عشاء|food|lunch|dinner|coffee/i.test(haystack);
+      if (interest === "culture") return /تراث|تاريخ|متحف|heritage|history|museum|historic/i.test(haystack);
+      if (interest === "relax") return /هادئ|خفيف|راحة|calm|light|relaxed/i.test(haystack);
+      return false;
+    });
+  });
+  const prioritized = [...interestMatched, ...preferred].filter((day, index, arr) => arr.indexOf(day) === index);
+  const pool = prioritized.length >= Math.min(count, 2)
+    ? [...prioritized, ...guide.days.filter((day) => !prioritized.includes(day))]
+    : preferred.length >= Math.min(count, 2)
     ? [...preferred, ...guide.days.filter((day) => !preferred.includes(day))]
     : guide.days;
   return pool.length ? pool : guide.days;
@@ -524,12 +550,12 @@ function buildDays(input: TripPlanInput, destinationCode: string | null, destina
 
   if (guide) {
     if (days === 1) {
-      const oneDay = pickDayTemplates(guide, input.tripType, 1)[0] ?? guide.arrival;
+      const oneDay = pickDayTemplates(guide, input.tripType, input.interests, 1)[0] ?? guide.arrival;
       return [buildDayFromTemplate(oneDay, 1, { ...input, days }, destinationName, dailyBudget)];
     }
 
     const middleCount = Math.max(0, days - 2);
-    const middle = pickDayTemplates(guide, input.tripType, middleCount);
+    const middle = pickDayTemplates(guide, input.tripType, input.interests, middleCount);
     const templates = [
       guide.arrival,
       ...Array.from({ length: middleCount }, (_, index) => middle[index % middle.length]),
@@ -603,6 +629,12 @@ export function buildTripPlan(input: TripPlanInput): TripPlan {
   const daily = Math.round(budget / Math.max(1, travelers) / Math.max(1, days));
   const daysPlan = buildDays({ ...input, days, travelers, budget, currency }, destinationCode, destinationName);
   const stayAreas = guide?.stayAreas.map((area) => t(area, locale)) ?? [];
+  const interestNames = input.interests?.map((interest) => INTEREST_LABELS[interest]?.[locale]).filter(Boolean) ?? [];
+  const interestNote = input.interests?.length
+    ? isAr
+      ? ` وراعت اهتماماتك: ${interestNames.join("، ")}.`
+      : ` and considers your interests: ${interestNames.join(", ")}.`
+    : ".";
 
   return {
     originCode,
@@ -617,8 +649,8 @@ export function buildTripPlan(input: TripPlanInput): TripPlan {
     budgetLevel: level,
     estimatedDailyBudget: daily,
     summary: isAr
-      ? `خطة ${TRIP_TYPE_LABELS.ar[input.tripType]} من ${originName} إلى ${destinationName} لمدة ${days} أيام. ركزت على أيام واقعية، تنقلات أقل، وأماكن محددة بدل جدول عام.`
-      : `A ${TRIP_TYPE_LABELS.en[input.tripType]} plan from ${originName} to ${destinationName} for ${days} days, built around realistic pacing, fewer transfers, and specific places.`,
+      ? `خطة ${TRIP_TYPE_LABELS.ar[input.tripType]} من ${originName} إلى ${destinationName} لمدة ${days} أيام. ركزت على أيام واقعية، تنقلات أقل، وأماكن محددة بدل جدول عام${interestNote}`
+      : `A ${TRIP_TYPE_LABELS.en[input.tripType]} plan from ${originName} to ${destinationName} for ${days} days, built around realistic pacing, fewer transfers, and specific places${interestNote}`,
     stayAdvice: buildStayAdvice(guide, destinationName, input.tripType, locale),
     bestStayAreas: stayAreas,
     flightAdvice: isAr

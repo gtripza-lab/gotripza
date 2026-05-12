@@ -1,4 +1,4 @@
-import { CalendarDays, MapPin, Users, WalletCards } from "lucide-react";
+import { CalendarDays, MapPin, MessageSquareWarning, Sparkles, ThumbsDown, ThumbsUp, Users, WalletCards } from "lucide-react";
 import { getTripPlanAdminStats } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
 
@@ -28,11 +28,17 @@ export default async function AdminTripsPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label="إجمالي الخطط" value={stats.total.toLocaleString()} icon={CalendarDays} color="blue" />
         <MetricCard label="خطط هذا الأسبوع" value={stats.createdWeek.toLocaleString()} icon={MapPin} color="green" />
-        <MetricCard label="متوسط الأيام" value={stats.avgDays.toLocaleString()} icon={CalendarDays} color="default" />
+        <MetricCard label="توليد هذا الأسبوع" value={stats.generatedWeek.toLocaleString()} icon={Sparkles} color="default" />
         <MetricCard label="متوسط الميزانية" value={stats.avgBudget ? stats.avgBudget.toLocaleString() : "—"} icon={WalletCards} color="yellow" />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <MetricCard label="تقييمات الخطط" value={stats.feedbackTotal.toLocaleString()} icon={MessageSquareWarning} color="blue" />
+        <MetricCard label="خطط مفيدة" value={stats.feedbackHelpful.toLocaleString()} icon={ThumbsUp} color="green" />
+        <MetricCard label="تحتاج تحسين" value={stats.feedbackUnhelpful.toLocaleString()} icon={ThumbsDown} color={stats.feedbackUnhelpful > stats.feedbackHelpful ? "yellow" : "default"} />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-3">
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
           <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">أكثر الوجهات حفظاً</h2>
           <div className="mt-4 space-y-2">
@@ -56,6 +62,54 @@ export default async function AdminTripsPage() {
             )) : <p className="text-sm text-white/30">لا توجد بيانات لأنواع الرحلات بعد</p>}
           </div>
         </div>
+
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">جودة الخطط حسب الوجهة</h2>
+          <div className="mt-4 space-y-2">
+            {stats.feedbackByDestination.length ? stats.feedbackByDestination.map((item) => (
+              <div key={item.destination} className="rounded-xl bg-white/[0.03] px-3 py-2">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-sm text-white/70">{item.destination}</span>
+                  <span className="text-xs text-white/35">{item.total} تقييم</span>
+                </div>
+                <div className="mt-2 flex gap-2 text-xs">
+                  <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-emerald-200">{item.helpful} مفيدة</span>
+                  <span className="rounded-full bg-rose-400/10 px-2 py-1 text-rose-200">{item.unhelpful} تحتاج تحسين</span>
+                </div>
+              </div>
+            )) : <p className="text-sm text-white/30">لا توجد تقييمات خطط بعد</p>}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-[0.15em] text-white/60">خطط تحتاج مراجعة</h2>
+            <p className="mt-1 text-xs text-white/35">هذه تأتي من زر “تحتاج تحسين” في صفحة خطط رحلتي.</p>
+          </div>
+          <span className="rounded-full bg-white/[0.05] px-3 py-1 text-xs text-white/45">
+            رضا الخطط {stats.feedbackTotal ? `${Math.round(stats.feedbackRate * 100)}%` : "—"}
+          </span>
+        </div>
+        {stats.weakPlans.length === 0 ? (
+          <p className="mt-5 text-sm text-white/30">لا توجد خطط ضعيفة كافية للمراجعة بعد.</p>
+        ) : (
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {stats.weakPlans.map((row, index) => (
+              <div key={`${row.created_at}-${index}`} className="rounded-xl border border-rose-400/10 bg-rose-500/[0.04] p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-medium text-white/80">{row.destination ?? "وجهة غير محددة"}</p>
+                    <p className="mt-1 text-xs text-white/35">{row.days ? `${row.days} أيام` : "بدون أيام"} · {row.tripType ?? "نوع غير محدد"}</p>
+                  </div>
+                  <span className="rounded-full bg-rose-500/10 px-2 py-1 text-[11px] text-rose-200">تحتاج تحسين</span>
+                </div>
+                <p className="mt-3 text-xs text-white/30">{row.path ?? "/ar/plan"} · {fmtDate(row.created_at)}</p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="overflow-hidden rounded-2xl border border-white/[0.06] bg-white/[0.03]">

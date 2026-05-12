@@ -7,6 +7,7 @@ import {
 } from "@/lib/seo-destinations";
 import { ROUTE_SLUGS } from "@/lib/route-pairs";
 import { getSeoIntentPages } from "@/lib/seo-intent-pages";
+import { READY_TRIP_PLAN_SLUGS } from "@/lib/ready-trip-plans";
 
 const BASE_URL = "https://gotripza.com";
 const locales = ["en", "ar"] as const;
@@ -106,6 +107,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // AI-search/GEO intent guides: companion-first planning pages.
   for (const page of getSeoIntentPages()) {
     entries.push(...makeEntry(`/guides/${page.slug}`, 0.86, "monthly"));
+  }
+
+  // Ready itinerary pages for high-intent trip planning searches.
+  for (const slug of READY_TRIP_PLAN_SLUGS) {
+    entries.push(...makeEntry(`/trip-plans/${slug}`, 0.88, "monthly"));
   }
 
   // Blog posts

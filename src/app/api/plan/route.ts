@@ -32,6 +32,7 @@ export async function POST(req: NextRequest) {
       tripType?: PlannerTripType;
       locale?: "ar" | "en";
       currency?: string;
+      interests?: string[];
     };
 
     const origin = body.origin?.trim() ?? "";
@@ -53,6 +54,13 @@ export async function POST(req: NextRequest) {
       tripType,
       locale: body.locale === "en" ? "en" : "ar",
       currency: body.currency?.trim().slice(0, 5) || undefined,
+      interests: Array.isArray(body.interests)
+        ? body.interests
+            .filter((value): value is "nature" | "kids" | "shopping" | "food" | "culture" | "relax" =>
+              ["nature", "kids", "shopping", "food", "culture", "relax"].includes(value),
+            )
+            .slice(0, 4)
+        : undefined,
     });
 
     return NextResponse.json({ plan });

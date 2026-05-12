@@ -366,6 +366,67 @@ function pad(n: number) {
   return n.toString().padStart(2, "0");
 }
 
+function formatDate(date: Date): string {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function relativePhraseDates(query: string): { departure_date: string; return_date: string } | null {
+  const q = normalizeDigits(query).toLowerCase();
+  const today = new Date();
+  const duration = findTripDurationDays(q) ?? 5;
+
+  if (/نهاية\s+الشهر\s+القادم|end\s+of\s+next\s+month/i.test(q)) {
+    const start = new Date(today.getFullYear(), today.getMonth() + 2, 0);
+    start.setDate(Math.max(1, start.getDate() - 2));
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, duration)) };
+  }
+
+  if (/نهاية\s+الشهر|آخر\s+الشهر|اخر\s+الشهر|end\s+of\s+the\s+month/i.test(q)) {
+    const targetMonthOffset = today.getDate() >= 25 ? 1 : 0;
+    const start = new Date(today.getFullYear(), today.getMonth() + targetMonthOffset + 1, 0);
+    start.setDate(Math.max(1, start.getDate() - 2));
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, duration)) };
+  }
+
+  if (/بداية\s+الشهر\s+القادم|اول\s+الشهر\s+القادم|أول\s+الشهر\s+القادم|start\s+of\s+next\s+month/i.test(q)) {
+    const start = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, duration)) };
+  }
+
+  if (/منتصف\s+الشهر|mid\s+month|middle\s+of\s+the\s+month/i.test(q)) {
+    const start = new Date(today.getFullYear(), today.getDate() > 15 ? today.getMonth() + 1 : today.getMonth(), 15);
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, duration)) };
+  }
+
+  if (/الويكند\s+القادم|نهاية\s+الأسبوع\s+القادم|نهاية\s+الاسبوع\s+القادم|next\s+weekend/i.test(q)) {
+    const start = new Date(today);
+    const day = start.getDay();
+    const daysUntilFriday = (5 - day + 7) % 7 || 7;
+    start.setDate(start.getDate() + daysUntilFriday);
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, Math.max(2, Math.min(duration, 3)))) };
+  }
+
+  if (/بعد\s+العيد|بعد\s+عيد|after\s+eid/i.test(q)) {
+    const eids = [
+      "2026-05-31",
+      "2027-03-12",
+      "2027-05-21",
+      "2028-03-01",
+      "2028-05-09",
+    ].map((value) => new Date(`${value}T12:00:00`));
+    const start = eids.find((date) => date >= today) ?? addDays(today, 14);
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, duration)) };
+  }
+
+  return null;
+}
+
 export function detectLocale(query: string): "ar" | "en" {
   return /[\u0600-\u06FF]/.test(query) ? "ar" : "en";
 }
@@ -424,10 +485,14 @@ export function heuristicParse(query: string): TripIntent {
     findAnyCity(query, origin) ??  // exclude origin to avoid returning same city
     "";
 
+  const relativeDates = relativePhraseDates(query);
   const month = findMonth(query);
   let departure_date: string | null = null;
   let return_date: string | null = null;
-  if (month) {
+  if (relativeDates) {
+    departure_date = relativeDates.departure_date;
+    return_date = relativeDates.return_date;
+  } else if (month) {
     const explicitDay = findExplicitDayForMonth(query, month.name);
     const startDay = explicitDay ?? 15;
     const durationDays = findTripDurationDays(query) ?? 5;

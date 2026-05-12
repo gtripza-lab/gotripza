@@ -5,6 +5,9 @@ import {
   CalendarDays,
   Car,
   CloudSun,
+  Coffee,
+  RefreshCw,
+  Scissors,
   Download,
   Hotel,
   Loader2,
@@ -21,7 +24,7 @@ import {
 } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 import { logEvent } from "@/lib/events";
-import type { PlannerTripType, TripPlan } from "@/lib/trip-planner";
+import type { PlannerTripType, TripPlan, TripPlanDay } from "@/lib/trip-planner";
 
 type FormState = {
   origin: string;
@@ -30,7 +33,10 @@ type FormState = {
   budget: number;
   travelers: number;
   tripType: PlannerTripType;
+  interests: PlannerInterest[];
 };
+
+type PlannerInterest = "nature" | "kids" | "shopping" | "food" | "culture" | "relax";
 
 const DEFAULT_AR: FormState = {
   origin: "جدة",
@@ -39,6 +45,7 @@ const DEFAULT_AR: FormState = {
   budget: 9000,
   travelers: 2,
   tripType: "balanced",
+  interests: ["culture", "food"],
 };
 
 const DEFAULT_EN: FormState = {
@@ -48,6 +55,7 @@ const DEFAULT_EN: FormState = {
   budget: 2500,
   travelers: 2,
   tripType: "balanced",
+  interests: ["nature", "food"],
 };
 
 const TRIP_TYPES: PlannerTripType[] = [
@@ -58,6 +66,8 @@ const TRIP_TYPES: PlannerTripType[] = [
   "adventure",
   "business",
 ];
+
+const INTERESTS: PlannerInterest[] = ["nature", "kids", "shopping", "food", "culture", "relax"];
 
 function typeLabel(type: PlannerTripType, isAr: boolean) {
   const labels = {
@@ -75,6 +85,100 @@ function budgetLabel(level: TripPlan["budgetLevel"], isAr: boolean) {
   if (level === "tight") return isAr ? "مشدودة" : "Tight";
   if (level === "comfortable") return isAr ? "مريحة" : "Comfortable";
   return isAr ? "متوازنة" : "Balanced";
+}
+
+function interestLabel(interest: PlannerInterest, isAr: boolean) {
+  const labels: Record<PlannerInterest, string> = {
+    nature: isAr ? "طبيعة" : "Nature",
+    kids: isAr ? "أطفال" : "Kids",
+    shopping: isAr ? "تسوق" : "Shopping",
+    food: isAr ? "مطاعم" : "Food",
+    culture: isAr ? "ثقافة" : "Culture",
+    relax: isAr ? "راحة" : "Relax",
+  };
+  return labels[interest];
+}
+
+function renumberDays(plan: TripPlan, isAr: boolean): TripPlan {
+  const daysPlan = plan.daysPlan.map((day, index) => {
+    const nextDay = index + 1;
+    const title = day.title.replace(/^(يوم\s+\d+\s*:\s*|Day\s+\d+\s*:\s*)/i, "");
+    return {
+      ...day,
+      day: nextDay,
+      title: nextDay === 1
+        ? day.title
+        : `${isAr ? `يوم ${nextDay}: ` : `Day ${nextDay}: `}${title}`,
+      ryaPrompt: day.ryaPrompt.replace(/يوم\s+\d+|day\s+\d+/i, isAr ? `يوم ${nextDay}` : `day ${nextDay}`),
+    };
+  });
+  return {
+    ...plan,
+    days: daysPlan.length,
+    daysPlan,
+  };
+}
+
+function alternativeForDay(plan: TripPlan, day: TripPlanDay, isAr: boolean): TripPlanDay {
+  const code = plan.destinationCode;
+  const cost = Math.max(0, Math.round(day.estimatedCost * 0.95));
+  const common = {
+    ...day,
+    estimatedCost: cost,
+  };
+
+  if (code === "AHB") {
+    return {
+      ...common,
+      title: isAr ? `يوم ${day.day}: بديل هادئ في أبها` : `Day ${day.day}: A calmer Abha alternative`,
+      focus: isAr ? "الجبل الأخضر + ممشى الضباب" : "Green Mountain + Fog Walkway",
+      area: isAr ? "وسط أبها" : "Central Abha",
+      morning: isAr ? "ابدأ بإفطار متأخر ثم جولة قصيرة في وسط أبها أو سوق قريب." : "Start with a late breakfast, then a short central Abha or nearby market walk.",
+      afternoon: isAr ? "زر الجبل الأخضر قبل الغروب للصور والإطلالة بدون طريق طويل." : "Visit Green Mountain before sunset for views without a long drive.",
+      evening: isAr ? "اختم بممشى الضباب أو شارع الفن حسب الطقس." : "End with Fog Walkway or Art Street depending on weather.",
+      transit: isAr ? "تنقلات قصيرة داخل المدينة، مناسبة إذا تريد يوم أخف." : "Short city transfers, good when you want an easier day.",
+      tip: isAr ? "هذا البديل مناسب بعد يوم السودة أو رجال ألمع." : "This alternative works well after Al Soudah or Rijal Almaa.",
+    };
+  }
+
+  if (code === "IST") {
+    return {
+      ...common,
+      title: isAr ? `يوم ${day.day}: كاديكوي والجانب الآسيوي` : `Day ${day.day}: Kadikoy and the Asian side`,
+      focus: isAr ? "عبّارة + طعام محلي + مشي خفيف" : "Ferry + local food + easy walking",
+      area: isAr ? "كاديكوي" : "Kadikoy",
+      morning: isAr ? "خذ العبّارة إلى كاديكوي واستمتع بالمشهد بدلاً من الزحام." : "Take the ferry to Kadikoy and enjoy the view instead of traffic.",
+      afternoon: isAr ? "غداء محلي ثم مشي في مودا أو شارع بغداد حسب وقتك." : "Local lunch, then walk around Moda or Bagdat Street depending on time.",
+      evening: isAr ? "ارجع بالعبّارة قبل التأخر، أو عشاء هادئ في كاراكوي." : "Return by ferry before it gets too late, or dinner in Karakoy.",
+      transit: isAr ? "العبّارة أفضل جزء في اليوم، واجعلها ضمن الخطة لا مجرد وسيلة." : "The ferry is part of the experience, not just transport.",
+      tip: isAr ? "ممتاز لمن يريد إسطنبول أقل سياحية وأكثر محلية." : "Great for a less touristy, more local Istanbul day.",
+    };
+  }
+
+  if (code === "DXB") {
+    return {
+      ...common,
+      title: isAr ? `يوم ${day.day}: متاحف وممشى حضري` : `Day ${day.day}: Museums and city walking`,
+      focus: isAr ? "متحف المستقبل أو الفهيدي + مساء خفيف" : "Museum of the Future or Al Fahidi + easy evening",
+      area: isAr ? "وسط دبي أو الفهيدي" : "Downtown Dubai or Al Fahidi",
+      morning: isAr ? "ابدأ بمتحف المستقبل أو حي الفهيدي حسب ميزانيتك." : "Start with Museum of the Future or Al Fahidi depending on budget.",
+      afternoon: isAr ? "غداء قريب ثم راحة قصيرة لتجنب حرارة الظهر." : "Nearby lunch, then a short rest to avoid midday heat.",
+      evening: isAr ? "ممشى سيتي ووك أو دبي مول بدون برنامج مزدحم." : "City Walk or Dubai Mall without a packed schedule.",
+      transit: isAr ? "المترو عملي إذا سكنك قريب من محطة." : "Metro works well if your stay is near a station.",
+      tip: isAr ? "هذا بديل جيد للأيام الحارة أو للعائلات." : "A strong alternative for hot days or family trips.",
+    };
+  }
+
+  return {
+    ...common,
+    title: isAr ? `يوم ${day.day}: بديل أخف` : `Day ${day.day}: Lighter alternative`,
+    focus: isAr ? "نشاط رئيسي واحد + مساحة راحة" : "One anchor activity + breathing room",
+    morning: isAr ? `ابدأ في ${day.area} بنشاط واحد واضح بدل أكثر من توقف.` : `Start in ${day.area} with one clear activity instead of multiple stops.`,
+    afternoon: isAr ? "غداء قريب ثم راحة أو نشاط داخلي حسب الطقس." : "Nearby lunch, then rest or an indoor stop depending on weather.",
+    evening: isAr ? "اختم بعشاء قريب من السكن لتقليل التنقل." : "End with dinner near your stay to reduce transfers.",
+    transit: isAr ? "قلل التنقلات واجعل اليوم داخل منطقة واحدة." : "Reduce transfers and keep the day in one area.",
+    tip: isAr ? "ريا تستطيع تخصيص هذا البديل أكثر حسب الموسم." : "Rya can tune this alternative further by season.",
+  };
 }
 
 export function TripPlanner({ locale }: { locale: Locale }) {
@@ -129,6 +233,85 @@ export function TripPlanner({ locale }: { locale: Locale }) {
       days: plan.days,
       tripType: plan.tripType,
       budgetLevel: plan.budgetLevel,
+    });
+  }
+
+  function toggleInterest(interest: PlannerInterest) {
+    setForm((prev) => {
+      const has = prev.interests.includes(interest);
+      return {
+        ...prev,
+        interests: has
+          ? prev.interests.filter((item) => item !== interest)
+          : [...prev.interests, interest].slice(0, 4),
+      };
+    });
+  }
+
+  function removeDay(dayNumber: number) {
+    if (!plan || plan.daysPlan.length <= 1) return;
+    const next = renumberDays({
+      ...plan,
+      daysPlan: plan.daysPlan.filter((day) => day.day !== dayNumber),
+      summary: isAr
+        ? `${plan.summary} تم تخفيفها بحذف يوم من الجدول داخل الصفحة.`
+        : `${plan.summary} Adjusted in-page by removing one itinerary day.`,
+    }, isAr);
+    setPlan(next);
+    setSaved(false);
+    logEvent("trip_plan_day_removed", {
+      destination: plan.destinationName,
+      removedDay: dayNumber,
+      remainingDays: next.days,
+    });
+  }
+
+  function lightenDay(dayNumber: number) {
+    if (!plan) return;
+    const nextPlan = {
+      ...plan,
+      daysPlan: plan.daysPlan.map((day) => {
+        if (day.day !== dayNumber) return day;
+        return {
+          ...day,
+          focus: isAr ? `${day.focus} بوتيرة أخف` : `${day.focus} at a lighter pace`,
+          afternoon: isAr
+            ? "اجعل العصر اختيارياً: غداء قريب ثم راحة أو نشاط قصير حسب الطاقة والطقس."
+            : "Make the afternoon optional: nearby lunch, then rest or a short stop depending on energy and weather.",
+          evening: isAr
+            ? "اختم بعشاء قريب من السكن بدون تنقل طويل."
+            : "End with dinner near your stay without a long transfer.",
+          transit: isAr
+            ? "تم تخفيف اليوم: تنقل واحد رئيسي فقط وهامش راحة واضح."
+            : "Lightened day: one main transfer and a clear rest buffer.",
+          estimatedCost: Math.max(0, Math.round(day.estimatedCost * 0.82)),
+          tip: isAr
+            ? "هذا النسق مناسب للعائلات أو بعد يوم طويل."
+            : "This pace works well for families or after a long day.",
+        };
+      }),
+    };
+    setPlan(nextPlan);
+    setSaved(false);
+    logEvent("trip_plan_day_lightened", {
+      destination: plan.destinationName,
+      day: dayNumber,
+    });
+  }
+
+  function swapDay(dayNumber: number) {
+    if (!plan) return;
+    const nextPlan = {
+      ...plan,
+      daysPlan: plan.daysPlan.map((day) => (
+        day.day === dayNumber ? alternativeForDay(plan, day, isAr) : day
+      )),
+    };
+    setPlan(nextPlan);
+    setSaved(false);
+    logEvent("trip_plan_day_swapped", {
+      destination: plan.destinationName,
+      day: dayNumber,
     });
   }
 
@@ -252,6 +435,31 @@ export function TripPlanner({ locale }: { locale: Locale }) {
                   {typeLabel(type, isAr)}
                 </button>
               ))}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-medium text-white/45">
+              {isAr ? "اهتمامات الرحلة" : "Trip interests"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {INTERESTS.map((interest) => {
+                const selected = form.interests.includes(interest);
+                return (
+                  <button
+                    key={interest}
+                    type="button"
+                    onClick={() => toggleInterest(interest)}
+                    className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                      selected
+                        ? "border-brand-mint/50 bg-brand-mint/10 text-brand-mint"
+                        : "border-white/[0.08] bg-white/[0.03] text-white/45 hover:text-white"
+                    }`}
+                  >
+                    {interestLabel(interest, isAr)}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -416,6 +624,33 @@ export function TripPlanner({ locale }: { locale: Locale }) {
                         <MessageCircle className="h-4 w-4" />
                         {isAr ? "عدّليه مع ريا" : "Tune with Rya"}
                       </a>
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-2 print:hidden">
+                      <button
+                        type="button"
+                        onClick={() => swapDay(day.day)}
+                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] px-3 text-xs text-white/55 transition hover:bg-white/[0.06] hover:text-white"
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                        {isAr ? "بدّل النشاط" : "Swap activity"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => lightenDay(day.day)}
+                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-white/[0.08] px-3 text-xs text-white/55 transition hover:bg-white/[0.06] hover:text-white"
+                      >
+                        <Coffee className="h-3.5 w-3.5" />
+                        {isAr ? "خفف اليوم" : "Make lighter"}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeDay(day.day)}
+                        disabled={plan.daysPlan.length <= 1}
+                        className="inline-flex h-9 items-center gap-2 rounded-lg border border-rose-400/20 px-3 text-xs text-rose-200/75 transition hover:bg-rose-500/10 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Scissors className="h-3.5 w-3.5" />
+                        {isAr ? "احذف اليوم" : "Remove day"}
+                      </button>
                     </div>
                   </div>
                 ))}

@@ -287,6 +287,12 @@ INTENT (TODAY = {{TODAY}}, MONTH = {{CURRENT_MONTH}}):
   • "يونيو 5", "5 يونيو", "June 5", "5 June" → June 5, not June 15.
   • "يونيو لمدة 5 أيام", "June for 5 nights" → month-only start may use the 15th; the number is duration.
   • If both a start day and duration are known, return_date = start date + duration nights/days.
+- Arabic relative dates:
+  • "نهاية الشهر" / "آخر الشهر" → the final 3 days of the current month, unless today is already late month then use next month.
+  • "بداية الشهر القادم" → first day of next month.
+  • "منتصف الشهر" → the 15th of the current month, or next month if the 15th has passed.
+  • "الويكند القادم" → next Friday/weekend.
+  • "بعد العيد" → the first calm travel window after the next Eid period; do not confuse it with "June 15".
 - adults: default 2
 - budget_usd: convert (1 SAR=$0.267, 1 EUR=$1.08, 1 GBP=$1.27, 1 AED=$0.272, 1 TRY=$0.031)
 - Populate intent fields with best-guess even in clarify/advice mode.

@@ -25,6 +25,12 @@ const ALLOWED_EVENTS = new Set([
   "ria_quick_action_clicked",
   "traveler_service_clicked",
   "ria_response_feedback",
+  "trip_plan_generated",
+  "trip_plan_feedback",
+  "trip_plan_rya_followup_clicked",
+  "trip_plan_day_removed",
+  "trip_plan_day_swapped",
+  "trip_plan_day_lightened",
 ]);
 
 export async function POST(req: NextRequest) {
