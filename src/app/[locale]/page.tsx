@@ -11,6 +11,8 @@ import { BrandStory } from "@/components/BrandStory";
 import { DestinationsGrid } from "@/components/DestinationsGrid";
 import { Footer } from "@/components/Footer";
 import { RyaCompanionPromise } from "@/components/RyaCompanionPromise";
+import { RyaConversationExamples } from "@/components/RyaConversationExamples";
+import { TrustDisclosureBand } from "@/components/TrustDisclosureBand";
 import { TravelerServicesSection } from "@/components/TravelerServicesSection";
 import { SearchProvider } from "@/components/search/SearchContext";
 import { FaqJsonLd } from "@/components/JsonLd";
@@ -158,10 +160,12 @@ export default async function LandingPage({
       <Navbar dict={dict} locale={locale as Locale} />
       <main>
         <Hero dict={dict} />
+        <RyaConversationExamples locale={locale as Locale} />
         <RyaCompanionPromise locale={locale as Locale} />
         <StatsBar dict={dict} />
         <BrandStory dict={dict} locale={locale} />
         <TravelerServicesSection locale={locale as Locale} />
+        <TrustDisclosureBand locale={locale as Locale} />
 
         {/* Below-fold sections — deferred for faster initial load */}
         <MobileMockups dict={dict} />

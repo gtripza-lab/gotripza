@@ -55,9 +55,16 @@ export function PartnerRecommendations({ recs, locale, destination, variant = "f
       {/* Section header */}
       <div className="flex items-center gap-3">
         <div className="h-px flex-1 bg-white/[0.06]" />
-        <span className="text-xs font-semibold uppercase tracking-widest text-white/35">
-          {isAr ? "خدمات مُوصى بها لرحلتك" : "Recommended for your trip"}
-        </span>
+        <div className="text-center">
+          <span className="block text-xs font-semibold uppercase tracking-widest text-white/35">
+            {isAr ? "خدمات مُوصى بها لرحلتك" : "Recommended for your trip"}
+          </span>
+          <span className="mt-1 block text-[10px] text-white/25">
+            {isAr
+              ? "قد نربح عمولة من الشريك بدون زيادة على سعرك"
+              : "Partner links may earn a commission at no extra cost to you"}
+          </span>
+        </div>
         <div className="h-px flex-1 bg-white/[0.06]" />
       </div>
 
@@ -136,6 +143,9 @@ function PartnerCard({
         {isAr ? "استعرض الخيارات" : "View options"}
         <ArrowRight className="h-3 w-3 rtl:rotate-180" />
       </div>
+      <p className="text-[10px] leading-4 text-white/30">
+        {isAr ? "رابط شريك موثّق، وقد يدعم GoTripza بدون تكلفة إضافية عليك." : "Verified partner link; it may support GoTripza at no extra cost to you."}
+      </p>
     </motion.a>
   );
 }
@@ -152,37 +162,42 @@ function CompactRow({
   destination?: string;
 }) {
   return (
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-      {recs.slice(0, 6).map((rec) => {
-        const c = accent(rec.partner.accentColor);
-        return (
-          <a
-            key={rec.partner.id}
-            href={rec.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            onClick={() =>
-              logEvent("affiliate_upsell_clicked", {
-                type: rec.partner.category,
-                partner: rec.partner.id,
-                destination: destination ?? "",
-              })
-            }
-            className={`group flex items-center gap-2 rounded-xl border p-2.5 transition ${c.border} ${c.bg}`}
-          >
-            <span className="text-base shrink-0" aria-hidden="true">{rec.partner.icon}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[11px] font-semibold text-white/80">{rec.partner.name}</p>
-              <p className={`text-[10px] ${c.text}`}>
-                {isAr
-                  ? CATEGORY_META[rec.partner.category]?.label_ar
-                  : CATEGORY_META[rec.partner.category]?.label_en}
-              </p>
-            </div>
-            <ExternalLink className="h-3 w-3 shrink-0 text-white/20 transition group-hover:text-white/50" />
-          </a>
-        );
-      })}
+    <div className="space-y-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        {recs.slice(0, 6).map((rec) => {
+          const c = accent(rec.partner.accentColor);
+          return (
+            <a
+              key={rec.partner.id}
+              href={rec.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() =>
+                logEvent("affiliate_upsell_clicked", {
+                  type: rec.partner.category,
+                  partner: rec.partner.id,
+                  destination: destination ?? "",
+                })
+              }
+              className={`group flex items-center gap-2 rounded-xl border p-2.5 transition ${c.border} ${c.bg}`}
+            >
+              <span className="text-base shrink-0" aria-hidden="true">{rec.partner.icon}</span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-semibold text-white/80">{rec.partner.name}</p>
+                <p className={`text-[10px] ${c.text}`}>
+                  {isAr
+                    ? CATEGORY_META[rec.partner.category]?.label_ar
+                    : CATEGORY_META[rec.partner.category]?.label_en}
+                </p>
+              </div>
+              <ExternalLink className="h-3 w-3 shrink-0 text-white/20 transition group-hover:text-white/50" />
+            </a>
+          );
+        })}
+      </div>
+      <p className="px-1 text-[10px] leading-4 text-white/24">
+        {isAr ? "تظهر هذه الخدمات حسب سياق رحلتك. قد تدعمنا روابط الشركاء بدون زيادة على سعرك." : "Shown because they fit your trip context. Partner links may support us at no extra cost to you."}
+      </p>
     </div>
   );
 }

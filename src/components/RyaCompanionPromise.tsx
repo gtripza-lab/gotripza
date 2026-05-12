@@ -40,10 +40,10 @@ const ITEMS = [
   },
   {
     icon: Camera,
-    titleAr: "تفهم الصور لاحقاً",
-    titleEn: "Image help ready",
-    descAr: "المنتج مجهز لتقديم مساعدة حول القوائم واللافتات والتذاكر ضمن ريا كومبانيون.",
-    descEn: "Built to support menus, signs, and tickets inside Rya Companion.",
+    titleAr: "تفهم صور السفر",
+    titleEn: "Understands travel images",
+    descAr: "قوائم طعام، لافتات، تذاكر، وشاشات مطار تتحول إلى خطوة واضحة أثناء الرحلة.",
+    descEn: "Menus, signs, tickets, and airport screens become clear next steps during the trip.",
   },
   {
     icon: LifeBuoy,

@@ -134,7 +134,7 @@ export function OrganizationJsonLd() {
       "https://twitter.com/gotripza",
     ],
     description:
-      "AI-powered travel companion. Smart planning, seamless booking, unforgettable journeys.",
+      "GoTripza is built around Rya, an AI travel companion for smart trip planning, budgeting, safety guidance, translation, airport help, and contextual travel services.",
   };
   return (
     <script
@@ -150,6 +150,13 @@ export function WebsiteJsonLd() {
     "@type": "WebSite",
     name: "GoTripza",
     url: APP_URL,
+    description:
+      "Rya is GoTripza's AI travel companion, helping travelers plan smarter and get useful trip support inside one conversation.",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: `${APP_URL}/en/search?q={search_term_string}`,
+      "query-input": "required name=search_term_string",
+    },
   };
   return (
     <script
