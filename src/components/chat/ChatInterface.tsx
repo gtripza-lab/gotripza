@@ -125,8 +125,10 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   const suggestions = isAr ? SUGGESTIONS_AR : SUGGESTIONS_EN;
   const showSuggestions = messages.length <= 1 && !isThinking;
 
-  // Mobile browsers expose a smaller visual viewport when the keyboard is open.
-  // Keep the chat locked to that visible height so the composer stays reachable.
+  // Keep the route isolated like a native chat screen. We intentionally do not
+  // resize the whole app to visualViewport.height; iOS PWA can report a tiny
+  // visual viewport while the keyboard is open, which lifts the composer to the
+  // top of the screen. Let the browser handle keyboard panning instead.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const root = document.documentElement;
@@ -134,18 +136,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     const previousBodyOverflow = document.body.style.overflow;
     root.style.overflow = "hidden";
     document.body.style.overflow = "hidden";
-    const setVisualHeight = () => {
-      const height = window.visualViewport?.height ?? window.innerHeight;
-      root.style.setProperty("--gtz-visual-height", `${Math.round(height)}px`);
-    };
-    setVisualHeight();
-    window.visualViewport?.addEventListener("resize", setVisualHeight);
-    window.visualViewport?.addEventListener("scroll", setVisualHeight);
-    window.addEventListener("orientationchange", setVisualHeight);
     return () => {
-      window.visualViewport?.removeEventListener("resize", setVisualHeight);
-      window.visualViewport?.removeEventListener("scroll", setVisualHeight);
-      window.removeEventListener("orientationchange", setVisualHeight);
       root.style.overflow = previousHtmlOverflow;
       document.body.style.overflow = previousBodyOverflow;
     };
@@ -204,7 +195,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   };
 
   const handleImage = async (file: File | null | undefined) => {
-    if (!file || isImageReading || isThinking) return;
+    if (!file || isImageReading) return;
     setIsImageReading(true);
     const form = new FormData();
     form.set("image", file);
@@ -370,7 +361,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           <button
             type="button"
             onClick={() => imageInputRef.current?.click()}
-            disabled={isThinking || isImageReading}
+            disabled={isImageReading}
             aria-label={isAr ? "فهم صورة" : "Analyze image"}
             title={isAr ? "فهم صورة مع Rya Companion" : "Image help with Rya Companion"}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/42 transition hover:bg-white/[0.10] hover:text-white/75 disabled:opacity-40 sm:h-10 sm:w-10"
@@ -392,9 +383,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
                 ? "اسألني عن رحلتك..."
                 : "Ask me about your trip..."
             }
-            disabled={isThinking}
             rows={1}
-            className="min-h-[36px] min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base leading-5 text-white/92 placeholder:text-white/32 focus:outline-none disabled:opacity-50 sm:min-h-[40px] sm:px-2 sm:py-2.5 sm:text-sm"
+            className="min-h-[36px] min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base leading-5 text-white/92 placeholder:text-white/32 focus:outline-none sm:min-h-[40px] sm:px-2 sm:py-2.5 sm:text-sm"
             style={{ maxHeight: "120px" }}
             onInput={(e) => {
               const t = e.currentTarget;
@@ -407,7 +397,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           <button
             type="button"
             onClick={handleVoice}
-            disabled={isThinking}
+            disabled={isListening}
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
             className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 min-[430px]:flex sm:h-10 sm:w-10 ${
               isListening
