@@ -1,7 +1,7 @@
 "use client";
 import { ChatProvider } from "./chat/ChatContext";
 import { ChatInterface } from "./chat/ChatInterface";
-import { buildAviasalesUrl, buildHotelUrl } from "@/lib/partners";
+import { buildAviasalesUrl } from "@/lib/partners";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Locale } from "@/i18n/config";
 import type { Currency } from "@/lib/utils";
@@ -91,11 +91,9 @@ export function SearchPageClient({
             </div>
           </a>
 
-          {/* Hotels CTA — Booking.com via TP promo_id=4338 */}
+          {/* Hotel guide CTA until direct hotel inventory is connected. */}
           <a
-            href={buildHotelUrl({ subid: "search_page_cta" })}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={`/${locale}/hotels/dubai`}
             className="group relative overflow-hidden rounded-2xl border border-white/[0.09] bg-white/[0.03] p-6 backdrop-blur-sm transition-all duration-300 hover:border-brand-mint/30 hover:bg-white/[0.06] hover:shadow-lg hover:shadow-brand-mint/5"
           >
             {/* Subtle gradient glow */}
@@ -108,14 +106,14 @@ export function SearchPageClient({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
                   <h3 className="text-base font-semibold text-white">
-                    {isAr ? "أفضل أسعار الفنادق" : "Best Hotel Prices"}
+                    {isAr ? "دليل مناطق السكن" : "Stay Area Guide"}
                   </h3>
                   <ExternalLink className="h-3.5 w-3.5 text-white/30 transition-colors group-hover:text-brand-mint/60" />
                 </div>
                 <p className="text-sm text-white/50 leading-relaxed">
                   {isAr
-                    ? "أكثر من مليون فندق وشقة في كل أنحاء العالم"
-                    : "Over 1 million hotels & apartments worldwide"}
+                    ? "اختر المنطقة المناسبة إلى أن يكتمل ربط عروض الفنادق المباشرة"
+                    : "Choose the right area until direct hotel offers are connected"}
                 </p>
                 <div className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-brand-mint/10 px-3 py-1.5 text-xs font-medium text-brand-mint ring-1 ring-brand-mint/20 transition-all duration-300 group-hover:bg-brand-mint/20 group-hover:text-white">
                   <Hotel className="h-3 w-3" />

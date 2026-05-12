@@ -158,6 +158,8 @@ export default async function AiControlCenterPage() {
                   <tr className="border-b border-white/[0.06]">
                     <th className="pb-2 text-right font-medium text-white/35">التقييم</th>
                     <th className="pb-2 text-right font-medium text-white/35">النمط</th>
+                    <th className="pb-2 text-right font-medium text-white/35">الوجهة</th>
+                    <th className="pb-2 text-right font-medium text-white/35">مقتطف الرد</th>
                     <th className="pb-2 text-right font-medium text-white/35">المسار</th>
                     <th className="pb-2 text-right font-medium text-white/35">الوقت</th>
                   </tr>
@@ -171,6 +173,14 @@ export default async function AiControlCenterPage() {
                         </span>
                       </td>
                       <td className="py-2.5 pr-4 text-white/50">{row.mode}</td>
+                      <td className="py-2.5 pr-4 text-white/40">{row.destination ?? "—"}</td>
+                      <td className="max-w-xs py-2.5 pr-4 text-white/45" title={row.messageExcerpt ?? undefined}>
+                        {row.messageExcerpt
+                          ? row.messageExcerpt.length > 90
+                            ? `${row.messageExcerpt.slice(0, 90)}…`
+                            : row.messageExcerpt
+                          : "—"}
+                      </td>
                       <td className="py-2.5 pr-4 text-white/35">{row.path ?? "—"}</td>
                       <td className="py-2.5 text-white/35">
                         {new Date(row.created_at).toLocaleString("ar-SA", {

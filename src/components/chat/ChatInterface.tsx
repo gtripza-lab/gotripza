@@ -38,7 +38,7 @@ import {
 import { useChat } from "./ChatContext";
 import { RayaAgentModal } from "./RayaAgentModal";
 import { RyaInstallPrompt } from "./RyaInstallPrompt";
-import type { ChatMessage, ChatSearchData } from "./ChatContext";
+import type { ChatMessage, ChatSearchData, TravelContext } from "./ChatContext";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
 import { getPartnerRecommendations } from "@/lib/orchestration";
@@ -294,6 +294,15 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       <RyaInstallPrompt locale={locale} />
 
+      <TravelMomentRail
+        locale={locale}
+        context={travelContext}
+        onPrompt={(prompt, label) => {
+          logEvent("ria_quick_action_clicked", { source: "travel_moment_rail", label, locale });
+          void sendMessage(prompt);
+        }}
+      />
+
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
         className="chat-viewport-lock flex-1 min-h-0 min-w-0 overflow-y-auto px-2.5 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
@@ -412,7 +421,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           <button
             type="button"
             onClick={handleSend}
-            disabled={isThinking || !input.trim()}
+            disabled={!input.trim()}
             aria-label={isAr ? "إرسال" : "Send"}
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-ink-950 shadow-md shadow-black/30 transition hover:scale-105 hover:shadow-lg disabled:cursor-not-allowed disabled:bg-white/[0.12] disabled:text-white/28 disabled:hover:scale-100 sm:h-10 sm:w-10"
           >
@@ -460,6 +469,75 @@ function CompanionMemoryStrip({
             {chip}
           </span>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function TravelMomentRail({
+  locale,
+  context,
+  onPrompt,
+}: {
+  locale: import("@/i18n/config").Locale;
+  context: TravelContext;
+  onPrompt: (prompt: string, label: string) => void;
+}) {
+  const isAr = locale === "ar";
+  const destination = context.destination;
+  const destinationHint = destination
+    ? isAr
+      ? ` وجهتي الحالية هي ${destination}.`
+      : ` My current destination is ${destination}.`
+    : "";
+  const items = [
+    {
+      label: isAr ? "ترجمة" : "Translate",
+      icon: Languages,
+      prompt: isAr
+        ? `أحتاج مساعدة ترجمة أثناء السفر.${destinationHint} اسألني عن العبارة أو الصورة أو الموقف، ثم أعطني صياغة طبيعية قصيرة.`
+        : `I need translation help during travel.${destinationHint} Ask me for the phrase, image, or situation, then give me a short natural wording.`,
+    },
+    {
+      label: isAr ? "المطار" : "Airport",
+      icon: Landmark,
+      prompt: isAr
+        ? `أنا في المطار وأحتاج إرشاد خطوة بخطوة.${destinationHint} اسألني عن المرحلة الحالية ثم ساعدني بهدوء.`
+        : `I am at the airport and need step-by-step help.${destinationHint} Ask where I am in the process, then guide me calmly.`,
+    },
+    {
+      label: isAr ? "الأمان" : "Safety",
+      icon: ShieldAlert,
+      prompt: isAr
+        ? `أعطني تنبيهات أمان واحتيال سياحي عملية.${destinationHint} اجعلها مختصرة وهادئة ومناسبة للمسافر.`
+        : `Give me practical safety and travel scam guidance.${destinationHint} Keep it calm, concise, and traveler-friendly.`,
+    },
+    {
+      label: isAr ? "الميزانية" : "Budget",
+      icon: WalletCards,
+      prompt: isAr
+        ? `ساعدني أراجع ميزانية رحلتي.${destinationHint} اسألني عن عدد الأيام وطريقة السفر ثم أعطني تقديرًا واضحًا.`
+        : `Help me review my trip budget.${destinationHint} Ask about trip length and travel style, then give me a clear estimate.`,
+    },
+  ];
+
+  return (
+    <div className="shrink-0 border-b border-white/[0.05] bg-black/10 px-3 py-2 sm:hidden">
+      <div className="flex max-w-full gap-2 overflow-x-auto scroll-hide">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => onPrompt(item.prompt, item.label)}
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 text-[11px] font-medium text-white/52 transition active:scale-[0.98] active:bg-violet-500/[0.18]"
+            >
+              <Icon className="h-3.5 w-3.5 text-brand-mint/80" />
+              <span>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -522,7 +600,7 @@ function MessageBubble({
 }) {
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
-  const { sendMessage, isThinking, travelContext } = useChat();
+  const { sendMessage, travelContext } = useChat();
 
   if (message.isLoading) return null; // handled by TypingIndicator
 
@@ -533,6 +611,9 @@ function MessageBubble({
       mode: message.mode ?? "unknown",
       hasSearchData: Boolean(message.searchData),
       messageId: message.id,
+      messageExcerpt: message.text.slice(0, 240),
+      destination: message.searchData?.intent.destination ?? travelContext.destination ?? null,
+      bookingStage: travelContext.booking_stage ?? null,
     });
   }
 
@@ -572,6 +653,12 @@ function MessageBubble({
           </div>
         )}
 
+        {isUser && message.queued && (
+          <span className="px-1 text-[10px] text-white/28">
+            {locale === "ar" ? "بالانتظار، ريا سترد عليها بعد الرسالة الحالية" : "Queued, Rya will answer after the current reply"}
+          </span>
+        )}
+
         {/* Search Results — only for search-mode assistant messages */}
         {!isUser && message.searchData && message.mode === "search" && (
           <ChatSearchResults
@@ -587,7 +674,7 @@ function MessageBubble({
           <QuickActionBar
             locale={locale}
             message={message}
-            disabled={isThinking}
+            disabled={false}
             onAction={(text) => void sendMessage(text)}
           />
         )}
@@ -968,11 +1055,10 @@ function ChatSearchResults({
               title={isAr ? "أسعار الفنادق المباشرة قريباً" : "Live hotel prices coming soon"}
               note={
                 isAr
-                  ? "نعمل على تفعيل الربط مع شريك الفنادق. يمكنك فتح البحث المباشر الآن."
-                  : "Hotel inventory is being connected. You can still open partner search now."
+                  ? "مزود الفنادق لم يفعّل الربط بعد. اسأل ريا عن أفضل مناطق السكن ونصائح اختيار الفندق."
+                  : "Hotel inventory is not connected yet. Ask Rya for the best stay areas and hotel-picking advice."
               }
-              url={data.hotelSearchUrl}
-              btnLabel={isAr ? "بحث مباشر" : "Live Search"}
+              btnLabel={isAr ? "قريباً" : "Soon"}
               accent="mint"
               live={false}
             />
@@ -1535,7 +1621,7 @@ function SearchCTACard({
 }: {
   isAr: boolean; icon: React.ReactNode; title: string;
   note?: string;
-  url: string; btnLabel: string; accent: "primary" | "mint";
+  url?: string; btnLabel: string; accent: "primary" | "mint";
   live?: boolean;
 }) {
   const isPrimary = accent === "primary";
@@ -1554,15 +1640,21 @@ function SearchCTACard({
           {note && <p className="mt-1 text-[11px] leading-relaxed text-white/40">{note}</p>}
         </div>
       </div>
-      <a
-        href={url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={`flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-3 text-xs font-semibold text-white shadow-sm transition hover:scale-105 ${isPrimary ? "bg-gradient-to-r from-brand-primary to-violet-600" : "bg-gradient-to-r from-emerald-500 to-teal-500"}`}
-      >
-        {btnLabel}
-        <ExternalLink className="h-3 w-3" />
-      </a>
+      {url ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={`flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-3 text-xs font-semibold text-white shadow-sm transition hover:scale-105 ${isPrimary ? "bg-gradient-to-r from-brand-primary to-violet-600" : "bg-gradient-to-r from-emerald-500 to-teal-500"}`}
+        >
+          {btnLabel}
+          <ExternalLink className="h-3 w-3" />
+        </a>
+      ) : (
+        <span className={`flex h-8 shrink-0 items-center justify-center rounded-lg px-3 text-xs font-semibold ${isPrimary ? "bg-violet-500/15 text-violet-200" : "bg-emerald-500/15 text-emerald-200"}`}>
+          {btnLabel}
+        </span>
+      )}
     </div>
   );
 }

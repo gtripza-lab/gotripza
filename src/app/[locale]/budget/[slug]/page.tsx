@@ -317,7 +317,7 @@ export default async function BudgetPage({ params }: Props) {
               {isAr ? `ريا تخطط رحلتك ضمن ميزانيتك` : `Raya will plan your trip within your budget`}
             </h3>
             <p className="text-white/60 mb-5 text-sm">
-              {isAr ? "أخبري ريا بميزانيتك وهي تجد أفضل خيارات الطيران والفنادق لك" : "Tell Raya your budget and she'll find the best flights and hotels for you"}
+              {isAr ? "أخبري ريا بميزانيتك وهي تساعدك في الطيران ومناطق السكن المناسبة" : "Tell Rya your budget and she will help with flights and the right stay areas"}
             </p>
             <a
               href={`/${locale}/search?q=${encodeURIComponent(isAr ? `رحلة لـ${dest.nameAr} ميزانية ${bp.budgetUsd} دولار ${bp.durationDays} أيام` : `trip to ${dest.nameEn} budget $${bp.budgetUsd} ${bp.durationDays} days`)}`}

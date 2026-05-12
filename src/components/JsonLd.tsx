@@ -150,11 +150,6 @@ export function WebsiteJsonLd() {
     "@type": "WebSite",
     name: "GoTripza",
     url: APP_URL,
-    potentialAction: {
-      "@type": "SearchAction",
-      target: `${APP_URL}/?q={search_term_string}`,
-      "query-input": "required name=search_term_string",
-    },
   };
   return (
     <script

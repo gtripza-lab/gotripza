@@ -4,13 +4,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   Plane, BedDouble, ExternalLink, MapPin, Thermometer,
-  Calendar, Star, Shield,
+  Calendar, Shield,
 } from "lucide-react";
 import { isLocale, type Locale } from "@/i18n/config";
 import { fetchPhoto } from "@/lib/unsplash";
 import { UnsplashAttribution } from "@/components/UnsplashAttribution";
-import { searchHotels } from "@/lib/travelpayouts";
-import { formatPrice } from "@/lib/utils";
 import { iataToCity } from "@/lib/iata";
 import {
   getDestination,
@@ -45,12 +43,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const country = isAr ? dest.countryAr : dest.country;
 
   const title = isAr
-    ? `${name} ${dest.flag} — دليل السفر الشامل، أفضل الفنادق والطيران`
-    : `${name} ${dest.flag} Travel Guide — Flights, Hotels & Tips`;
+    ? `${name} ${dest.flag} — دليل السفر الشامل، الطيران ومناطق السكن`
+    : `${name} ${dest.flag} Travel Guide — Flights, Stay Areas & Tips`;
 
   const description = isAr
-    ? `دليل ${name} الشامل: أرخص تذاكر الطيران، أفضل الفنادق، ميزانية الرحلة، أفضل وقت للزيارة، ومتطلبات التأشيرة. احجز الآن عبر GoTripza.`
-    : `Complete ${name} travel guide: cheap flights, best hotels, budget planning, best time to visit, and visa requirements. Book your ${name} trip on GoTripza.`;
+    ? `دليل ${name} الشامل: تذاكر الطيران، أفضل مناطق السكن، ميزانية الرحلة، أفضل وقت للزيارة، ومتطلبات التأشيرة. خطط رحلتك مع ريا.`
+    : `Complete ${name} travel guide: flights, best stay areas, budget planning, best time to visit, and visa requirements. Plan your trip with Rya.`;
 
   const pageUrl = `${BASE}/${params.locale}/destinations/${params.slug}`;
 
@@ -86,26 +84,21 @@ export default async function DestinationHubPage({ params }: Props) {
   const dest = getDestination(params.slug);
   if (!dest) notFound();
 
-  const currency = "USD";
   const pageUrl = `${BASE}/${locale}/destinations/${params.slug}`;
   const cityName = iataToCity(dest.iata);
 
-  // Fetch in parallel
-  const [photoResult, hotelsResult] = await Promise.allSettled([
-    fetchPhoto(dest.heroKeyword, "landscape"),
-    searchHotels({ location: cityName, currency }),
-  ]);
+  const photoResult = await fetchPhoto(dest.heroKeyword, "landscape").then(
+    (value) => ({ status: "fulfilled" as const, value }),
+    () => ({ status: "rejected" as const, value: null }),
+  );
 
   const photo = photoResult.status === "fulfilled" ? photoResult.value : null;
-  const hotels = hotelsResult.status === "fulfilled" ? hotelsResult.value.slice(0, 6) : [];
-  const minHotelPrice = hotels.length ? Math.min(...hotels.map((h) => h.priceFrom)) : undefined;
 
   const name = isAr ? dest.nameAr : dest.nameEn;
   const bestMonths = formatBestMonths(dest.bestMonths, locale);
 
   // Affiliate URLs
   const flightUrl = `https://www.aviasales.com/?marker=${MARKER}&destination=${dest.iata}&subid=destination_hub`;
-  const hotelUrl = `https://www.hotellook.com/search?destination=${encodeURIComponent(cityName)}&lang=${isAr ? "ar" : "en"}&marker=${MARKER}&subid=destination_hub`;
   const carUrl = `https://www.discovercars.com/?a_aid=${MARKER}&destination=${encodeURIComponent(cityName)}`;
   const activitiesUrl = `https://www.getyourguide.com/s/?q=${encodeURIComponent(cityName)}&partner_id=${MARKER}`;
 
@@ -151,7 +144,7 @@ export default async function DestinationHubPage({ params }: Props) {
     },
     {
       href: `/${locale}/hotels/${params.slug}`,
-      label: isAr ? `أفضل فنادق ${name}` : `Best hotels in ${dest.nameEn}`,
+      label: isAr ? `أفضل مناطق السكن في ${name}` : `Best stay areas in ${dest.nameEn}`,
       icon: "🏨",
     },
   ];
@@ -163,7 +156,7 @@ export default async function DestinationHubPage({ params }: Props) {
         destination={dest.nameEn}
         description={isAr ? dest.descriptionAr : dest.descriptionEn}
         imageUrl={photo?.url}
-        minHotelPrice={minHotelPrice}
+        minHotelPrice={undefined}
         currency="USD"
         pageUrl={pageUrl}
       />
@@ -227,16 +220,13 @@ export default async function DestinationHubPage({ params }: Props) {
                 {isAr ? `طيران إلى ${name}` : `Flights to ${dest.nameEn}`}
                 <ExternalLink className="h-3.5 w-3.5 opacity-70" />
               </a>
-              <a
-                href={hotelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`/${locale}/hotels/${params.slug}`}
                 className="inline-flex items-center gap-2 rounded-full bg-brand-mint/20 border border-brand-mint/30 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-mint/30"
               >
                 <BedDouble className="h-4 w-4 text-brand-mint" />
-                {isAr ? `فنادق ${name}` : `Hotels in ${dest.nameEn}`}
-                <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-              </a>
+                {isAr ? `مناطق السكن في ${name}` : `Stay areas in ${dest.nameEn}`}
+              </Link>
             </div>
           </div>
         </section>
@@ -362,11 +352,16 @@ export default async function DestinationHubPage({ params }: Props) {
             </div>
           </section>
 
-          {/* HOTELS */}
+          {/* STAY AREAS */}
           <section className="glass rounded-2xl p-6 mb-6">
             <h2 className="mb-4 font-display text-xl font-bold">
-              {isAr ? `أفضل فنادق ${name}` : `Top Hotels in ${dest.nameEn}`}
+              {isAr ? `أفضل مناطق السكن في ${name}` : `Best Stay Areas in ${dest.nameEn}`}
             </h2>
+            <p className="mb-4 text-sm leading-relaxed text-white/60">
+              {isAr
+                ? "عروض الفنادق المباشرة غير مفعلة حالياً، لذلك نعرض لك دليلاً عملياً لاختيار منطقة السكن المناسبة إلى أن يكتمل الربط."
+                : "Direct hotel offers are not active yet, so this is a practical guide to choosing the right stay area until the connection is complete."}
+            </p>
 
             {/* Hotel categories */}
             <div className="mb-4 flex flex-wrap gap-2">
@@ -381,68 +376,21 @@ export default async function DestinationHubPage({ params }: Props) {
               ))}
             </div>
 
-            {hotels.length > 0 ? (
-              <ul className="space-y-3">
-                {hotels.map((h) => (
-                  <li
-                    key={h.hotelId}
-                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] p-3 transition hover:bg-white/[0.06]"
-                  >
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold">{h.hotelName}</div>
-                      <div className="mt-1 flex items-center gap-2 text-xs text-white/50">
-                        {h.stars ? (
-                          <span className="inline-flex items-center gap-0.5 text-amber-400">
-                            <Star className="h-3 w-3 fill-current" />
-                            {h.stars}
-                          </span>
-                        ) : null}
-                        <span>{h.location.name}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="text-end">
-                        <div className="text-xs text-white/40">
-                          {isAr ? "من" : "from"}
-                        </div>
-                        <div className="font-bold">{formatPrice(h.priceFrom, currency)}</div>
-                      </div>
-                      <a
-                        href={h.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-r from-brand-mint to-brand-deep text-white"
-                        aria-label="Book hotel"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </a>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <a
-                href={hotelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-brand-mint/20 bg-brand-mint/5 p-5 text-sm font-medium text-white/70 transition hover:bg-brand-mint/10"
-              >
-                <BedDouble className="h-5 w-5 text-brand-mint" />
-                {isAr ? `ابحث عن فنادق ${name}` : `Search hotels in ${dest.nameEn}`}
-                <ExternalLink className="h-4 w-4" />
-              </a>
-            )}
+            <Link
+              href={`/${locale}/hotels/${params.slug}`}
+              className="flex items-center justify-center gap-2 rounded-xl border border-brand-mint/20 bg-brand-mint/5 p-5 text-sm font-medium text-white/70 transition hover:bg-brand-mint/10"
+            >
+              <BedDouble className="h-5 w-5 text-brand-mint" />
+              {isAr ? `افتح دليل السكن في ${name}` : `Open the ${dest.nameEn} stay guide`}
+            </Link>
 
             <div className="mt-4 flex justify-end">
-              <a
-                href={hotelUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={`/${locale}/hotels/${params.slug}`}
                 className="text-sm text-brand-mint hover:underline inline-flex items-center gap-1"
               >
-                {isAr ? `عرض كل فنادق ${name}` : `See all ${dest.nameEn} hotels`}
-                <ExternalLink className="h-3.5 w-3.5" />
-              </a>
+                {isAr ? `عرض دليل مناطق السكن` : `See stay area guide`}
+              </Link>
             </div>
           </section>
 

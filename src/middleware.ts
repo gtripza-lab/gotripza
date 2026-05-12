@@ -81,12 +81,33 @@ function pickLocale(req: NextRequest): string {
   return defaultLocale;
 }
 
+function redirectToCleanLocaleHome(req: NextRequest, locale: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = `/${locale}`;
+  url.search = "";
+  return NextResponse.redirect(url, 308);
+}
+
 export function middleware(req: NextRequest) {
   // ── B7: CSRF check (API POSTs only) ──────────────────────────────────────
   const csrfRes = csrfReject(req);
   if (csrfRes) return csrfRes;
 
   const { pathname } = req.nextUrl;
+  const locale = pickLocale(req);
+
+  // Google picked up the old WebSite SearchAction template as a literal URL:
+  // /?q={search_term_string}. Keep it out of the index by canonicalizing it.
+  const q = req.nextUrl.searchParams.get("q");
+  if (q === "{search_term_string}") {
+    return redirectToCleanLocaleHome(req, locale);
+  }
+
+  // Defensive canonicalization for malformed absolute URLs requested as paths,
+  // e.g. /https://gotripza.com or Vercel-normalized /https:/gotripza.com.
+  if (/^\/https?:\/+/.test(pathname)) {
+    return redirectToCleanLocaleHome(req, locale);
+  }
 
   // ── Main domain locale redirect ────────────────────────────────────────────
   const hasLocale = locales.some(
@@ -98,7 +119,6 @@ export function middleware(req: NextRequest) {
   if (pathname.startsWith("/api/")) return NextResponse.next();
   if (pathname.startsWith("/admin")) return NextResponse.next();
 
-  const locale = pickLocale(req);
   const url = req.nextUrl.clone();
   url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
   return NextResponse.redirect(url);
@@ -108,6 +128,6 @@ export const config = {
   matcher: [
     // Run on /api/* (for CSRF) and on locale routes (for redirect)
     "/api/:path*",
-    "/((?!_next|favicon.ico|.*\\..*).*)",
+    "/((?!_next|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|map|txt|xml|woff|woff2)$).*)",
   ],
 };

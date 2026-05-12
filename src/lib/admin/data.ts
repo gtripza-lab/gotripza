@@ -137,6 +137,10 @@ export type RiaFeedbackStats = {
     value: "up" | "down";
     mode: string;
     path: string | null;
+    destination: string | null;
+    bookingStage: string | null;
+    messageExcerpt: string | null;
+    hasSearchData: boolean;
     created_at: string;
   }[];
 };
@@ -256,7 +260,14 @@ export async function getRiaFeedbackStats(): Promise<RiaFeedbackStats> {
 
     const rows = ((data ?? []) as {
       id: string | number;
-      payload: { value?: string; mode?: string } | null;
+      payload: {
+        value?: string;
+        mode?: string;
+        destination?: string | null;
+        bookingStage?: string | null;
+        messageExcerpt?: string | null;
+        hasSearchData?: boolean;
+      } | null;
       path: string | null;
       created_at: string;
     }[]).filter((row) => row.payload?.value === "up" || row.payload?.value === "down");
@@ -284,6 +295,10 @@ export async function getRiaFeedbackStats(): Promise<RiaFeedbackStats> {
         value: row.payload?.value as "up" | "down",
         mode: row.payload?.mode || "unknown",
         path: row.path,
+        destination: row.payload?.destination || null,
+        bookingStage: row.payload?.bookingStage || null,
+        messageExcerpt: row.payload?.messageExcerpt || null,
+        hasSearchData: Boolean(row.payload?.hasSearchData),
         created_at: row.created_at,
       })),
     };

@@ -91,7 +91,7 @@ export default async function PlusPage({ params }: { params: { locale: string } 
                 <span className="text-4xl font-bold text-white">{isAr ? "تجربة مجانية" : "Free trial"}</span>
                 <span className="ms-2 text-sm text-white/35">{isAr ? "مؤقتاً" : "for now"}</span>
                 <p className="mt-2 text-sm text-white/40">
-                  {isAr ? "نفعّل لك كامل تجربة Rya Companion على الجوال لفترة مجانية محددة إلى أن نربط الدفع لاحقاً." : "Use the full Rya Companion mobile experience free for a limited time until payments are connected later."}
+                  {isAr ? "نفعّل لك كامل تجربة Rya Companion على الجوال لفترة مجانية." : "Use the full Rya Companion mobile experience free for a limited time."}
                 </p>
               </div>
               <ul className="mt-6 space-y-3">

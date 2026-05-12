@@ -88,6 +88,7 @@ export type ChatMessage = {
   role: "user" | "assistant";
   text: string;
   timestamp: number;
+  queued?: boolean;
   mode?: ChatMode;          // mode of the AI response
   searchData?: ChatSearchData; // only present when mode === "search"
   isLoading?: boolean;
@@ -165,6 +166,8 @@ export function ChatProvider({
     knownFacts: [],
   });
   const abortRef = useRef<AbortController | null>(null);
+  const processingRef = useRef(false);
+  const queuedMessagesRef = useRef<{ id: string; text: string }[]>([]);
 
   // Keep a ref in sync so sendMessage can read latest messages without
   // being re-created on every state update (avoids stale-closure & perf issues).
@@ -172,6 +175,8 @@ export function ChatProvider({
   useEffect(() => { messagesRef.current = messages; }, [messages]);
   const companionMemoryRef = useRef(companionMemory);
   useEffect(() => { companionMemoryRef.current = companionMemory; }, [companionMemory]);
+  const travelContextRef = useRef(travelContext);
+  useEffect(() => { travelContextRef.current = travelContext; }, [travelContext]);
 
   function updateCompanionMemory(userText: string, aiText: string, context: TravelContext) {
     const facts = [
@@ -228,23 +233,33 @@ export function ChatProvider({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialMessage]);
 
-  const sendMessage = useCallback(async (text: string) => {
-    if (!text.trim() || isThinking) return;
+  const processMessage = useCallback(async (
+    text: string,
+    opts: { showUserBubble?: boolean; queuedMessageId?: string } = {},
+  ) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
+    const showUserBubble = opts.showUserBubble ?? true;
+    processingRef.current = true;
+    if (opts.queuedMessageId) {
+      setMessages((prev) =>
+        prev.map((message) =>
+          message.id === opts.queuedMessageId ? { ...message, queued: false } : message,
+        ),
+      );
+    }
 
-    // Cancel any in-flight request
     abortRef.current?.abort();
     const abort = new AbortController();
     abortRef.current = abort;
 
-    // 1 — Add user bubble
     const userMsg: ChatMessage = {
       id: genId(),
       role: "user",
-      text: text.trim(),
+      text: cleanText,
       timestamp: Date.now(),
     };
 
-    // 2 — Add thinking placeholder
     const thinkingId = genId();
     const thinkingMsg: ChatMessage = {
       id: thinkingId,
@@ -254,9 +269,9 @@ export function ChatProvider({
       isLoading: true,
     };
 
-    setMessages((prev) => [...prev, userMsg, thinkingMsg]);
+    setMessages((prev) => showUserBubble ? [...prev, userMsg, thinkingMsg] : [...prev, thinkingMsg]);
     setIsThinking(true);
-    logEvent("chat_message_sent", { query: text, locale });
+    logEvent("chat_message_sent", { query: cleanText, locale });
 
     try {
       // Build conversation history to send (last 12 messages, excluding current loading msg).
@@ -276,9 +291,9 @@ export function ChatProvider({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          query: text,
+          query: cleanText,
           history: historySnap,
-          context: travelContext,
+          context: travelContextRef.current,
           clientMemory: companionMemoryRef.current,
         }),
         signal: abort.signal,
@@ -322,7 +337,7 @@ export function ChatProvider({
       // Accumulate context. Prefer server's authoritative merged context
       // (Phase 3 orchestrator); fall back to client-side merge for older
       // server builds that don't echo `context` yet.
-      const nextContext = parsedJson.context ?? mergeContext(travelContext, intent);
+      const nextContext = parsedJson.context ?? mergeContext(travelContextRef.current, intent);
       if (parsedJson.context) {
         setTravelContext(parsedJson.context);
       } else {
@@ -339,7 +354,7 @@ export function ChatProvider({
               : m,
           ),
         );
-        updateCompanionMemory(text, aiMessage, nextContext);
+        updateCompanionMemory(cleanText, aiMessage, nextContext);
 
         logEvent("chat_message_sent", { mode, destination: intent.destination, locale: aiLocale });
 
@@ -347,7 +362,7 @@ export function ChatProvider({
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            query: text,
+            query: cleanText,
             response: aiMessage,
             destination: intent.destination,
             locale: aiLocale,
@@ -406,7 +421,7 @@ export function ChatProvider({
             : m,
         ),
       );
-      updateCompanionMemory(text, aiMessage, nextContext);
+      updateCompanionMemory(cleanText, aiMessage, nextContext);
 
       logEvent("chat_results_ready", {
         destination: intent.destination,
@@ -419,7 +434,7 @@ export function ChatProvider({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          query: text,
+          query: cleanText,
           response: aiMessage,
           destination: intent.destination,
           locale: aiLocale,
@@ -444,14 +459,46 @@ export function ChatProvider({
       );
     } finally {
       setIsThinking(false);
+      processingRef.current = false;
+      const nextQueuedMessage = queuedMessagesRef.current.shift();
+      if (nextQueuedMessage) {
+        void processMessage(nextQueuedMessage.text, {
+          showUserBubble: false,
+          queuedMessageId: nextQueuedMessage.id,
+        });
+      }
     }
-  }, [locale, currency, isThinking, travelContext]);
+  }, [locale, currency]);
+
+  const sendMessage = useCallback(async (text: string) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
+    if (processingRef.current) {
+      const queuedId = genId();
+      queuedMessagesRef.current.push({ id: queuedId, text: cleanText });
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: queuedId,
+          role: "user",
+          text: cleanText,
+          timestamp: Date.now(),
+          queued: true,
+        },
+      ]);
+      logEvent("chat_message_sent", { locale, queued: true });
+      return;
+    }
+    await processMessage(cleanText, { showUserBubble: true });
+  }, [locale, processMessage]);
 
   const clearChat = useCallback(() => {
     setMessages([welcomeMsg]);
     setIsThinking(false);
     setTravelContext(EMPTY_CONTEXT);
     setCompanionMemory({ summary: null, knownFacts: [] });
+    queuedMessagesRef.current = [];
+    processingRef.current = false;
     abortRef.current?.abort();
   }, [welcomeMsg]);
 
