@@ -5,6 +5,7 @@ import { Plane, Clock, Calendar, ExternalLink, Sparkles, ChevronDown } from "luc
 import { isLocale, type Locale } from "@/i18n/config";
 import { getRoutePair, ROUTE_SLUGS } from "@/lib/route-pairs";
 import { DESTINATIONS } from "@/lib/seo-destinations";
+import type { RoutePair } from "@/lib/route-pairs";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
 
@@ -40,14 +41,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const isAr = params.locale === "ar";
   const currentYear = new Date().getFullYear();
   const airlinesList = route.airlines.join(", ");
+  const routeIntent = route.slug === "dubai-to-maldives";
 
   const title = isAr
-    ? `رحلات رخيصة من ${route.fromNameAr} إلى ${route.toNameAr} ${currentYear} — احجز الآن`
-    : `Cheap Flights from ${route.fromNameEn} to ${route.toNameEn} ${currentYear} — Book Now`;
+    ? routeIntent
+      ? `دبي إلى المالديف ${currentYear} — الطيران، التأشيرة، أفضل وقت وتكلفة الرحلة`
+      : `رحلات من ${route.fromNameAr} إلى ${route.toNameAr} ${currentYear} — الأسعار والمدة`
+    : routeIntent
+      ? `Dubai to Maldives ${currentYear} — Flights, Visa, Best Time & Trip Cost`
+      : `${route.fromNameEn} to ${route.toNameEn} ${currentYear} — Flights, Time & Cost`;
 
   const description = isAr
-    ? `اعثر على أرخص رحلات من ${route.fromNameAr} إلى ${route.toNameAr}. قارن أسعار ${airlinesList}. السعر المتوسط من $${route.avgPriceUsd}. احجز مع مستشارة ريا الذكية.`
-    : `Find the cheapest flights from ${route.fromNameEn} to ${route.toNameEn}. Compare prices from ${airlinesList}. Average price from $${route.avgPriceUsd}. Book with GoTripza's AI advisor Raya.`;
+    ? routeIntent
+      ? `دليل عملي للسفر من دبي إلى المالديف: مدة الرحلة، شركات الطيران، التأشيرة عند الوصول، أفضل الشهور، النقل للمنتجع، وتخطيط ريا.`
+      : `اعرف مدة الرحلة من ${route.fromNameAr} إلى ${route.toNameAr}، متوسط السعر من $${route.avgPriceUsd}، شركات الطيران ${airlinesList}، ونصائح ريا قبل الحجز.`
+    : routeIntent
+      ? `A practical Dubai to Maldives guide: flight time, airlines, visa on arrival, best months, resort transfers, trip cost, and planning with Rya.`
+      : `Learn flight time from ${route.fromNameEn} to ${route.toNameEn}, average fares from $${route.avgPriceUsd}, airlines ${airlinesList}, and Rya's planning tips.`;
 
   const pageUrl = `${BASE}/${params.locale}/routes/${params.slug}`;
 
@@ -56,7 +66,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     description,
     keywords: isAr
       ? `طيران ${route.fromNameAr} ${route.toNameAr}, رحلات رخيصة, ${airlinesList}, ${route.fromCountryAr}, ${route.toCountryAr}`
-      : `cheap flights ${route.fromNameEn} ${route.toNameEn}, ${airlinesList}, ${route.fromCountryEn} to ${route.toCountryEn}, airfare deals`,
+      : `${route.fromNameEn.toLowerCase()} to ${route.toNameEn.toLowerCase()}, cheap flights ${route.fromNameEn} ${route.toNameEn}, ${route.fromCountryEn} to ${route.toCountryEn}, flight time, visa, best time`,
     alternates: {
       canonical: pageUrl,
       languages: {
@@ -76,6 +86,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+function routeSearchQuestions(route: RoutePair, isAr: boolean) {
+  if (route.slug === "dubai-to-maldives") {
+    return isAr
+      ? ["دبي إلى المالديف", "كم ساعة من دبي إلى المالديف؟", "هل المالديف تحتاج فيزا؟", "أفضل وقت للمالديف", "تكلفة رحلة المالديف من دبي"]
+      : ["Dubai to Maldives", "Dubai to Maldives flight time", "Do I need a visa for Maldives?", "Best time to visit Maldives", "Dubai to Maldives trip cost"];
+  }
+  return isAr
+    ? [`${route.fromNameAr} إلى ${route.toNameAr}`, `مدة الرحلة إلى ${route.toNameAr}`, `تأشيرة ${route.toCountryAr}`, `أفضل وقت للسفر إلى ${route.toNameAr}`]
+    : [`${route.fromNameEn} to ${route.toNameEn}`, `${route.toNameEn} flight time`, `${route.toCountryEn} visa requirements`, `best time to visit ${route.toNameEn}`];
+}
+
+function routePlanningBrief(route: RoutePair, isAr: boolean) {
+  if (route.slug === "dubai-to-maldives") {
+    return isAr
+      ? {
+          title: "إجابة سريعة: دبي إلى المالديف",
+          body: "رحلة دبي إلى المالديف قصيرة نسبياً، حوالي 4 ساعات طيران مباشر إلى ماليه. أغلب المسافرين يحصلون على تأشيرة مجانية عند الوصول لمدة 30 يوماً، لكن المهم هو تنسيق المنتجع مع النقل البحري أو الطائرة المائية بعد الوصول.",
+          bullets: ["أفضل الشهور غالباً من نوفمبر إلى أبريل.", "احسب تكلفة المنتجع والنقل للجزيرة، وليس الطيران فقط.", "احجز الوصول نهاراً إن كان منتجعك يحتاج طائرة مائية."],
+        }
+      : {
+          title: "Quick answer: Dubai to Maldives",
+          body: "Dubai to Maldives is a short international trip, roughly 4 hours by direct flight to Male. Most travellers get a free 30-day visa on arrival, but the key planning detail is resort transfer by speedboat or seaplane after landing.",
+          bullets: ["Best months are usually November to April.", "Budget for resort and island transfer, not only flights.", "Arrive during daylight if your resort needs a seaplane."],
+        };
+  }
+  return isAr
+    ? {
+        title: `إجابة سريعة: ${route.fromNameAr} إلى ${route.toNameAr}`,
+        body: `تستغرق الرحلة تقريباً ${route.durationHours} ساعة، ومتوسط السعر من $${route.avgPriceUsd}. راجع التأشيرة والطقس قبل الحجز، ثم اطلب من ريا مقارنة التواريخ المناسبة.`,
+        bullets: ["قارن عدة تواريخ قبل الحجز.", "راجع الأمتعة والترانزيت.", "اطلب من ريا خطة ميزانية للرحلة."],
+      }
+    : {
+        title: `Quick answer: ${route.fromNameEn} to ${route.toNameEn}`,
+        body: `The flight takes about ${route.durationHours} hours, with average fares from $${route.avgPriceUsd}. Check visa and season before booking, then ask Rya to compare practical travel dates.`,
+        bullets: ["Compare several dates before booking.", "Check baggage and transit rules.", "Ask Rya for a trip budget plan."],
+      };
+}
+
 export default async function RoutePage({ params }: Props) {
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
@@ -93,6 +141,8 @@ export default async function RoutePage({ params }: Props) {
   const toCountry = isAr ? route.toCountryAr : route.toCountryEn;
   const airlinesList = route.airlines.join(", ");
   const tips = isAr ? route.tipsAr : route.tipsEn;
+  const searchQuestions = routeSearchQuestions(route, isAr);
+  const planningBrief = routePlanningBrief(route, isAr);
 
   const durationH = Math.floor(route.durationHours);
   const durationMin = Math.round((route.durationHours - durationH) * 60);
@@ -176,10 +226,14 @@ export default async function RoutePage({ params }: Props) {
           q: `Which airlines fly from ${route.fromNameEn} to ${route.toNameEn}?`,
           a: `Airlines serving this route include ${airlinesList}. You can compare live prices across all carriers on GoTripza.`,
         },
-        {
-          q: `Do I need a visa to travel from ${route.fromNameEn} to ${route.toNameEn}?`,
+          {
+            q: `Do I need a visa to travel from ${route.fromNameEn} to ${route.toNameEn}?`,
           a: `Visa requirements depend on your nationality. Always check the official ${route.toCountryEn} government or embassy website for the latest entry requirements before booking.`,
         },
+        ...(route.slug === "dubai-to-maldives" ? [{
+          q: "Is Dubai to Maldives a good short trip?",
+          a: "Yes. It is one of the easiest premium beach escapes from Dubai: short flight, visa on arrival for most travellers, and strong resort options. The main thing to plan is island transfer timing.",
+        }] : []),
         {
           q: `How far in advance should I book flights from ${route.fromNameEn} to ${route.toNameEn}?`,
           a: `For the best prices, book 6–8 weeks in advance. For peak seasons and holidays, aim to book at least 3 months ahead to lock in competitive fares.`,
@@ -367,6 +421,34 @@ export default async function RoutePage({ params }: Props) {
               <div className="text-sm font-semibold text-white/90">
                 {bestMonthsLabel(route.toDestSlug, isAr)}
               </div>
+            </div>
+          </section>
+
+          <section className="mb-8 rounded-2xl border border-brand-primary/20 bg-brand-primary/[0.08] p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-primary/80">
+              {isAr ? "مختصر مفيد" : "Short answer"}
+            </p>
+            <h2 className="mt-2 font-display text-xl font-bold">{planningBrief.title}</h2>
+            <p className="mt-3 text-sm leading-7 text-white/68">{planningBrief.body}</p>
+            <div className="mt-4 grid gap-2 md:grid-cols-3">
+              {planningBrief.bullets.map((item) => (
+                <div key={item} className="rounded-xl border border-white/[0.06] bg-black/20 p-3 text-sm leading-6 text-white/58">
+                  {item}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-8 rounded-2xl border border-white/[0.10] bg-white/[0.04] p-5">
+            <h2 className="font-display text-lg font-bold">
+              {isAr ? "أسئلة بحث تغطيها هذه الصفحة" : "Search questions answered here"}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {searchQuestions.map((query) => (
+                <span key={query} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-white/58">
+                  {query}
+                </span>
+              ))}
             </div>
           </section>
 

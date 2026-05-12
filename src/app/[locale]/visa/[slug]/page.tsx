@@ -79,14 +79,25 @@ function visaStatusLabel(status: "free" | "onArrival" | "eVisa" | "required", is
 
 function destinationVisaContext(dest: Destination, isAr: boolean) {
   if (dest.country === "Turkey") {
+    const isCappadocia = dest.slug === "cappadocia";
     return {
-      title: isAr ? `إجابة سريعة: هل كابادوكيا لها تأشيرة خاصة؟` : `Quick answer: does Cappadocia have its own visa?`,
+      title: isCappadocia
+        ? isAr ? `إجابة سريعة: هل كابادوكيا لها تأشيرة خاصة؟` : `Quick answer: does Cappadocia have its own visa?`
+        : isAr ? `إجابة سريعة عن تأشيرة ${dest.nameAr}` : `Quick answer for ${dest.nameEn} visa requirements`,
       body: isAr
-        ? `${dest.nameAr} تتبع تركيا، لذلك لا توجد “فيزا كابادوكيا” منفصلة. تحتاج فقط إلى متطلبات دخول تركيا حسب جنسيتك، وغالباً تكون التأشيرة الإلكترونية مناسبة لكثير من المسافرين.`
-        : `${dest.nameEn} is in Turkey, so there is no separate “Cappadocia visa”. You only need to meet Turkey entry requirements for your nationality, and many travellers use the Turkish e-Visa system.`,
+        ? isCappadocia
+          ? `${dest.nameAr} تتبع تركيا، لذلك لا توجد “فيزا كابادوكيا” منفصلة. تحتاج فقط إلى متطلبات دخول تركيا حسب جنسيتك، وغالباً تكون التأشيرة الإلكترونية مناسبة لكثير من المسافرين.`
+          : `${dest.nameAr} تتبع تركيا، لذلك تحتاج إلى متطلبات دخول تركيا حسب جنسيتك. كثير من المسافرين يستطيعون استخدام التأشيرة الإلكترونية التركية قبل السفر.`
+        : isCappadocia
+          ? `${dest.nameEn} is in Turkey, so there is no separate “Cappadocia visa”. You only need to meet Turkey entry requirements for your nationality, and many travellers use the Turkish e-Visa system.`
+          : `${dest.nameEn} follows Turkey entry rules. Many travellers can use the Turkish e-Visa system before travel, depending on nationality.`,
       tip: isAr
-        ? "إذا كانت رحلتك إلى كابادوكيا عبر إسطنبول أو قيصري أو نفسهير، فمتطلبات الدخول هي نفسها متطلبات دخول تركيا."
-        : "If you reach Cappadocia via Istanbul, Kayseri, or Nevsehir, the same Turkey entry rules apply.",
+        ? isCappadocia
+          ? "إذا كانت رحلتك إلى كابادوكيا عبر إسطنبول أو قيصري أو نفسهير، فمتطلبات الدخول هي نفسها متطلبات دخول تركيا."
+          : "تحقق من evisa.gov.tr أو السفارة الرسمية قبل شراء التذاكر، خصوصاً إذا كان جوازك لا يدعم التأشيرة الإلكترونية."
+        : isCappadocia
+          ? "If you reach Cappadocia via Istanbul, Kayseri, or Nevsehir, the same Turkey entry rules apply."
+          : "Check evisa.gov.tr or the official embassy before buying tickets, especially if your passport is not eligible for e-Visa.",
     };
   }
 

@@ -7,6 +7,7 @@ import { DESTINATION_SLUGS, getDestination, BUDGET_PAGES, COMPARISON_PAGES } fro
 import { iataToCity } from "@/lib/iata";
 import { BreadcrumbJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
+import type { Destination } from "@/lib/seo-destinations";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
@@ -25,20 +26,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!dest) return {};
   const isAr = params.locale === "ar";
   const name = isAr ? dest.nameAr : dest.nameEn;
+  const year = "2026";
 
   const title = isAr
-    ? `أفضل مناطق السكن في ${name} — فنادق GoTripza قريباً`
-    : `Where to Stay in ${dest.nameEn} — GoTripza Hotels Coming Soon`;
+    ? `أفضل مناطق السكن والفنادق في ${name} ${year} — دليل عملي`
+    : `Best Hotels & Areas to Stay in ${dest.nameEn} ${year} — Practical Guide`;
   const description = isAr
-    ? `دليل مؤقت لأفضل مناطق السكن في ${name} ونصائح اختيار الفندق إلى أن يكتمل ربط عروض الفنادق المباشرة في GoTripza.`
-    : `A temporary guide to the best areas to stay in ${dest.nameEn}, with hotel selection tips while GoTripza live hotel inventory is being connected.`;
+    ? `دليل صادق لاختيار أفضل منطقة سكن في ${name}: الأحياء المناسبة، أنواع الفنادق، نصائح قبل الحجز، ومساعدة ريا إلى أن يكتمل ربط عروض الفنادق المباشرة.`
+    : `An honest guide to choosing where to stay in ${dest.nameEn}: best areas, hotel types, booking tips, and Rya's help while live hotel offers are being connected.`;
 
   return {
     title,
     description,
     keywords: isAr
       ? `فنادق ${name}, أفضل فنادق ${name}, حجز فندق ${name}`
-      : `${dest.nameEn} hotels, best hotels ${dest.nameEn}, hotel booking ${dest.nameEn}`,
+      : `best hotels in ${dest.nameEn}, ${dest.nameEn} hotels, where to stay in ${dest.nameEn}, hotel areas ${dest.nameEn}`,
     alternates: {
       canonical: `${BASE}/${params.locale}/hotels/${params.slug}`,
       languages: {
@@ -51,6 +53,44 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
+function hotelSearchQueries(dest: Destination, isAr: boolean) {
+  if (isAr) {
+    return [
+      `فنادق ${dest.nameAr}`,
+      `أفضل فنادق ${dest.nameAr}`,
+      `أفضل منطقة للسكن في ${dest.nameAr}`,
+      `فنادق ${dest.nameAr} للعوائل`,
+    ];
+  }
+  return [
+    `best hotels in ${dest.nameEn}`,
+    `where to stay in ${dest.nameEn}`,
+    `${dest.nameEn} hotel areas`,
+    `best ${dest.nameEn} hotels for families`,
+  ];
+}
+
+function hotelIntentBrief(dest: Destination, isAr: boolean) {
+  if (dest.slug === "amman") {
+    return isAr
+      ? "للبحث عن فنادق عمان، ابدأ بجبل عمان إذا تريد مطاعم ومشي وتجربة محلية، عبدون إذا تريد منطقة أرقى وهادئة، ووسط البلد إذا تريد قرب الأسواق والآثار بتكلفة أقل."
+      : "For Amman hotels, start with Jabal Amman for food and walkability, Abdoun for a quieter upscale stay, and Downtown if you want markets and Roman sites at a lower cost.";
+  }
+  if (dest.slug === "antalya") {
+    return isAr
+      ? "لأنطاليا، اختر لارا أو بيليك للمنتجعات، كونيالتي للشاطئ مع مدينة، وكاليتشي إذا تريد أجواء تاريخية ومشي."
+      : "For Antalya, choose Lara or Belek for resorts, Konyaalti for beach plus city access, and Kaleici for historic walkability.";
+  }
+  if (dest.slug === "dubai") {
+    return isAr
+      ? "في دبي، اختر وسط دبي لأول زيارة، مارينا/JBR للشاطئ والحياة اليومية، وديرة إذا تريد ميزانية أقل وقرب الأسواق."
+      : "In Dubai, choose Downtown for a first visit, Marina/JBR for beach and lifestyle, and Deira for lower budgets and souks.";
+  }
+  return isAr
+    ? `أفضل منطقة للسكن في ${dest.nameAr} تعتمد على هدف الرحلة: قرب المعالم، الهدوء، الميزانية، أو سهولة التنقل. ريا تساعدك تختار بناءً على برنامجك.`
+    : `The best area to stay in ${dest.nameEn} depends on your trip goal: attractions, calm, budget, or transport. Rya can help choose based on your itinerary.`;
+}
+
 export default async function HotelsPage({ params }: Props) {
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
@@ -61,6 +101,8 @@ export default async function HotelsPage({ params }: Props) {
 
   const name = isAr ? dest.nameAr : dest.nameEn;
   const cityName = iataToCity(dest.iata);
+  const searchQueries = hotelSearchQueries(dest, isAr);
+  const intentBrief = hotelIntentBrief(dest, isAr);
 
   const budgetPages = BUDGET_PAGES.filter((b) => b.destination === params.slug);
   const comparisons = COMPARISON_PAGES.filter(
@@ -116,7 +158,7 @@ export default async function HotelsPage({ params }: Props) {
             <span className="text-4xl">{dest.flag}</span>
             <div>
               <h1 className="font-display text-2xl font-bold md:text-3xl">
-                {isAr ? `فنادق ${name} قريباً على GoTripza` : `${dest.nameEn} Hotels Are Coming Soon`}
+                {isAr ? `أفضل مناطق السكن والفنادق في ${name}` : `Best Hotels and Areas to Stay in ${dest.nameEn}`}
               </h1>
               <p className="mt-1 text-sm text-white/50">
                 {isAr
@@ -125,6 +167,29 @@ export default async function HotelsPage({ params }: Props) {
               </p>
             </div>
           </div>
+
+          <section className="mt-6 rounded-2xl border border-brand-mint/20 bg-brand-mint/[0.08] p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand-mint/80">
+              {isAr ? "مختصر مفيد" : "Short answer"}
+            </p>
+            <h2 className="mt-2 font-display text-xl font-semibold">
+              {isAr ? `أين تسكن في ${name}؟` : `Where should you stay in ${dest.nameEn}?`}
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-white/68">{intentBrief}</p>
+          </section>
+
+          <section className="mt-6 glass rounded-2xl p-6">
+            <h2 className="font-display text-lg font-bold">
+              {isAr ? "إجابات يبحث عنها المسافرون" : "Search questions answered here"}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {searchQueries.map((query) => (
+                <span key={query} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-white/58">
+                  {query}
+                </span>
+              ))}
+            </div>
+          </section>
 
           {/* Hotel categories */}
           <div className="mt-5 flex flex-wrap gap-2">

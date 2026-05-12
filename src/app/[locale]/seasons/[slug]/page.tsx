@@ -14,6 +14,7 @@ import {
 } from "@/lib/seo-destinations";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
+import type { Destination } from "@/lib/seo-destinations";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
@@ -33,13 +34,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!dest) return {};
   const isAr = params.locale === "ar";
   const name = isAr ? dest.nameAr : dest.nameEn;
+  const year = "2026";
+  const bestMonths = formatBestMonths(dest.bestMonths, params.locale as Locale);
 
   const title = isAr
-    ? `أفضل وقت لزيارة ${name} — دليل المواسم 2025`
-    : `Best Time to Visit ${dest.nameEn} — Season Guide 2025`;
+    ? `أفضل وقت لزيارة ${name} ${year} — أفضل الشهور والطقس`
+    : `Best Time to Visit ${dest.nameEn} ${year} — Best Months & Weather`;
   const description = isAr
-    ? `اكتشف أفضل وقت لزيارة ${name}: الطقس شهراً بشهر، موسم الذروة، الأسعار، وما تتوقعه في كل فصل.`
-    : `Find the best time to visit ${dest.nameEn}: month-by-month weather, peak season, prices, and what to expect each season.`;
+    ? `إجابة مباشرة عن أفضل وقت لزيارة ${name}: أفضل الشهور ${bestMonths}، الطقس، موسم الذروة، الأسعار، ومتى تطلب من ريا تخطيط الرحلة.`
+    : `Direct answer for the best time to visit ${dest.nameEn}: best months ${bestMonths}, weather, peak season, prices, and when to ask Rya to plan.`;
 
   return {
     title,
@@ -52,6 +55,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         "x-default": `${BASE}/en/seasons/${params.slug}`,
       },
     },
+    keywords: isAr
+      ? `أفضل وقت لزيارة ${name}, مواسم ${name}, طقس ${name}, أرخص شهر للسفر إلى ${name}`
+      : `best time to visit ${dest.nameEn}, best month to travel to ${dest.nameEn}, ${dest.nameEn} seasons, ${dest.nameEn} weather`,
     openGraph: { type: "website", title, description, siteName: "GoTripza" },
   };
 }
@@ -75,6 +81,65 @@ const SCORE_STYLES = {
   avoid: { color: "red", bar: "bg-red-500/40", label: { en: "Avoid", ar: "تجنب" } },
 };
 
+function seasonSearchQueries(dest: Destination, isAr: boolean) {
+  if (isAr) {
+    return [
+      `أفضل وقت لزيارة ${dest.nameAr}`,
+      `مواسم ${dest.nameAr}`,
+      `طقس ${dest.nameAr}`,
+      `أرخص شهر للسفر إلى ${dest.nameAr}`,
+    ];
+  }
+  return [
+    `best time to visit ${dest.nameEn}`,
+    `best month to travel to ${dest.nameEn}`,
+    `best months to visit ${dest.nameEn}`,
+    `${dest.nameEn.toLowerCase()} seasons`,
+  ];
+}
+
+function seasonIntentAnswer(dest: Destination, bestMonthsText: string, isAr: boolean) {
+  if (dest.slug === "maldives") {
+    return isAr
+      ? `أفضل وقت للمالديف غالباً من ${bestMonthsText}. هذه الفترة هي الموسم الجاف: بحر أهدأ، شمس أكثر، وتجربة أفضل للمنتجعات والرحلات البحرية.`
+      : `The best time to visit the Maldives is usually ${bestMonthsText}. This is the dry season, with calmer seas, more sunshine, and the strongest resort and boat-transfer experience.`;
+  }
+  if (dest.slug === "dubai") {
+    return isAr
+      ? `أفضل وقت لزيارة دبي من ${bestMonthsText}. هذه هي أشهر الطقس اللطيف للأنشطة الخارجية، المولات، الشواطئ، والصحراء.`
+      : `The best time to visit Dubai is ${bestMonthsText}. These months bring comfortable weather for outdoor attractions, beaches, desert trips, and walking-heavy days.`;
+  }
+  if (dest.slug === "kuala-lumpur") {
+    return isAr
+      ? `كوالالمبور مناسبة طوال السنة تقريباً، لكن ${bestMonthsText} غالباً أفضل للتنقل اليومي لأن الأمطار تكون أسهل في التخطيط حولها.`
+      : `Kuala Lumpur works almost year-round, but ${bestMonthsText} is usually easier for daily sightseeing because showers are shorter and simpler to plan around.`;
+  }
+  return isAr
+    ? `أفضل أشهر زيارة ${dest.nameAr}: ${bestMonthsText}. استخدم هذه الفترة إذا كنت تريد توازناً جيداً بين الطقس والتكلفة والأنشطة.`
+    : `The best months to visit ${dest.nameEn}: ${bestMonthsText}. Use this window for the best balance of weather, cost, and activities.`;
+}
+
+function monthPlanningTips(dest: Destination, isAr: boolean) {
+  if (dest.slug === "maldives") {
+    return isAr
+      ? ["احجز المنتجع والنقل البحري أو الطائرة المائية معاً.", "نوفمبر إلى أبريل أغلى غالباً لكنه الأفضل للطقس.", "مايو إلى أكتوبر أرخص غالباً، لكنه قد يشهد أمطاراً قصيرة وفرص غوص جيدة."]
+      : ["Book resort and speedboat or seaplane transfer together.", "November to April is usually pricier but best for weather.", "May to October is often cheaper, with short rains and strong diving conditions."];
+  }
+  if (dest.slug === "dubai") {
+    return isAr
+      ? ["تجنب المشي الطويل في الصيف وخطط للأنشطة الداخلية.", "نوفمبر إلى مارس أفضل للشاطئ والصحراء.", "احجز مبكراً في رأس السنة والمعارض الكبيرة."]
+      : ["Avoid long outdoor walks in summer and plan indoor activities.", "November to March is best for beaches and desert trips.", "Book early around New Year and major events."];
+  }
+  if (dest.slug === "kuala-lumpur") {
+    return isAr
+      ? ["ضع نشاطاً داخلياً بديلاً في كل يوم بسبب الأمطار السريعة.", "احمل مظلة خفيفة حتى في أفضل الشهور.", "المولات والمطاعم تجعل المدينة سهلة حتى وقت المطر."]
+      : ["Keep one indoor backup activity each day for quick showers.", "Carry a light umbrella even in better months.", "Malls and food areas make KL easy during rain."];
+  }
+  return isAr
+    ? ["احجز الأنشطة المهمة في أفضل الشهور مبكراً.", "راجع الطقس قبل الرحلة بأسبوع.", "اطلب من ريا تعديل الجدول حسب الموسم."]
+    : ["Book key activities early in the best months.", "Recheck weather one week before travel.", "Ask Rya to tune the itinerary by season."];
+}
+
 export default async function SeasonsPage({ params }: Props) {
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
@@ -86,6 +151,9 @@ export default async function SeasonsPage({ params }: Props) {
   const name = isAr ? dest.nameAr : dest.nameEn;
   const bestMonthsText = formatBestMonths(dest.bestMonths, locale);
   const flightUrl = `https://www.aviasales.com/?marker=${MARKER}&destination=${dest.iata}&subid=seasons`;
+  const queryChips = seasonSearchQueries(dest, isAr);
+  const quickAnswer = seasonIntentAnswer(dest, bestMonthsText, isAr);
+  const planningTips = monthPlanningTips(dest, isAr);
 
   // Categorise all 12 months
   const months = Array.from({ length: 12 }, (_, i) => {
@@ -164,9 +232,13 @@ export default async function SeasonsPage({ params }: Props) {
         items={[
           {
             q: isAr ? `ما أفضل وقت لزيارة ${name}؟` : `What is the best time to visit ${dest.nameEn}?`,
+            a: quickAnswer,
+          },
+          {
+            q: isAr ? `ما أفضل شهر للسفر إلى ${name}؟` : `What is the best month to travel to ${dest.nameEn}?`,
             a: isAr
-              ? `أفضل أشهر لزيارة ${name} هي: ${bestMonthsText}.`
-              : `The best time to visit ${dest.nameEn} is: ${bestMonthsText}.`,
+              ? `ابدأ بالأشهر التالية: ${bestMonthsText}. اختر الشهر حسب ميزانيتك وتفضيلك للزحام أو الهدوء.`
+              : `Start with these months: ${bestMonthsText}. Pick the exact month by budget and whether you prefer fewer crowds or peak conditions.`,
           },
           {
             q: isAr ? `هل ${name} مناسبة للزيارة في الصيف؟` : `Is ${dest.nameEn} good to visit in summer?`,
@@ -225,7 +297,21 @@ export default async function SeasonsPage({ params }: Props) {
               </span>
             </div>
             <p className="text-sm text-white/75">{bestMonthsText}</p>
+            <p className="mt-3 text-sm leading-7 text-white/65">{quickAnswer}</p>
           </div>
+
+          <section className="mt-6 glass rounded-2xl p-6">
+            <h2 className="font-display text-lg font-bold">
+              {isAr ? "إجابات يبحث عنها المسافرون" : "Search questions answered here"}
+            </h2>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {queryChips.map((query) => (
+                <span key={query} className="rounded-full border border-white/[0.08] bg-white/[0.04] px-3 py-1.5 text-xs text-white/58">
+                  {query}
+                </span>
+              ))}
+            </div>
+          </section>
 
           {/* Climate overview */}
           <section className="mt-6 glass rounded-2xl p-6">
@@ -317,6 +403,19 @@ export default async function SeasonsPage({ params }: Props) {
             <p className="text-sm leading-relaxed text-white/70">
               {isAr ? dest.clothing.ar : dest.clothing.en}
             </p>
+          </section>
+
+          <section className="mt-6 glass rounded-2xl p-5">
+            <h2 className="mb-3 font-display text-lg font-bold">
+              {isAr ? "نصائح عملية حسب الموسم" : "Practical seasonal tips"}
+            </h2>
+            <div className="grid gap-3 sm:grid-cols-3">
+              {planningTips.map((tip) => (
+                <div key={tip} className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-3 text-sm leading-6 text-white/60">
+                  {tip}
+                </div>
+              ))}
+            </div>
           </section>
 
           {/* CTA */}
