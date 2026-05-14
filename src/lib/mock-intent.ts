@@ -335,23 +335,38 @@ function findExplicitDayForMonth(query: string, monthName: string | undefined): 
   const q = normalizeDigits(query).toLowerCase();
   const m = escapeRegExp(monthName.toLowerCase());
   const durationUnit = String.raw`(?:أيام|ايام|يوم|ليال|ليالي|ليلة|days?|nights?)`;
+  const candidates: Array<{ day: number; index: number; correction: boolean; negated: boolean }> = [];
+  const pushCandidate = (day: number, index: number) => {
+    if (day < 1 || day > 31) return;
+    const before = q.slice(Math.max(0, index - 40), index);
+    const correction = /(?:^|[\s،,.])(أقصد|اقصد|اعني|أعني|mean|meant)\s*$/i.test(before);
+    const negated =
+      /(?:لا|مو|not)\s+(?:أقصد|اقصد|اعني|أعني|mean|meant)\s*$/i.test(before) ||
+      /(?:لا|مو|not)\s+$/i.test(before) ||
+      /(?:لا|مو)\s+(?:تغير|تغيّر|تحول|تحوّل|تبدل|تبدّل|تجعله|تخليه)[\s\S]*$/i.test(before) ||
+      /(?:do not|don't|dont|not)\s+(?:change|set|turn|make)[\s\S]*$/i.test(before);
+    candidates.push({ day, index, correction, negated });
+  };
 
   // "June 5", "يونيو 5", "يونيو يوم 5" => day 5.
-  const monthThenDay = q.match(new RegExp(`${m}\\s*(?:-|/|،|,)?\\s*(?:يوم\\s+|day\\s+)?(\\d{1,2})(?!\\s*${durationUnit})`, "i"));
-  if (monthThenDay) {
-    const day = Number(monthThenDay[1]);
-    if (day >= 1 && day <= 31) return day;
+  const monthThenDayRe = new RegExp(`${m}\\s*(?:-|/|،|,)?\\s*(?:يوم\\s+|day\\s+)?(\\d{1,2})(?!\\s*${durationUnit})`, "gi");
+  for (const match of q.matchAll(monthThenDayRe)) {
+    pushCandidate(Number(match[1]), match.index ?? 0);
   }
 
   // "5 June", "5 يونيو" => day 5. The negative look-behind by pattern
   // avoids "لمدة 5 أيام في يونيو" being misread as June 5.
-  const dayThenMonth = q.match(new RegExp(`(?:^|[\\s,،])(?:يوم\\s+|day\\s+)?(\\d{1,2})\\s*(?:-|/|،|,)?\\s*${m}`, "i"));
-  if (dayThenMonth) {
-    const day = Number(dayThenMonth[1]);
-    if (day >= 1 && day <= 31) return day;
+  const dayThenMonthRe = new RegExp(`(?:^|[\\s,،])(?:يوم\\s+|day\\s+)?(\\d{1,2})\\s*(?:-|/|،|,)?\\s*${m}`, "gi");
+  for (const match of q.matchAll(dayThenMonthRe)) {
+    pushCandidate(Number(match[1]), match.index ?? 0);
   }
 
-  return null;
+  if (!candidates.length) return null;
+  const valid = candidates.filter((candidate) => !candidate.negated);
+  const pool = valid.length ? valid : candidates;
+  const corrected = pool.filter((candidate) => candidate.correction);
+  const chosen = (corrected.length ? corrected : pool).sort((a, b) => b.index - a.index)[0];
+  return chosen.day;
 }
 
 function findTripDurationDays(query: string): number | null {

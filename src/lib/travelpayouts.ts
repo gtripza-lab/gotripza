@@ -123,6 +123,9 @@ export async function searchFlights(params: {
   if (!params.origin) return [];
 
   const tripClass = aviasalesTripClass(params.cabin_class);
+  const exactDate = params.departure_date ?? null;
+  const exactDateMatches = (offers: FlightOffer[]) =>
+    exactDate ? offers.filter((offer) => offer.departure_at?.slice(0, 10) === exactDate) : offers;
 
   // First attempt: with dates (if provided and in range)
   const results = await fetchFlightPage(
@@ -134,7 +137,16 @@ export async function searchFlights(params: {
     params.subid,
     tripClass,
   );
-  if (results.length > 0) return results;
+  if (results.length > 0) {
+    const exactResults = exactDateMatches(results);
+    if (!exactDate || exactResults.length > 0) return exactResults;
+    // Cached Travelpayouts can occasionally return cheap dates outside the
+    // requested day. Do not show those inside Rya; the broader search CTA still
+    // preserves the user's exact date in the Aviasales URL.
+    return [];
+  }
+
+  if (exactDate) return [];
 
   // Second attempt: without specific dates (broader cache hit)
   const fallback = await fetchFlightPage(
