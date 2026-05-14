@@ -8,6 +8,7 @@ import {
 } from "@/lib/admin/data";
 import { MetricCard } from "@/components/admin/MetricCard";
 import { AdminAutoRefresh } from "@/components/admin/AdminAutoRefresh";
+import { labelTripLifecycle } from "@/lib/ai/trip-lifecycle";
 
 const AreaChartCard = dynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.AreaChartCard })),
@@ -125,6 +126,27 @@ export default async function DashboardPage() {
         data={stats.dailyConversations as unknown as Record<string, unknown>[]}
         dataKey="count"
       />
+
+      <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] p-6">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-white text-base font-medium">مراحل رحلات ريا</h2>
+            <p className="mt-1 text-xs text-white/35">أين يقف المستخدمون الآن: تخطيط، حجز، قبل السفر، أثناء الرحلة، أو بعدها.</p>
+          </div>
+        </div>
+        {stats.tripLifecycle.length === 0 ? (
+          <p className="mt-5 text-sm text-white/35">لا توجد مراحل مسجلة بعد.</p>
+        ) : (
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {stats.tripLifecycle.slice(0, 8).map((item) => (
+              <div key={item.stage} className="rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3">
+                <p className="text-xs text-white/38">{labelTripLifecycle(item.stage, "ar")}</p>
+                <p className="mt-1 text-2xl font-semibold text-white/85">{item.count.toLocaleString("ar-SA")}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Recent AI Traces Table */}
       <div className="rounded-2xl bg-white/[0.03] border border-white/[0.06] overflow-hidden">

@@ -30,6 +30,11 @@ function envCsrfHosts(): Set<string> {
   return set;
 }
 
+function isAllowedDevHost(host: string): boolean {
+  if (process.env.NODE_ENV !== "development") return false;
+  return /^localhost:\d+$/.test(host) || /^127\.0\.0\.1:\d+$/.test(host);
+}
+
 // Routes that handle external webhooks — exempt from CSRF (signature-verified)
 const WEBHOOK_ROUTES = ["/api/webhook/", "/api/billing/webhook"];
 const CSRF_EXEMPT_ROUTES = ["/api/csp-report"];
@@ -90,7 +95,7 @@ function csrfReject(req: NextRequest): NextResponse | null {
   const candidate = origin ?? referer ?? "";
   try {
     const host = new URL(candidate).host;
-    if (!allowed.has(host)) {
+    if (!allowed.has(host) && !isAllowedDevHost(host)) {
       return NextResponse.json(
         { error: "csrf_origin_rejected" },
         { status: 403 },

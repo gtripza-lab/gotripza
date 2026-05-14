@@ -20,6 +20,7 @@ import "server-only";
  */
 import type { TravelIntelligence, ChatTurn } from "../schemas/intelligence";
 import type { TravelContext } from "../schemas/intent";
+import { isPostBookingLifecycle, labelTripLifecycle } from "../trip-lifecycle";
 
 function mergeContextWithIntent(
   ctx: TravelContext,
@@ -120,6 +121,30 @@ function clarifyFor(field: "destination" | "date" | "origin", isAr: boolean): st
     : "Which city are you flying from? After that I can move forward without repeating the same questions.";
 }
 
+function companionPhaseMessage(ctx: TravelContext, isAr: boolean): string {
+  const destination = ctx.destination ?? (isAr ? "رحلتك" : "your trip");
+  const stage = ctx.booking_stage;
+  if (stage === "booked" || stage === "pre_trip") {
+    return isAr
+      ? `تمام، بما أن الرحلة إلى ${destination} أصبحت بعد الحجز، لن أرجع أعرض لك خيارات حجز كل مرة. خلينا نجهز الرحلة نفسها: الوصول، الشريحة، التأمين، الطقس، والشنطة.`
+      : `Got it. Since ${destination} is now post-booking, I will not keep showing booking options. Let’s prepare the actual trip: arrival, mobile data, insurance, weather, and packing.`;
+  }
+  if (stage === "in_trip") {
+    return isAr
+      ? `أنا معك الآن أثناء الرحلة في ${destination}. سأركز على خطوات قصيرة ومباشرة: ترجمة، تنقل، أمان، ميزانية، وما تحتاجه الآن.`
+      : `I’m with you during the trip in ${destination}. I’ll focus on short, direct help: translation, transport, safety, budget, and what you need now.`;
+  }
+  if (stage === "post_trip") {
+    return isAr
+      ? `نحن الآن بعد الرحلة إلى ${destination}. أقدر أراجع التجربة، أحفظ تفضيلاتك للرحلة القادمة، وأساعدك إذا كان هناك تعويض أو مشكلة.`
+      : `We are now after the ${destination} trip. I can review what worked, remember your preferences for next time, and help with compensation or issues.`;
+  }
+  const label = labelTripLifecycle(stage, isAr ? "ar" : "en");
+  return isAr
+    ? `فهمت مرحلة الرحلة: ${label}. سأكمل معك حسب هذه المرحلة بدون تكرار نفس الأسئلة.`
+    : `I understand the trip stage: ${label}. I’ll continue from there without repeating the same questions.`;
+}
+
 export function postProcess(
   intel: TravelIntelligence,
   history: ChatTurn[],
@@ -127,6 +152,17 @@ export function postProcess(
 ): { intel: TravelIntelligence; mergedContext: TravelContext } {
   const mergedContext = mergeContextWithIntent(ctx, intel);
   const isAr = intel.locale === "ar";
+  const postBooking = isPostBookingLifecycle(mergedContext.booking_stage);
+
+  // After booking, Rya becomes a companion, not a booking-results surface.
+  // This prevents repeated cards and keeps the flow useful during real trips.
+  if (postBooking && intel.mode === "search") {
+    intel.mode = "advice";
+    if (/جاري البحث|searching|بحث|book|booking|عروض|تذاكر/i.test(intel.message) || intel.message.length < 24) {
+      intel.message = companionPhaseMessage(mergedContext, isAr);
+    }
+    return { intel, mergedContext };
+  }
 
   // Advice: always honor.
   if (intel.mode === "advice") {

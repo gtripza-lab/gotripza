@@ -28,6 +28,7 @@ export type DashboardStats = {
   errorRate: number; // 0-1
   recentTraces: AiTraceRow[];
   dailyConversations: { date: string; count: number }[];
+  tripLifecycle: { stage: NonNullable<TravelContext["booking_stage"]>; count: number }[];
 };
 
 export async function getDashboardStats(): Promise<DashboardStats | null> {
@@ -67,6 +68,10 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       .from("conversations")
       .select("started_at")
       .gte("started_at", daysAgo(14));
+    const convStageRes = await db
+      .from("conversations")
+      .select("context")
+      .gte("started_at", d7);
     const dailyMap = new Map<string, number>();
     for (let i = 13; i >= 0; i--) {
       dailyMap.set(new Date(Date.now() - i * 86_400_000).toISOString().slice(0, 10), 0);
@@ -76,6 +81,15 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       if (day && dailyMap.has(day)) dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
     }
     const dailyConversations = Array.from(dailyMap.entries()).map(([date, count]) => ({ date, count }));
+    const lifecycleMap = new Map<NonNullable<TravelContext["booking_stage"]>, number>();
+    for (const row of (convStageRes.data ?? []) as { context?: Partial<TravelContext> | null }[]) {
+      const stage = row.context?.booking_stage;
+      if (!stage) continue;
+      lifecycleMap.set(stage, (lifecycleMap.get(stage) ?? 0) + 1);
+    }
+    const tripLifecycle = Array.from(lifecycleMap.entries())
+      .map(([stage, count]) => ({ stage, count }))
+      .sort((a, b) => b.count - a.count);
 
     return {
       conversations24h: conv24.count ?? 0,
@@ -88,6 +102,7 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       errorRate,
       recentTraces: (recentRes.data ?? []) as AiTraceRow[],
       dailyConversations,
+      tripLifecycle,
     };
   } catch (err) {
     console.error("[admin/data] getDashboardStats:", err);

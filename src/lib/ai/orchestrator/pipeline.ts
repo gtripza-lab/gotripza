@@ -26,6 +26,7 @@ import {
 } from "../memory/store";
 import { extractAndUpdate, extractAndUpdateAnon } from "../memory/extract";
 import { maybeSummarize } from "../memory/summarize";
+import { mergeLifecycleStage } from "../trip-lifecycle";
 import { HAS_OPENAI_KEY } from "../config";
 import { captureError } from "@/lib/observability/sentry";
 
@@ -79,7 +80,7 @@ function mergeStoredContext(
     service_interests: Array.from(
       new Set([...(s.service_interests ?? []), ...(current.service_interests ?? [])]),
     ).slice(-8) as TravelContext["service_interests"],
-    booking_stage: current.booking_stage ?? s.booking_stage ?? null,
+    booking_stage: mergeLifecycleStage(s.booking_stage ?? null, current.booking_stage ?? null),
     concerns: Array.from(new Set([...(s.concerns ?? []), ...(current.concerns ?? [])])).slice(-10),
   };
 }

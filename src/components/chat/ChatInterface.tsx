@@ -34,6 +34,11 @@ import {
   WalletCards,
   ThumbsDown,
   ThumbsUp,
+  CheckCircle2,
+  CloudSun,
+  ClipboardCheck,
+  Luggage,
+  Navigation,
 } from "lucide-react";
 import { useChat } from "./ChatContext";
 import { RayaAgentModal } from "./RayaAgentModal";
@@ -42,6 +47,14 @@ import type { ChatMessage, ChatSearchData, TravelContext } from "./ChatContext";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
 import { getPartnerRecommendations } from "@/lib/orchestration";
+import {
+  deriveTripLifecycle,
+  getLifecycleActions,
+  isPostBookingLifecycle,
+  labelTripLifecycle,
+  lifecycleSummary,
+  type LifecycleAction,
+} from "@/lib/ai/trip-lifecycle";
 import { formatPrice } from "@/lib/utils";
 import type { FlightOffer, HotelOffer } from "@/lib/travelpayouts";
 import type { BudgetVerdict, ConfidenceScore, DestinationIntel } from "@/lib/ai/schemas/intelligence";
@@ -297,11 +310,31 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       <RyaInstallPrompt locale={locale} />
 
+      <TripNowPanel
+        locale={locale}
+        context={travelContext}
+        onPrompt={(prompt, label) => {
+          logEvent("ria_lifecycle_action_clicked", {
+            source: "trip_now_panel",
+            label,
+            stage: travelContext.booking_stage ?? null,
+            destination: travelContext.destination ?? null,
+            locale,
+          });
+          void sendMessage(prompt);
+        }}
+      />
+
       <TravelMomentRail
         locale={locale}
         context={travelContext}
         onPrompt={(prompt, label) => {
-          logEvent("ria_quick_action_clicked", { source: "travel_moment_rail", label, locale });
+          logEvent("ria_quick_action_clicked", {
+            source: "travel_moment_rail",
+            label,
+            stage: travelContext.booking_stage ?? null,
+            locale,
+          });
           void sendMessage(prompt);
         }}
       />
@@ -459,7 +492,7 @@ function CompanionMemoryStrip({
     context.departure_date ? (isAr ? `موعد ${context.departure_date}` : `Date ${context.departure_date}`) : null,
     context.budget_usd ? (isAr ? `ميزانية $${context.budget_usd.toLocaleString()}` : `Budget $${context.budget_usd.toLocaleString()}`) : null,
     context.traveler_type ? (isAr ? travelerLabelAr(context.traveler_type) : travelerLabelEn(context.traveler_type)) : null,
-    context.booking_stage ? (isAr ? stageLabelAr(context.booking_stage) : stageLabelEn(context.booking_stage)) : null,
+    context.booking_stage ? labelTripLifecycle(context.booking_stage, locale) : null,
   ].filter(Boolean) as string[];
 
   if (chips.length === 0 && facts.length === 0) return null;
@@ -483,6 +516,96 @@ function CompanionMemoryStrip({
   );
 }
 
+function TripNowPanel({
+  locale,
+  context,
+  onPrompt,
+}: {
+  locale: import("@/i18n/config").Locale;
+  context: TravelContext;
+  onPrompt: (prompt: string, label: string) => void;
+}) {
+  const isAr = locale === "ar";
+  const stage = deriveTripLifecycle(context);
+  const actions = getLifecycleActions(context, locale);
+  const show =
+    Boolean(context.destination || context.departure_date || context.booking_stage) &&
+    stage !== "browsing" &&
+    stage !== "support";
+
+  useEffect(() => {
+    if (!show) return;
+    logEvent("ria_companion_hub_viewed", {
+      stage,
+      destination: context.destination ?? null,
+      locale,
+    });
+  }, [context.destination, locale, show, stage]);
+
+  if (!show) return null;
+
+  const stageLabel = labelTripLifecycle(stage, locale);
+  const summary = lifecycleSummary(stage, locale);
+
+  return (
+    <div className="shrink-0 border-b border-white/[0.05] bg-[#080f1d]/78 px-3 py-2.5">
+      <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] px-3 py-3 shadow-[0_16px_45px_rgba(0,0,0,0.18)]">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-brand-mint/20 bg-brand-mint/10 px-2 py-1 text-[10px] font-semibold text-brand-mint">
+                <CheckCircle2 className="h-3 w-3" />
+                {isAr ? "رحلتي الآن" : "My trip now"}
+              </span>
+              <span className="rounded-full border border-white/[0.08] bg-black/20 px-2 py-1 text-[10px] text-white/50">
+                {stageLabel}
+              </span>
+            </div>
+            <p className="mt-2 text-[12px] leading-relaxed text-white/58">
+              {summary}
+            </p>
+          </div>
+          {context.departure_date && (
+            <div className="shrink-0 rounded-xl border border-white/[0.08] bg-black/20 px-2.5 py-2 text-center">
+              <p className="text-[9px] text-white/30">{isAr ? "الموعد" : "Date"}</p>
+              <p className="mt-0.5 text-[11px] font-semibold text-white/65">{context.departure_date}</p>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-3 flex gap-2 overflow-x-auto pb-0.5 scroll-hide">
+          {actions.slice(0, 4).map((action) => {
+            const Icon = lifecycleIcon(action);
+            return (
+              <button
+                key={action.id}
+                type="button"
+                onClick={() => onPrompt(action.prompt, action.label)}
+                className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.09] bg-white/[0.04] px-3 text-[11px] font-medium text-white/58 transition active:scale-[0.98] active:bg-violet-500/[0.15] hover:border-violet-400/25 hover:text-white/85"
+              >
+                <Icon className="h-3.5 w-3.5 text-violet-200/80" />
+                <span>{action.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function lifecycleIcon(action: LifecycleAction) {
+  if (action.kind === "airport") return Navigation;
+  if (action.kind === "translate") return Languages;
+  if (action.id === "weather-packing") return CloudSun;
+  if (action.kind === "safety") return ShieldAlert;
+  if (action.kind === "budget") return WalletCards;
+  if (action.kind === "data") return Zap;
+  if (action.kind === "review") return ClipboardCheck;
+  if (action.kind === "booking") return Plane;
+  return Luggage;
+}
+
 function TravelMomentRail({
   locale,
   context,
@@ -494,12 +617,24 @@ function TravelMomentRail({
 }) {
   const isAr = locale === "ar";
   const destination = context.destination;
+  const stage = deriveTripLifecycle(context);
+  const tripPanelVisible =
+    Boolean(context.destination || context.departure_date || context.booking_stage) &&
+    stage !== "browsing" &&
+    stage !== "support";
+  if (tripPanelVisible) return null;
+
+  const actions = getLifecycleActions(context, locale);
   const destinationHint = destination
     ? isAr
       ? ` وجهتي الحالية هي ${destination}.`
       : ` My current destination is ${destination}.`
     : "";
-  const items = [
+  const items = actions.length >= 4 ? actions.slice(0, 4).map((action) => ({
+    label: action.label,
+    icon: lifecycleIcon(action),
+    prompt: action.prompt,
+  })) : [
     {
       label: isAr ? "ترجمة" : "Translate",
       icon: Languages,
@@ -560,14 +695,6 @@ function travelerLabelEn(value: string) {
   return value === "family" ? "Family" : value === "couple" ? "Couple" : value === "solo" ? "Solo" : value === "business" ? "Business" : "Friends";
 }
 
-function stageLabelAr(value: string) {
-  return value === "ready_to_book" ? "جاهز للحجز" : value === "planning" ? "تخطيط" : value === "support" ? "دعم" : "استكشاف";
-}
-
-function stageLabelEn(value: string) {
-  return value === "ready_to_book" ? "Ready to book" : value === "planning" ? "Planning" : value === "support" ? "Support" : "Browsing";
-}
-
 // ── Typing Indicator ──────────────────────────────────────────────────────
 
 function TypingIndicator({ isAr }: { isAr: boolean }) {
@@ -612,6 +739,8 @@ function MessageBubble({
   const isUser = message.role === "user";
   const [feedback, setFeedback] = useState<"up" | "down" | null>(null);
   const { sendMessage, travelContext } = useChat();
+  const messageContext = message.context ?? travelContext;
+  const showMessageActions = !isPostBookingLifecycle(deriveTripLifecycle(messageContext));
 
   if (message.isLoading) return null; // handled by TypingIndicator
 
@@ -623,8 +752,8 @@ function MessageBubble({
       hasSearchData: Boolean(message.searchData),
       messageId: message.id,
       messageExcerpt: message.text.slice(0, 240),
-      destination: message.searchData?.intent.destination ?? travelContext.destination ?? null,
-      bookingStage: travelContext.booking_stage ?? null,
+      destination: message.searchData?.intent.destination ?? messageContext.destination ?? null,
+      bookingStage: messageContext.booking_stage ?? null,
     });
   }
 
@@ -681,10 +810,11 @@ function MessageBubble({
           />
         )}
 
-        {!isUser && message.id !== "welcome" && !message.error && (
+        {!isUser && message.id !== "welcome" && !message.error && showMessageActions && (
           <QuickActionBar
             locale={locale}
             message={message}
+            context={messageContext}
             disabled={false}
             onAction={(text) => void sendMessage(text)}
           />
@@ -694,7 +824,7 @@ function MessageBubble({
           <AdviceServiceNudges
             locale={locale}
             message={message}
-            context={travelContext}
+            context={messageContext}
           />
         )}
 
@@ -734,21 +864,31 @@ function MessageBubble({
 function QuickActionBar({
   locale,
   message,
+  context,
   disabled,
   onAction,
 }: {
   locale: import("@/i18n/config").Locale;
   message: ChatMessage;
+  context: TravelContext;
   disabled: boolean;
   onAction: (text: string) => void;
 }) {
   const isAr = locale === "ar";
-  const destination = message.searchData?.intent.destination;
+  const destination = message.searchData?.intent.destination ?? context.destination;
   const destinationLabel = destination ?? (isAr ? "وجهتي الحالية" : "my current destination");
   const hasHotelGap =
     message.searchData?.wants.includes("hotels") &&
     (message.searchData.hotels.length === 0);
-  const actions = [
+  const lifecycleActions = getLifecycleActions(context, locale);
+  const postBooking = isPostBookingLifecycle(deriveTripLifecycle(context));
+  const actions = postBooking
+    ? lifecycleActions.map((action) => ({
+        icon: lifecycleIcon(action),
+        label: action.label,
+        prompt: action.prompt,
+      }))
+    : [
     {
       icon: Plane,
       label: isAr ? "اعمل خطة" : "Make a plan",
@@ -827,7 +967,7 @@ function QuickActionBar({
           ? "ما الخطوة التالية لهذه الرحلة؟"
           : "What is the next step for this trip?",
     },
-  ];
+    ];
 
   return (
     <div className="flex max-w-full gap-2 overflow-x-auto pb-1 scroll-hide">
@@ -843,7 +983,7 @@ function QuickActionBar({
                 source: "message_actions",
                 label: action.label,
                 destination: destination ?? null,
-                stage: contextStageFromMessage(message),
+                stage: context.booking_stage ?? contextStageFromMessage(message),
                 locale,
               });
               onAction(action.prompt);
@@ -873,7 +1013,9 @@ function AdviceServiceNudges({
   context: import("@/lib/ai/schemas/intent").TravelContext;
 }) {
   const isAr = locale === "ar";
-  const inferredServices = inferServicesFromText(message.text);
+  const stage = deriveTripLifecycle(context);
+  const postBooking = isPostBookingLifecycle(stage);
+  const inferredServices = postBooking ? [] : inferServicesFromText(message.text);
   const mergedContext = {
     ...context,
     service_interests: Array.from(new Set([
@@ -884,7 +1026,7 @@ function AdviceServiceNudges({
 
   const shouldShow =
     (mergedContext.service_interests?.length ?? 0) > 0 ||
-    Boolean(mergedContext.destination && (mergedContext.booking_stage === "planning" || mergedContext.booking_stage === "ready_to_book"));
+    (!postBooking && Boolean(mergedContext.destination && (mergedContext.booking_stage === "planning" || mergedContext.booking_stage === "ready_to_book")));
   if (!shouldShow) return null;
 
   const intent = {

@@ -16,6 +16,7 @@ import { resolveIata } from "@/lib/iata";
 import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/observability/sentry";
 import { createSupabaseService } from "@/lib/supabase/service";
+import { detectLifecycleFromText, isPostBookingLifecycle, mergeLifecycleStage } from "@/lib/ai/trip-lifecycle";
 
 // Supabase generated types do not include the newer support/memory tables yet.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -354,6 +355,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
   const moneyMatch = normalizedQuery.match(/(\d{2,6})\s*(?:\$|دولار|usd|ريال|sar)?/i);
   const daysMatch = normalizedQuery.match(/(\d{1,2})\s*(?:أيام|ايام|يوم|ليال|ليالي|ليلة|days|day|nights|night)/i);
   const parsedQuery = heuristicParse(query);
+  const detectedStage = detectLifecycleFromText(query);
   const baseContext: TravelContext = {
     destination: context?.destination ?? parsedQuery.destination ?? (hasIstanbul ? "IST" : null),
     origin: context?.origin ?? parsedQuery.origin ?? null,
@@ -366,7 +368,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
     traveler_type: context?.traveler_type ?? (hasFamily ? "family" : null),
     hotel_preferences: context?.hotel_preferences ?? [],
     service_interests: context?.service_interests ?? [],
-    booking_stage: context?.booking_stage ?? null,
+    booking_stage: mergeLifecycleStage(context?.booking_stage ?? null, detectedStage),
     concerns: context?.concerns ?? [],
   };
 
@@ -396,7 +398,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       message: directTranslation,
       context: {
         ...baseContext,
-        booking_stage: "planning",
+        booking_stage: baseContext.booking_stage ?? "planning",
       },
       wants: ["flights", "hotels"],
       followup: hasPhrase ? null : isAr ? "أرسل العبارة هنا." : "Send the phrase here.",
@@ -428,7 +430,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       context: {
         ...baseContext,
         service_interests: mergeServiceInterests(baseContext.service_interests, ["esim", "insurance"]),
-        booking_stage: "planning",
+        booking_stage: baseContext.booking_stage ?? "planning",
         concerns: Array.from(new Set([...(baseContext.concerns ?? []), "airport"])).slice(0, 8),
       },
       wants: ["flights", "hotels"],
@@ -461,7 +463,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       context: {
         ...baseContext,
         service_interests: mergeServiceInterests(baseContext.service_interests, ["insurance"]),
-        booking_stage: "planning",
+        booking_stage: baseContext.booking_stage ?? "planning",
         concerns: Array.from(new Set([...(baseContext.concerns ?? []), "safety"])).slice(0, 8),
       },
       wants: ["flights", "hotels"],
@@ -506,7 +508,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
         destination: knownDestination,
         budget_usd: budgetAmount ? Number(budgetAmount) : baseContext.budget_usd,
         service_interests: mergeServiceInterests(baseContext.service_interests, ["esim"]),
-        booking_stage: "planning",
+        booking_stage: baseContext.booking_stage ?? "planning",
         concerns: Array.from(new Set([...(baseContext.concerns ?? []), "budget"])).slice(0, 8),
       },
       wants: ["flights", "hotels"],
@@ -526,7 +528,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
     const nextContext: TravelContext = {
       ...baseContext,
       service_interests: mergeServiceInterests(baseContext.service_interests, serviceInterestsFromQuery(query)),
-      booking_stage: "planning",
+      booking_stage: baseContext.booking_stage ?? "planning",
       concerns: Array.from(new Set([...(baseContext.concerns ?? []), "insurance"])).slice(0, 8),
     };
     return NextResponse.json({
@@ -554,7 +556,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
     const nextContext: TravelContext = {
       ...baseContext,
       service_interests: mergeServiceInterests(baseContext.service_interests, serviceInterestsFromQuery(query)),
-      booking_stage: "planning",
+      booking_stage: baseContext.booking_stage ?? "planning",
     };
     return NextResponse.json({
       intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "esim" },
@@ -581,7 +583,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
     const nextContext: TravelContext = {
       ...baseContext,
       service_interests: mergeServiceInterests(baseContext.service_interests, serviceInterestsFromQuery(query)),
-      booking_stage: "planning",
+      booking_stage: baseContext.booking_stage ?? "planning",
     };
     return NextResponse.json({
       intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "activities" },
@@ -604,15 +606,56 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
     });
   }
 
+  if (isPostBookingLifecycle(baseContext.booking_stage)) {
+    const destinationLabel = displayDestinationName(baseContext.destination, locale) ?? (isAr ? "رحلتك" : "your trip");
+    const message =
+      baseContext.booking_stage === "in_trip"
+        ? isAr
+          ? `أنا معك الآن أثناء الرحلة في ${destinationLabel}. لن أرجع أعرض عليك حجوزات؛ سأساعدك في الموقف الحالي مباشرة: ترجمة، مطار، تاكسي، أمان، أو ميزانية اليوم. قل لي أين أنت الآن أو أرسل صورة/عبارة وسأعطيك خطوة واضحة.`
+          : `I’m with you during the trip in ${destinationLabel}. I will not keep showing bookings; I’ll help with the live moment: translation, airport, taxi, safety, or today’s budget. Tell me where you are now or send the phrase/photo.`
+        : isAr
+          ? `تمام، بما أنك وصلت لمرحلة ما بعد الحجز لرحلة ${destinationLabel}، تركيزي الآن على تجهيز الرحلة لا تكرار عروض الحجز: خطة الوصول، الشريحة، التأمين، الطقس، والشنطة. ابدأ بخطة الوصول أو قل لي أكثر شيء مقلقك قبل السفر.`
+          : `Got it. Since ${destinationLabel} is now post-booking, I’ll focus on trip preparation instead of repeating booking offers: arrival plan, data, insurance, weather, and packing. Start with arrival or tell me your biggest concern.`;
+
+    return NextResponse.json({
+      intent: {
+        origin: baseContext.origin,
+        destination: baseContext.destination,
+        departure_date: baseContext.departure_date,
+        return_date: baseContext.return_date,
+        adults: baseContext.adults,
+        budget_usd: baseContext.budget_usd,
+        trip_type: baseContext.trip_type,
+        cabin_class: baseContext.cabin_class,
+        notes: baseContext.booking_stage,
+      },
+      locale,
+      mode: "advice",
+      message,
+      context: baseContext,
+      wants: ["flights", "hotels"],
+      followup: null,
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
   // Advice questions (visa, safety, weather, tips) → answer briefly and offer to plan
   if (isAdviceQuery(query)) {
     return NextResponse.json({
-      intent: { origin: null, destination: "", departure_date: null, return_date: null, adults: 2, budget_usd: null, trip_type: null, cabin_class: null, notes: null },
+      intent: { origin: baseContext.origin, destination: baseContext.destination, departure_date: baseContext.departure_date, return_date: baseContext.return_date, adults: baseContext.adults, budget_usd: baseContext.budget_usd, trip_type: baseContext.trip_type, cabin_class: baseContext.cabin_class, notes: null },
       locale,
       mode: "advice",
       message: isAr
-        ? "سؤال ممتاز! 🌍 للأسف خدمة الذكاء الاصطناعي مشغولة الآن، لكن يمكنني مساعدتك بتخطيط الرحلة مباشرة. أخبرني الوجهة والتاريخ وأبحث لك عن أفضل العروض."
-        : "Great question! 🌍 Our AI is a bit busy right now, but I can still help you plan your trip. Tell me your destination and dates and I'll search the best deals for you.",
+        ? "سؤال ممتاز. أقدر أساعدك بإجابة عملية الآن: أعطني الوجهة أو الحي أو الموقف، وسأعطيك خلاصة هادئة مع خطوة تالية واحدة بدون تكرار أسئلة."
+        : "Good question. I can still help with a practical answer now: give me the destination, neighborhood, or situation and I’ll give you a calm summary with one next step.",
+      context: baseContext,
       wants: ["flights", "hotels"],
       followup: null,
       tips: null,
@@ -804,7 +847,7 @@ export async function POST(req: NextRequest) {
       traveler_type: null,
       hotel_preferences: [],
       service_interests: [],
-      booking_stage: null,
+      booking_stage: detectLifecycleFromText(query),
       concerns: [],
     };
 

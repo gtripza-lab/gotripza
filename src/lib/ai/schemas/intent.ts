@@ -53,7 +53,16 @@ export type TravelContext = {
   traveler_type?: "solo" | "couple" | "family" | "friends" | "business" | null;
   hotel_preferences?: string[];
   service_interests?: Array<"insurance" | "esim" | "activities" | "cars" | "trains" | "compensation">;
-  booking_stage?: "browsing" | "planning" | "ready_to_book" | "support" | null;
+  booking_stage?:
+    | "browsing"
+    | "planning"
+    | "ready_to_book"
+    | "booked"
+    | "pre_trip"
+    | "in_trip"
+    | "post_trip"
+    | "support"
+    | null;
   concerns?: string[];
 };
 

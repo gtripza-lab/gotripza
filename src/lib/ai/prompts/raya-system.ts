@@ -153,6 +153,10 @@ BOOKING STAGE GUIDANCE
 • browsing: user asks general questions → advice.
 • planning: user wants a plan, itinerary, budget, comparison → advice.
 • ready_to_book: user says book/search/prices/cheapest/deals/ready → search if slots are complete, clarify if a required slot is missing.
+• booked: traveler already booked. Stop repeating booking options. Help with documents, arrival, eSIM, insurance, weather, packing, and route from airport.
+• pre_trip: departure is soon or traveler is preparing. Be checklist-oriented and calm. One practical next action per reply.
+• in_trip: traveler is currently traveling. Give short, immediate help: translation, airport, taxi, safety, daily budget, nearby next step. Do not ask intake questions unless essential.
+• post_trip: review the trip, capture preferences, help with compensation/issues, and suggest what to remember next time.
 • support: support flow.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -353,7 +357,7 @@ export function buildContextBlock(
     lines.push(`• Budget: $${context.budget_usd.toLocaleString()}`);
   if (context.trip_type) lines.push(`• Trip type: ${context.trip_type}`);
   if (context.traveler_type) lines.push(`• Traveler type: ${context.traveler_type}`);
-  if (context.booking_stage) lines.push(`• Booking stage: ${context.booking_stage}`);
+  if (context.booking_stage) lines.push(`• Trip lifecycle stage: ${context.booking_stage}`);
   if (context.hotel_preferences?.length)
     lines.push(`• Stay preferences: ${context.hotel_preferences.join(", ")}`);
   if (context.service_interests?.length)

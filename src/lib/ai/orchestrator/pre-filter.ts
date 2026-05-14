@@ -25,6 +25,7 @@ import {
 } from "@/lib/mock-intent";
 import type { TravelContext, TripIntent } from "../schemas/intent";
 import type { ChatTurn } from "../schemas/intelligence";
+import { detectLifecycleFromText, mergeLifecycleStage } from "../trip-lifecycle";
 
 export type PreFilterResult = {
   context: TravelContext; // context merged with everything we extracted
@@ -132,7 +133,7 @@ function mergeIntoContext(
       ...(base.service_interests ?? []),
       ...(inferred?.service_interests ?? []),
     ])) as TravelContext["service_interests"],
-    booking_stage: inferred?.booking_stage ?? base.booking_stage ?? null,
+    booking_stage: mergeLifecycleStage(base.booking_stage ?? null, inferred?.booking_stage ?? null),
     concerns: Array.from(new Set([
       ...(base.concerns ?? []),
       ...(inferred?.concerns ?? []),
@@ -141,7 +142,6 @@ function mergeIntoContext(
 }
 
 function inferCompanionContext(query: string, transcript: string): Partial<TravelContext> {
-  const q = query.toLowerCase();
   const all = transcript.toLowerCase();
   const service_interests: NonNullable<TravelContext["service_interests"]> = [];
   const hotel_preferences: string[] = [];
@@ -185,12 +185,7 @@ function inferCompanionContext(query: string, transcript: string): Partial<Trave
     /لوحدي|solo|alone|وحدي/i.test(all) ? "solo" :
     null;
 
-  const booking_stage: TravelContext["booking_stage"] =
-    /دعم|مشكلة|شكوى|support|refund|not working/i.test(q) ? "support" :
-    /احجز|احجزلي|ابحث|أرخص|سعر|عروض|تذاكر|book|booking|search|deal|price|ready/i.test(q) ? "ready_to_book" :
-    /خطة|خطط|برنامج|جدول|itinerary|plan|schedule|budget/i.test(q) ? "planning" :
-    /أفضل|هل|كيف|متى|قارن|compare|best|should|what|when|how|is it/i.test(q) ? "browsing" :
-    null;
+  const booking_stage = detectLifecycleFromText(query);
 
   return {
     traveler_type,

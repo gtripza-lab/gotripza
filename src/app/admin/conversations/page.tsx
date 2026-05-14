@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getConversations } from "@/lib/admin/data";
 import type { ConversationRow } from "@/lib/admin/data";
+import { labelTripLifecycle } from "@/lib/ai/trip-lifecycle";
 
 export const metadata = { title: "المحادثات" };
 
@@ -71,7 +72,7 @@ function contextChips(row: ConversationRow): string[] {
   const context = row.context;
   const chips = [
     context?.destination ? `وجهة: ${context.destination}` : null,
-    context?.booking_stage ? `مرحلة: ${context.booking_stage}` : null,
+    context?.booking_stage ? `مرحلة: ${labelTripLifecycle(context.booking_stage, "ar")}` : null,
     ...(context?.service_interests ?? []).slice(0, 3).map((item) => labelService(item)),
   ].filter(Boolean) as string[];
   return chips;

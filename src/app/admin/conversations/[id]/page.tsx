@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getConversationDetail } from "@/lib/admin/data";
 import type { ConversationDetail, MessageRow } from "@/lib/admin/data";
+import { labelTripLifecycle } from "@/lib/ai/trip-lifecycle";
 
 export const metadata = { title: "تفاصيل المحادثة" };
 
@@ -112,7 +113,7 @@ function ContextPanel({ conversation }: { conversation: ConversationDetail }) {
     { label: "المسافر", value: context.traveler_type },
     { label: "نوع الرحلة", value: context.trip_type ?? intent.trip_type },
     { label: "الميزانية", value: context.budget_usd ? `$${context.budget_usd}` : null },
-    { label: "مرحلة الحجز", value: context.booking_stage },
+    { label: "مرحلة الرحلة", value: context.booking_stage ? labelTripLifecycle(context.booking_stage, "ar") : null },
   ].filter((item) => item.value != null && item.value !== "");
   const services = (context.service_interests ?? []).map(labelService);
   const concerns = context.concerns ?? [];

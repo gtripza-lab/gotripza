@@ -22,6 +22,7 @@ import type { Locale } from "@/i18n/config";
 import { currencyForLocale, type Currency } from "@/lib/utils";
 import { logEvent } from "@/lib/events";
 import { TP_MARKER } from "@/lib/partners";
+import { deriveTripLifecycle } from "@/lib/ai/trip-lifecycle";
 
 // ── Re-export for consumers ────────────────────────────────────────────────
 export type { ChatMode, TravelContext };
@@ -94,6 +95,7 @@ export type ChatMessage = {
   queued?: boolean;
   mode?: ChatMode;          // mode of the AI response
   searchData?: ChatSearchData; // only present when mode === "search"
+  context?: TravelContext;
   isLoading?: boolean;
   error?: string;
 };
@@ -310,7 +312,12 @@ export function ChatProvider({
 
     setMessages((prev) => showUserBubble ? [...prev, userMsg, thinkingMsg] : [...prev, thinkingMsg]);
     setIsThinking(true);
-    logEvent("chat_message_sent", { query: cleanText, locale });
+    logEvent("chat_message_sent", {
+      query: cleanText,
+      locale,
+      bookingStage: travelContextRef.current.booking_stage ?? null,
+      destination: travelContextRef.current.destination ?? null,
+    });
 
     try {
       // Build conversation history to send (last 12 messages, excluding current loading msg).
@@ -377,6 +384,15 @@ export function ChatProvider({
       // (Phase 3 orchestrator); fall back to client-side merge for older
       // server builds that don't echo `context` yet.
       const nextContext = parsedJson.context ?? mergeContext(travelContextRef.current, intent);
+      const nextStage = deriveTripLifecycle(nextContext);
+      if (nextStage !== travelContextRef.current.booking_stage) {
+        logEvent("ria_trip_phase_detected", {
+          stage: nextStage,
+          previousStage: travelContextRef.current.booking_stage ?? null,
+          destination: nextContext.destination ?? null,
+          locale: aiLocale,
+        });
+      }
       if (parsedJson.context) {
         setTravelContext(parsedJson.context);
       } else {
@@ -389,13 +405,18 @@ export function ChatProvider({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === thinkingId
-              ? { ...m, text: aiMessage, isLoading: false, mode }
+              ? { ...m, text: aiMessage, isLoading: false, mode, context: nextContext }
               : m,
           ),
         );
         updateCompanionMemory(cleanText, aiMessage, nextContext);
 
-        logEvent("chat_message_sent", { mode, destination: intent.destination, locale: aiLocale });
+        logEvent("chat_message_sent", {
+          mode,
+          destination: intent.destination,
+          locale: aiLocale,
+          bookingStage: nextContext.booking_stage ?? null,
+        });
 
         fetch("/api/history", {
           method: "POST",
@@ -456,7 +477,7 @@ export function ChatProvider({
       setMessages((prev) =>
         prev.map((m) =>
           m.id === thinkingId
-            ? { ...m, text: aiMessage, isLoading: false, mode, searchData }
+            ? { ...m, text: aiMessage, isLoading: false, mode, searchData, context: nextContext }
             : m,
         ),
       );
@@ -467,6 +488,7 @@ export function ChatProvider({
         flights: searchData.flights.length,
         hotels: searchData.hotels.length,
         locale: aiLocale,
+        bookingStage: nextContext.booking_stage ?? null,
       });
 
       fetch("/api/history", {
@@ -525,7 +547,12 @@ export function ChatProvider({
           queued: true,
         },
       ]);
-      logEvent("chat_message_sent", { locale, queued: true });
+      logEvent("chat_message_sent", {
+        locale,
+        queued: true,
+        bookingStage: travelContextRef.current.booking_stage ?? null,
+        destination: travelContextRef.current.destination ?? null,
+      });
       return;
     }
     await processMessage(cleanText, { showUserBubble: true });

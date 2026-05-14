@@ -20,6 +20,7 @@ import {
 } from "./partners";
 import type { TripIntent } from "./ai/schemas/intent";
 import type { TravelContext } from "./ai/schemas/intent";
+import { isPostBookingLifecycle } from "./ai/trip-lifecycle";
 
 export type PartnerRec = {
   partner: Partner;
@@ -91,6 +92,7 @@ export function getPartnerRecommendations(
   const isAS = isAsian(dest);
   const services = new Set(context?.service_interests ?? []);
   const isReady = context?.booking_stage === "ready_to_book";
+  const postBooking = isPostBookingLifecycle(context?.booking_stage ?? null);
 
   // Helper: add rec if partner is configured
   function add(
@@ -106,8 +108,8 @@ export function getPartnerRecommendations(
     recs.push({ partner: PARTNERS[id], url, reason_en, reason_ar, priority });
   }
 
-  // ── Always add hotel partners first if destination is known ──────────────
-  if (dest) {
+  // ── Hotel partners only when the traveler is genuinely ready to book ────
+  if (dest && isReady && !postBooking) {
     add("booking", 1,
       `Book hotels in ${dest} — best price guarantee on Booking.com`,
       `احجز فنادق في ${dest} — ضمان أفضل سعر على Booking.com`
@@ -166,6 +168,40 @@ export function getPartnerRecommendations(
       "Check if a delayed or cancelled flight may qualify for compensation",
       "تحقق هل الرحلة المتأخرة أو الملغاة تستحق تعويضاً"
     );
+  }
+
+  // After booking, Rya should feel like a companion during the trip, not a
+  // repeated booking widget. Keep only timely service help.
+  if (postBooking) {
+    if ((context?.booking_stage === "booked" || context?.booking_stage === "pre_trip") && isIntl) {
+      add("airalo", 3,
+        "Prepare mobile data before arrival so you land connected",
+        "جهّز الإنترنت قبل الوصول حتى تبدأ رحلتك وأنت متصل"
+      );
+      add("visitorscoverage", 4,
+        "Review travel protection before departure if you have not already done it",
+        "راجع حماية السفر قبل المغادرة إذا لم تجهزها بعد"
+      );
+    }
+    if (context?.booking_stage === "in_trip") {
+      add("getyourguide", 5,
+        `Helpful nearby experiences for your current stay in ${dest || "the destination"}`,
+        `تجارب قريبة ومفيدة أثناء وجودك في ${dest || "الوجهة"}`
+      );
+      if (isAS) {
+        add("klook", 6,
+          `Same-trip tickets and local help for ${dest}`,
+          `تذاكر وتجارب محلية أثناء الرحلة في ${dest}`
+        );
+      }
+    }
+    if (context?.booking_stage === "post_trip") {
+      add("airhelp", 4,
+        "If the flight was delayed or cancelled, check compensation eligibility",
+        "إذا تأخرت الرحلة أو ألغيت، تحقق من أهلية التعويض"
+      );
+    }
+    return recs.sort((a, b) => a.priority - b.priority).slice(0, maxResults);
   }
 
   if (isReady && isIntl) {
