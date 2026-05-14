@@ -46,12 +46,12 @@ export function detectLifecycleFromText(text: string): TripLifecycleStage | null
     return "post_trip";
   }
   if (
-    /وصلت|انا في|أنا في|داخل|في المطار|عند البوابة|تاكسي|منيو|لافتة|تذكرة|ترجم|ترجمة|ضعت|محتاج مساعدة الآن|during the trip|arrived|i am in|i'm in|at the airport|gate|terminal|taxi|menu|sign/i.test(q)
+    /وصلت|انا في|أنا في|داخل|في المطار|عند البوابة|تاكسي|منيو|لافتة|تذكرة|ترجم|ترجمة|ضعت|طوارئ|جوازي|جواز|شنطتي ضاعت|حلال|مطعم|فاتورة|صورة|محتاج مساعدة الآن|during the trip|arrived|i am in|i'm in|at the airport|gate|terminal|taxi|menu|sign|emergency|passport|lost bag|halal|restaurant|receipt|photo|image/i.test(q)
   ) {
     return "in_trip";
   }
   if (
-    /قبل السفر|باقي|أجهز|اجهز|شنطة|الشنطة|ماذا أحضر|ماذا احضر|مطار|بوابة|تفعيل الشريحة|الشريحة قبل|الطقس قبل|pre[-\s]?trip|packing|before travel|before my trip|departure soon/i.test(q)
+    /قبل السفر|باقي|أجهز|اجهز|شنطة|الشنطة|ماذا أحضر|ماذا احضر|مطار|بوابة|تفعيل الشريحة|الشريحة قبل|الطقس قبل|تحويلات|أدوية|ادوية|pre[-\s]?trip|packing|before travel|before my trip|departure soon|what to pack/i.test(q)
   ) {
     return "pre_trip";
   }
@@ -135,7 +135,9 @@ export function lifecycleSummary(stage: TripLifecycleStage, locale: Locale): str
     return isAr ? "جهزي/جهز الوصول، الشريحة، التأمين، والشنطة بهدوء." : "Prepare arrival, data, insurance, and packing calmly.";
   }
   if (stage === "in_trip") {
-    return isAr ? "ريا معك للمواقف اليومية: ترجمة، مطار، أمان، وميزانية." : "Rya helps with live moments: translation, airport, safety, and budget.";
+    return isAr
+      ? "ريا معك للمواقف اليومية: ترجمة، صور، مطار، أمان، أكل، طوارئ، وميزانية."
+      : "Rya helps with live moments: translation, images, airport, safety, food, emergencies, and budget.";
   }
   if (stage === "post_trip") {
     return isAr ? "نراجع التجربة ونحفظ ما تعلمناه للرحلة القادمة." : "Review the trip and keep what we learned for next time.";
@@ -150,7 +152,23 @@ export type LifecycleAction = {
   id: string;
   label: string;
   prompt: string;
-  kind: "plan" | "airport" | "translate" | "safety" | "budget" | "data" | "review" | "booking" | "support";
+  kind:
+    | "plan"
+    | "airport"
+    | "translate"
+    | "image"
+    | "safety"
+    | "budget"
+    | "data"
+    | "packing"
+    | "transport"
+    | "emergency"
+    | "food"
+    | "family"
+    | "romance"
+    | "review"
+    | "booking"
+    | "support";
 };
 
 export function getLifecycleActions(context: TravelContext, locale: Locale): LifecycleAction[] {
@@ -186,11 +204,27 @@ export function getLifecycleActions(context: TravelContext, locale: Locale): Lif
       },
       {
         id: "weather-packing",
-        kind: "safety",
+        kind: "packing",
         label: isAr ? "الطقس والشنطة" : "Weather & bag",
         prompt: isAr
           ? `راجع لي الطقس المتوقع في ${destination} وما الذي أضعه في الشنطة بدون مبالغة.`
           : `Review likely weather in ${destination} and what to pack without overpacking.`,
+      },
+      {
+        id: "airport-transfer",
+        kind: "transport",
+        label: isAr ? "تنقل المطار" : "Airport transfer",
+        prompt: isAr
+          ? `ساعدني أختار أفضل تنقل من مطار ${destination} إلى السكن: تاكسي رسمي، تطبيق، مترو، أو باص، مع السعر الطبيعي وما أتجنبه.`
+          : `Help me choose the best airport transfer in ${destination}: official taxi, app, metro, or bus, with normal price ranges and what to avoid.`,
+      },
+      {
+        id: "emergency-ready",
+        kind: "emergency",
+        label: isAr ? "طوارئ السفر" : "Emergency help",
+        prompt: isAr
+          ? `جهز لي خطة طوارئ مختصرة لرحلتي إلى ${destination}: جواز، شنطة ضائعة، مرض، تأخير رحلة، وأرقام/خطوات أبدأ بها.`
+          : `Prepare a short emergency plan for my trip to ${destination}: passport, lost bag, illness, flight delay, and first steps.`,
       },
     ];
   }
@@ -204,6 +238,14 @@ export function getLifecycleActions(context: TravelContext, locale: Locale): Lif
         prompt: isAr
           ? `أنا أثناء الرحلة في ${destination}. ساعدني بترجمة موقف أو عبارة، واسألني فقط عن النص أو الصورة.`
           : `I am in ${destination}. Help me translate a live situation or phrase, and only ask for the text or image.`,
+      },
+      {
+        id: "image-reader",
+        kind: "image",
+        label: isAr ? "افهم صورة" : "Read image",
+        prompt: isAr
+          ? `أريد فهم صورة أثناء الرحلة في ${destination}: قائمة طعام أو لوحة أو تذكرة أو فاتورة. اطلب مني رفع الصورة ثم اشرحها بالعربية مع ما أفعل الآن.`
+          : `I need help understanding a travel image in ${destination}: menu, sign, ticket, or receipt. Ask me to upload it, then explain what it means and what to do now.`,
       },
       {
         id: "nearby-help",
@@ -228,6 +270,22 @@ export function getLifecycleActions(context: TravelContext, locale: Locale): Lif
         prompt: isAr
           ? `ساعدني أضبط ميزانية اليوم في ${destination}: أكل، تنقل، أنشطة، ومبلغ احتياطي.`
           : `Help me manage today's budget in ${destination}: food, transport, activities, and a buffer.`,
+      },
+      {
+        id: "food-halal",
+        kind: "food",
+        label: isAr ? "أكل وحلال" : "Food help",
+        prompt: isAr
+          ? `ساعدني أختار أكل مناسب في ${destination}: مطاعم حلال أو خيارات آمنة، أطباق محلية، وما أسأل عنه قبل الطلب.`
+          : `Help me choose food in ${destination}: halal or safe options, local dishes, and what to ask before ordering.`,
+      },
+      {
+        id: "emergency-now",
+        kind: "emergency",
+        label: isAr ? "مشكلة الآن" : "Urgent help",
+        prompt: isAr
+          ? `أنا في موقف سفر مزعج الآن في ${destination}. ساعدني بخطوات قصيرة: ماذا أفعل أولاً، ماذا أقول، ومتى أطلب مساعدة رسمية؟`
+          : `I am in a stressful travel situation now in ${destination}. Give me short steps: what to do first, what to say, and when to ask for official help.`,
       },
     ];
   }
@@ -269,6 +327,22 @@ export function getLifecycleActions(context: TravelContext, locale: Locale): Lif
       prompt: isAr
         ? `هل ${destination} تناسب ميزانيتي؟ أعطني تقديراً واضحاً ونصائح تخفيض التكلفة.`
         : `Does ${destination} fit my budget? Give me a clear estimate and cost-saving advice.`,
+    },
+    {
+      id: "family-fit",
+      kind: "family",
+      label: isAr ? "مناسب للعائلة؟" : "Family fit",
+      prompt: isAr
+        ? `هل ${destination} مناسبة لعائلة؟ قيّمها من ناحية السكن، التنقل، الأطفال، الأمان، والجدول اليومي.`
+        : `Is ${destination} good for a family trip? Evaluate stay areas, transport, kids, safety, and daily pacing.`,
+    },
+    {
+      id: "honeymoon-fit",
+      kind: "romance",
+      label: isAr ? "شهر عسل؟" : "Honeymoon fit",
+      prompt: isAr
+        ? `هل ${destination} مناسبة لشهر عسل؟ اقترح أسلوب رحلة رومانسي وهادئ مع مناطق وتجارب مناسبة.`
+        : `Is ${destination} good for a honeymoon? Suggest a calm romantic trip style with stay areas and experiences.`,
     },
     {
       id: "ready-book",

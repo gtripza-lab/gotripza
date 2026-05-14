@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Download, Share, Smartphone, X } from "lucide-react";
 import { logEvent } from "@/lib/events";
 import type { Locale } from "@/i18n/config";
+import { AuthModal } from "@/components/AuthModal";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -16,6 +17,8 @@ type TrialState = {
   endsAt: string | null;
   daysRemaining: number;
   trialDays: number;
+  signedIn?: boolean;
+  authRequired?: boolean;
 };
 
 function isStandalone() {
@@ -34,6 +37,8 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
   const [trial, setTrial] = useState<TrialState | null>(null);
   const [dismissed, setDismissed] = useState(false);
   const [showIosHelp, setShowIosHelp] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [notice, setNotice] = useState("");
   const standalone = useMemo(() => isStandalone(), []);
 
   useEffect(() => {
@@ -70,7 +75,13 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
   if (!canInstall && trial?.active) return null;
 
   async function startTrial() {
-    const next = await fetch("/api/companion/trial", { method: "POST" }).then((res) => res.json());
+    const res = await fetch("/api/companion/trial", { method: "POST" });
+    if (res.status === 401) {
+      setNotice(isAr ? "سجّل دخولك أولاً حتى نحفظ Rya Companion في حسابك." : "Sign in first so Rya Companion is saved to your account.");
+      setAuthOpen(true);
+      return null;
+    }
+    const next = await res.json();
     setTrial(next);
     return next as TrialState;
   }
@@ -78,6 +89,7 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
   async function handleInstall() {
     logEvent("pwa_install_cta_clicked", { locale, platform: isIOS() ? "ios_manual" : "install_prompt" });
     const state = await startTrial();
+    if (!state) return;
     if (installEvent) {
       await installEvent.prompt();
       const choice = await installEvent.userChoice.catch(() => null);
@@ -100,7 +112,9 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
             <p className="truncate text-[11px] font-semibold text-white/82">
               {trial?.active
                 ? isAr ? `Rya Companion مفعّلة · ${trial.daysRemaining} يوم` : `Rya Companion active · ${trial.daysRemaining}d`
-                : isAr ? "ثبّت ريا كتطبيق جوال" : "Install Rya as a mobile app"}
+                : trial?.authRequired
+                  ? isAr ? "سجّل دخولك لتثبيت Rya Companion" : "Sign in to install Rya Companion"
+                  : isAr ? "ثبّت ريا كتطبيق جوال" : "Install Rya as a mobile app"}
             </p>
             {showIosHelp ? (
               <div className="mt-1 rounded-xl border border-white/[0.08] bg-black/25 p-2 text-[11px] leading-5 text-white/55">
@@ -116,9 +130,10 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
                 className="mt-1 inline-flex h-7 items-center gap-1.5 rounded-full bg-white px-2.5 text-[10px] font-semibold text-ink-950"
               >
                 <Download className="h-3.5 w-3.5" />
-                {isAr ? "تفعيل وتثبيت" : "Activate & install"}
+                {trial?.authRequired ? (isAr ? "تسجيل الدخول" : "Sign in") : (isAr ? "تفعيل وتثبيت" : "Activate & install")}
               </button>
             )}
+            {notice && <p className="mt-1 text-[10px] leading-4 text-amber-200/80">{notice}</p>}
           </div>
           <button
             type="button"
@@ -130,6 +145,14 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
           </button>
         </div>
       </div>
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        locale={locale}
+        nextPath={`/${locale}/search?source=companion-install`}
+        title={isAr ? "سجّل دخولك لتثبيت Rya Companion" : "Sign in to install Rya Companion"}
+        description={isAr ? "نحفظ التفعيل والتثبيت في حسابك حتى تظهر بياناته في الأدمن وتستطيع استخدام ريا المستشارة." : "We save activation and install intent to your account so it appears in admin and enables Companion on mobile."}
+      />
     </div>
   );
 }

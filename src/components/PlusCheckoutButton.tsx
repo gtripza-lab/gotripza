@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 import { logEvent } from "@/lib/events";
+import { AuthModal } from "@/components/AuthModal";
 
 export function PlusCheckoutButton({
   locale,
@@ -15,12 +16,25 @@ export function PlusCheckoutButton({
   const isAr = locale === "ar";
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("activate") === "companion") void checkout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function checkout() {
     setLoading(true);
     setMessage("");
     try {
       const res = await fetch("/api/companion/trial", { method: "POST" });
+      if (res.status === 401) {
+        setMessage(isAr ? "سجّل دخولك أولاً حتى نفعّل Rya Companion ونحفظها في حسابك." : "Sign in first so Rya Companion can be activated and saved to your account.");
+        setAuthOpen(true);
+        return;
+      }
       if (!res.ok) {
         setMessage(isAr ? "تعذر تفعيل التجربة الآن." : "Could not activate the trial right now.");
         return;
@@ -45,6 +59,14 @@ export function PlusCheckoutButton({
         {isAr ? "جرّب Rya Companion مجاناً" : "Try Rya Companion free"}
       </button>
       {message && <p className="mt-2 text-xs leading-5 text-amber-300/80">{message}</p>}
+      <AuthModal
+        open={authOpen}
+        onClose={() => setAuthOpen(false)}
+        locale={locale}
+        nextPath={`/${locale}/plus?activate=companion`}
+        title={isAr ? "سجّل دخولك لتفعيل Rya Companion" : "Sign in to activate Rya Companion"}
+        description={isAr ? "نحفظ التفعيل في حسابك حتى تظهر في الأدمن وتستطيع استخدامها على الجوال." : "We’ll save activation to your account so it appears in admin and works on mobile."}
+      />
     </div>
   );
 }

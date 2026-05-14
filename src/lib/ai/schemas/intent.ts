@@ -52,7 +52,23 @@ export type TravelContext = {
   cabin_class: TripIntent["cabin_class"];
   traveler_type?: "solo" | "couple" | "family" | "friends" | "business" | null;
   hotel_preferences?: string[];
-  service_interests?: Array<"insurance" | "esim" | "activities" | "cars" | "trains" | "compensation">;
+  service_interests?: Array<
+    | "insurance"
+    | "esim"
+    | "activities"
+    | "cars"
+    | "trains"
+    | "compensation"
+    | "image_help"
+    | "translation"
+    | "airport_help"
+    | "emergency"
+    | "food"
+    | "packing"
+    | "transport"
+    | "family"
+    | "honeymoon"
+  >;
   booking_stage?:
     | "browsing"
     | "planning"

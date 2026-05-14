@@ -1,6 +1,20 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CheckCircle2, Crown, Sparkles } from "lucide-react";
+import {
+  BadgeDollarSign,
+  Camera,
+  CheckCircle2,
+  Crown,
+  HeartHandshake,
+  Languages,
+  Luggage,
+  MapPinned,
+  PlaneLanding,
+  ShieldAlert,
+  Siren,
+  Sparkles,
+  Utensils,
+} from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { PlusCheckoutButton } from "@/components/PlusCheckoutButton";
@@ -31,21 +45,94 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
 }
 
 const FEATURES_AR = [
-  "مساعدة مستمرة طوال الرحلة",
-  "ذاكرة سفر تحفظ خطتك وتفضيلاتك",
-  "فهم صور القوائم واللوحات والتذاكر",
-  "ترجمة مباشرة للمواقف اليومية",
-  "تنبيهات ميزانية ونصائح أمان وتجنب الاحتيال",
-  "مساعدة المطار والتنقلات والأنشطة",
+  "تفعيل كامل على الجوال بعد تسجيل الدخول",
+  "ذاكرة سفر تحفظ خطتك وتفضيلاتك ومخاوفك",
+  "خدمات يومية داخل ريا وليست روابط مزعجة",
+  "مساعدات مخصصة قبل السفر وأثناءه وبعد العودة",
+  "تنبيهات ذكية للخدمات عندما تحتاجها فقط",
+  "تظهر بيانات التفعيل في لوحة الأدمن",
 ];
 
 const FEATURES_EN = [
-  "Help throughout your actual trip",
-  "Travel memory for your plan and preferences",
-  "Image help for menus, signs, and tickets",
-  "Live translation for everyday moments",
-  "Budget nudges, safety tips, and scam guidance",
-  "Airport, transport, and activity assistance",
+  "Full mobile activation after sign-in",
+  "Travel memory for your plan, preferences, and concerns",
+  "Daily travel tools inside Rya, not noisy link spam",
+  "Personal help before, during, and after the trip",
+  "Service nudges only when contextually useful",
+  "Activation appears in the admin dashboard",
+];
+
+const SERVICES = [
+  {
+    icon: PlaneLanding,
+    titleAr: "مساعد المطار",
+    titleEn: "Airport Copilot",
+    descAr: "الجوازات، الشنط، الترانزيت، البوابة، والتأخير بخطوات قصيرة.",
+    descEn: "Immigration, baggage, transit, gates, and delays in calm short steps.",
+  },
+  {
+    icon: Languages,
+    titleAr: "مترجم المواقف",
+    titleEn: "Situation Translator",
+    descAr: "ماذا تقول للسائق، الفندق، المطعم، الصيدلية، أو موظف المطار.",
+    descEn: "What to say to a driver, hotel, restaurant, pharmacy, or airport staff.",
+  },
+  {
+    icon: Camera,
+    titleAr: "قارئ الصور",
+    titleEn: "Travel Image Reader",
+    descAr: "افهم منيو، لوحة، تذكرة، فاتورة، أو تعليمات سفر بصورة.",
+    descEn: "Understand menus, signs, tickets, receipts, and travel instructions from images.",
+  },
+  {
+    icon: ShieldAlert,
+    titleAr: "حماية من الاحتيال",
+    titleEn: "Scam & Safety Guard",
+    descAr: "تنبيهات تاكسي، صرف عملة، مناطق ليلية، وأساليب احتيال شائعة.",
+    descEn: "Taxi, currency, nightlife, and common tourist-scam guidance.",
+  },
+  {
+    icon: BadgeDollarSign,
+    titleAr: "ميزانية اليوم",
+    titleEn: "Daily Budget Coach",
+    descAr: "قسّم مصروفك اليومي بين أكل، تنقل، نشاط، واحتياط.",
+    descEn: "Split your day’s money across food, transport, activities, and a buffer.",
+  },
+  {
+    icon: Siren,
+    titleAr: "مساعد الطوارئ",
+    titleEn: "Emergency Helper",
+    descAr: "جواز ضائع، شنطة مفقودة، مرض، تأخير رحلة، أو موقف مزعج.",
+    descEn: "Lost passport, missing bag, illness, flight delay, or stressful moments.",
+  },
+  {
+    icon: Utensils,
+    titleAr: "الأكل والحلال",
+    titleEn: "Food & Halal Help",
+    descAr: "أطباق محلية، مطاعم مناسبة، وماذا تسأل قبل الطلب.",
+    descEn: "Local dishes, suitable restaurants, and what to ask before ordering.",
+  },
+  {
+    icon: Luggage,
+    titleAr: "مساعد الشنطة",
+    titleEn: "Packing Assistant",
+    descAr: "تجهيزات حسب الطقس، الوجهة، عدد الأيام، الأطفال، والأنشطة.",
+    descEn: "Packing guidance by weather, destination, days, kids, and activities.",
+  },
+  {
+    icon: MapPinned,
+    titleAr: "مخطط اليوم",
+    titleEn: "Today Planner",
+    descAr: "اقتراح يوم مناسب حسب الطقس، الطاقة، الميزانية، والزحمة.",
+    descEn: "A realistic day plan based on weather, energy, budget, and crowds.",
+  },
+  {
+    icon: HeartHandshake,
+    titleAr: "العائلة وشهر العسل",
+    titleEn: "Family & Honeymoon Modes",
+    descAr: "إيقاع هادئ للأطفال أو تجربة رومانسية بدون جدول مرهق.",
+    descEn: "Gentle pacing for families or romantic ideas without an exhausting schedule.",
+  },
 ];
 
 export default async function PlusPage(props: { params: Promise<{ locale: string }> }) {
@@ -64,15 +151,15 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
           <div className="text-center">
             <p className="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-brand-primary/[0.08] px-4 py-2 text-sm text-brand-primary">
               <Crown className="h-4 w-4" />
-              {isAr ? "رفيق سفر ذكي، وليس اشتراك ذكاء اصطناعي" : "A travel companion, not an AI subscription"}
+              {isAr ? "رفيق سفر عالمي، وليس اشتراك ذكاء اصطناعي" : "A global travel companion, not an AI subscription"}
             </p>
             <h1 className="mt-5 font-display text-3xl font-bold text-white sm:text-5xl">
-              {isAr ? "Rya Companion معك أثناء الرحلة" : "Rya Companion Travels With You"}
+              {isAr ? "Rya Companion معك في كل موقف سفر" : "Rya Companion for Every Travel Moment"}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/50 sm:text-base">
               {isAr
-                ? "قبل السفر وأثناءه، ريا تتذكر خطتك وتساعدك في المواقف اليومية: من المطار، إلى الترجمة، إلى الميزانية، إلى تجنب الأخطاء السياحية."
-                : "Before and during your trip, Rya remembers your plan and helps with real travel moments: airports, translation, budgeting, and avoiding tourist traps."}
+                ? "ريا تتذكر رحلتك وتساعدك في اللحظات التي يخاف منها المسافرون فعلاً: المطار، الترجمة، الصور، الميزانية، الاحتيال، الطوارئ، والطعام."
+                : "Rya remembers your trip and helps with the moments travelers actually worry about: airports, translation, images, budget, scams, emergencies, and food."}
             </p>
           </div>
 
@@ -90,10 +177,19 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                 <Sparkles className="h-8 w-8 text-brand-primary" />
               </div>
               <div className="mt-6">
-                <span className="text-4xl font-bold text-white">{isAr ? "تجربة مجانية" : "Free trial"}</span>
-                <span className="ms-2 text-sm text-white/35">{isAr ? "مؤقتاً" : "for now"}</span>
+                <div className="flex flex-wrap items-end gap-3">
+                  <span className="text-4xl font-bold text-white">$39</span>
+                  <span className="pb-1 text-sm font-medium text-white/35">
+                    {isAr ? "لكل رحلة" : "per trip"}
+                  </span>
+                  <span className="rounded-full border border-brand-mint/20 bg-brand-mint/10 px-3 py-1 text-xs font-semibold text-brand-mint">
+                    {isAr ? "مجاني لفترة محدودة" : "Free for a limited time"}
+                  </span>
+                </div>
                 <p className="mt-2 text-sm text-white/40">
-                  {isAr ? "نفعّل لك كامل تجربة Rya Companion على الجوال لفترة مجانية." : "Use the full Rya Companion mobile experience free for a limited time."}
+                  {isAr
+                    ? "جرّب كامل قوة Rya Companion مجاناً الآن. يجب تسجيل الدخول حتى نحفظ التفعيل في حسابك ونظهره في الأدمن."
+                    : "Try the full Rya Companion experience free right now. Sign-in is required so activation is saved to your account and visible in admin."}
                 </p>
               </div>
               <ul className="mt-6 space-y-3">
@@ -120,14 +216,68 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
               </p>
               <div className="mt-5 rounded-xl bg-black/20 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-mint">
-                  {isAr ? "مصمم للمواقف الحقيقية" : "Built for real travel moments"}
+                  {isAr ? "مصمم للمواقف التي لا تنتظر" : "Built for moments that cannot wait"}
                 </p>
                 <div className="mt-3 space-y-2 text-sm text-white/55">
                   <p>{isAr ? "افهم قائمة طعام أو لوحة في الشارع بصورة" : "Understand a menu, sign, or ticket from an image"}</p>
                   <p>{isAr ? "اسأل عن منطقة، احتيال شائع، أو موقف في المطار" : "Ask about an area, common scam, or airport situation"}</p>
-                  <p>{isAr ? "احصل على توصيات هادئة حسب خطتك وميزانيتك" : "Get calm suggestions based on your plan and budget"}</p>
+                  <p>{isAr ? "استخدمها بعد تسجيل الدخول حتى تحفظ ريا سياق رحلتك" : "Use it after sign-in so Rya keeps your trip context"}</p>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="mt-12">
+            <div className="max-w-2xl">
+              <p className="text-sm font-semibold text-brand-mint">
+                {isAr ? "الخدمات التي تجعل ريا لا تُقاوم" : "Services that make Rya hard to leave behind"}
+              </p>
+              <h2 className="mt-2 text-2xl font-bold text-white sm:text-3xl">
+                {isAr ? "ليست دردشة سفر. إنها صندوق أدواتك أثناء الرحلة." : "Not a travel chat. Your trip toolkit in one companion."}
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-white/45">
+                {isAr
+                  ? "كل خدمة مصممة لموقف حقيقي: عندما تصل متأخراً، لا تفهم لوحة، تخاف من تاكسي، تحتاج أكل مناسب، أو تريد إنقاذ يومك بدون بحث طويل."
+                  : "Every service is designed for a real moment: arriving late, not understanding a sign, avoiding a taxi scam, finding safe food, or saving a day without endless searching."}
+              </p>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {SERVICES.map((service) => {
+                const Icon = service.icon;
+                return (
+                  <div key={service.titleEn} className="rounded-2xl border border-white/[0.07] bg-white/[0.035] p-5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-primary/10 text-brand-primary">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <h3 className="mt-4 text-base font-semibold text-white">
+                      {isAr ? service.titleAr : service.titleEn}
+                    </h3>
+                    <p className="mt-2 text-sm leading-6 text-white/45">
+                      {isAr ? service.descAr : service.descEn}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-12 rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-brand-primary/[0.08] p-6 sm:p-8">
+            <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
+              <div>
+                <p className="text-sm font-semibold text-brand-mint">
+                  {isAr ? "متاحة الآن للمسافرين الأوائل" : "Available now for early travelers"}
+                </p>
+                <h2 className="mt-2 text-2xl font-bold text-white">
+                  {isAr ? "قيمة $39 لكل رحلة، متاحة مجاناً لفترة محدودة." : "$39 per trip value, free for a limited time."}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-white/48">
+                  {isAr
+                    ? "العميل يسجّل الدخول، نفعّل Rya Companion في حسابه، ونحفظ بيانات التفعيل في الأدمن. بعدها يستطيع تثبيتها على الجوال واستخدام الخدمات أثناء السفر."
+                    : "The traveler signs in, Rya Companion activates on their account, and activation is saved in admin. Then they can install it on mobile and use the services during travel."}
+                </p>
+              </div>
+              <PlusCheckoutButton locale={locale} interval="monthly" />
             </div>
           </div>
         </section>

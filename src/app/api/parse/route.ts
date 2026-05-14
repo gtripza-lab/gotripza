@@ -336,6 +336,13 @@ function serviceInterestsFromQuery(query: string): ServiceInterest[] {
   if (/تأمين|insurance|medical cover|coverage|شنغن|schengen/i.test(query)) interests.push("insurance");
   if (/esim|e-sim|شريحة|شرائح|انترنت|إنترنت|roaming|data/i.test(query)) interests.push("esim");
   if (/أنشطة|نشاط|جولات|تذاكر|activities|tours|tickets|klook|getyourguide/i.test(query)) interests.push("activities");
+  if (/صورة|صور|افهم|فاتورة|منيو|لافتة|تذكرة|photo|image|receipt|menu|sign|ticket/i.test(query)) interests.push("image_help");
+  if (/ترجم|ترجمة|لغة|translate|translation|phrase/i.test(query)) interests.push("translation");
+  if (/مطار|ترانزيت|بوابة|airport|terminal|gate|layover|connection/i.test(query)) interests.push("airport_help");
+  if (/طوارئ|جواز|شنطة ضاعت|مريض|مرض|شرطة|سفارة|emergency|passport|lost bag|police|embassy|illness/i.test(query)) interests.push("emergency");
+  if (/أكل|اكل|مطعم|حلال|food|restaurant|halal|dietary/i.test(query)) interests.push("food");
+  if (/شنطة|الشنطة|ماذا أحضر|ماذا احضر|packing|pack|luggage|bag/i.test(query)) interests.push("packing");
+  if (/تنقل|مواصلات|تاكسي|مترو|باص|transfer|transport|taxi|metro|bus|uber/i.test(query)) interests.push("transport");
   return interests;
 }
 
@@ -372,6 +379,34 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
     concerns: context?.concerns ?? [],
   };
 
+  if (/صورة|صور|افهم|فاتورة|منيو|لافتة|تذكرة|photo|image|receipt|menu|sign|ticket/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, ["image_help", "translation"]),
+      booking_stage: baseContext.booking_stage ?? "in_trip",
+      concerns: Array.from(new Set([...(baseContext.concerns ?? []), "image-help"])).slice(0, 8),
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "image_help" },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "ارفع الصورة هنا وسأقرأها لك كمرافقة سفر: أشرح المعنى، أنبهك لأي مبلغ/شرط/تحذير، وأقول لك ماذا تقول أو تفعل بعدها. ينفع هذا للقوائم، اللوحات، التذاكر، الفواتير، ورسائل الفندق."
+        : "Upload the image here and I’ll read it like a travel companion: what it means, any price/condition/warning to notice, and exactly what to say or do next. This works for menus, signs, tickets, receipts, and hotel messages.",
+      context: nextContext,
+      wants: ["flights", "hotels"],
+      followup: isAr ? "ارفع الصورة الآن." : "Upload the image now.",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
   if (/ترجم|ترجمة|translate|translation|phrase|عبارة|لغة/i.test(query)) {
     const phrase = query
       .replace(/^(?:ترجم(?:\s+لي)?|ترجمة|translate(?:\s+for\s+me)?)[\s:：-]*/i, "")
@@ -398,10 +433,123 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       message: directTranslation,
       context: {
         ...baseContext,
+        service_interests: mergeServiceInterests(baseContext.service_interests, ["translation"]),
         booking_stage: baseContext.booking_stage ?? "planning",
       },
       wants: ["flights", "hotels"],
       followup: hasPhrase ? null : isAr ? "أرسل العبارة هنا." : "Send the phrase here.",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/طوارئ|جواز|شنطة ضاعت|مريض|مرض|شرطة|سفارة|ضعت|مساعدة الآن|emergency|passport|lost bag|police|embassy|illness|urgent/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, ["emergency", "insurance"]),
+      booking_stage: baseContext.booking_stage ?? "in_trip",
+      concerns: Array.from(new Set([...(baseContext.concerns ?? []), "emergency"])).slice(0, 8),
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "emergency" },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "أنا معك. أولاً: ابتعد لمكان مضاء/رسمي إذا كنت غير مرتاح، واحتفظ بالجوال والوثائق معك. بعدها قل لي نوع المشكلة: جواز، شنطة، مرض، شرطة، تأخير رحلة، أو ضياع طريق. سأعطيك خطوات قصيرة وما تقوله بالضبط. إذا يوجد خطر مباشر اتصل بالطوارئ المحلية فوراً."
+        : "I’m with you. First: move to a bright/official place if you feel unsafe, and keep your phone and documents with you. Then tell me the issue: passport, bag, illness, police, flight delay, or getting lost. I’ll give short steps and exact wording. If there is immediate danger, call local emergency services now.",
+      context: nextContext,
+      wants: ["flights", "hotels"],
+      followup: isAr ? "ما نوع المشكلة الآن؟" : "What is happening right now?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/أكل|اكل|مطعم|حلال|منيو|حساسية|food|restaurant|halal|menu|allergy|dietary/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, ["food", "translation"]),
+      booking_stage: baseContext.booking_stage ?? "in_trip",
+      concerns: Array.from(new Set([...(baseContext.concerns ?? []), "food"])).slice(0, 8),
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "food" },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "أساعدك تختار أكل بثقة. إذا أرسلت صورة المنيو أشرح لك الأطباق والأسعار وما يناسبك. للحلال قل لهم: هل اللحم حلال؟ وهل يوجد كحول أو خنزير في الطبق؟ وإذا عندك حساسية اكتبها لي وأصيغ لك عبارة محلية واضحة."
+        : "I’ll help you choose food confidently. Send a menu photo and I’ll explain dishes, prices, and what fits you. For halal, ask: Is the meat halal? Does this include alcohol or pork? If you have an allergy, tell me and I’ll phrase it clearly in the local language.",
+      context: nextContext,
+      wants: ["flights", "hotels"],
+      followup: isAr ? "هل تريد ترشيح طبق، مطعم، أو قراءة منيو؟" : "Do you want a dish suggestion, restaurant help, or menu reading?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/شنطة|الشنطة|ماذا أحضر|ماذا احضر|ألبس|البس|packing|pack|luggage|bag|what to wear/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, ["packing"]),
+      booking_stage: baseContext.booking_stage ?? "pre_trip",
+      concerns: Array.from(new Set([...(baseContext.concerns ?? []), "packing"])).slice(0, 8),
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "packing" },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "خلّنا نجهز شنطة ذكية بدون مبالغة: وثائق وجواز/تأشيرة، شواحن وباوربانك، أدوية أساسية، لبس حسب الطقس، حذاء مشي مريح، وقطعة رسمية خفيفة لو احتجتها. أعطني الوجهة وعدد الأيام وأحوّلها لقائمة دقيقة حسب الجو والنشاطات."
+        : "Let’s pack smart without overpacking: passport/visa documents, chargers and power bank, basic medicine, clothes by weather, comfortable walking shoes, and one nicer outfit if needed. Tell me destination and days and I’ll make it precise by weather and activities.",
+      context: nextContext,
+      wants: ["flights", "hotels"],
+      followup: nextContext.destination ? null : isAr ? "ما الوجهة وعدد الأيام؟" : "What destination and how many days?",
+      tips: null,
+      budget_verdict: null,
+      confidence: null,
+      destination_intel: null,
+      clarification_needed: false,
+      clarification_question: null,
+      mock: true,
+      notice,
+    });
+  }
+
+  if (/تنقل|مواصلات|تاكسي|مترو|باص|transfer|transport|taxi|metro|bus|uber/i.test(query)) {
+    const nextContext: TravelContext = {
+      ...baseContext,
+      service_interests: mergeServiceInterests(baseContext.service_interests, ["transport"]),
+      booking_stage: baseContext.booking_stage ?? "in_trip",
+      concerns: Array.from(new Set([...(baseContext.concerns ?? []), "transport"])).slice(0, 8),
+    };
+    return NextResponse.json({
+      intent: { origin: nextContext.origin, destination: nextContext.destination, departure_date: nextContext.departure_date, return_date: nextContext.return_date, adults: nextContext.adults, budget_usd: nextContext.budget_usd, trip_type: nextContext.trip_type, cabin_class: nextContext.cabin_class, notes: "transport" },
+      locale,
+      mode: "advice",
+      message: isAr
+        ? "أقارن لك التنقل كمسافر: التاكسي الرسمي أفضل مع شنط كثيرة أو وصول متأخر، التطبيقات أوضح بالسعر، المترو أرخص وأسرع داخل المدن، والباص مناسب إذا عندك وقت. قل لي من أين إلى أين، وهل معك شنط/أطفال، وأعطيك الخيار الأفضل والسعر الطبيعي وما تتجنبه."
+        : "I’ll compare transport like a traveler: official taxi is best with luggage or late arrival, ride-hailing is clearer on price, metro is usually fastest and cheapest in cities, and buses work when you have time. Tell me from where to where, and whether you have luggage/kids, and I’ll pick the best option with normal price ranges and what to avoid.",
+      context: nextContext,
+      wants: ["flights", "hotels"],
+      followup: isAr ? "من أين إلى أين تريد التنقل؟" : "From where to where?",
       tips: null,
       budget_verdict: null,
       confidence: null,
@@ -429,7 +577,7 @@ function heuristicFallback(query: string, notice: string, history: ChatTurn[], c
       message: airportMessage,
       context: {
         ...baseContext,
-        service_interests: mergeServiceInterests(baseContext.service_interests, ["esim", "insurance"]),
+        service_interests: mergeServiceInterests(baseContext.service_interests, ["airport_help", "esim", "insurance", "transport"]),
         booking_stage: baseContext.booking_stage ?? "planning",
         concerns: Array.from(new Set([...(baseContext.concerns ?? []), "airport"])).slice(0, 8),
       },

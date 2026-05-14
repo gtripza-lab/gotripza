@@ -153,11 +153,20 @@ function inferCompanionContext(query: string, transcript: string): Partial<Trave
   if (/سيارة|تأجير|car rental|rent a car|drive/i.test(all)) service_interests.push("cars");
   if (/قطار|قطارات|train|rail/i.test(all)) service_interests.push("trains");
   if (/تعويض|تأخرت الرحلة|تأخير رحلة|flight compensation|airhelp|delayed flight/i.test(all)) service_interests.push("compensation");
+  if (/صورة|صور|افهم|فاتورة|منيو|لافتة|تذكرة|photo|image|receipt|menu|sign|ticket/i.test(all)) service_interests.push("image_help");
+  if (/ترجم|ترجمة|لغة|translate|translation|phrase/i.test(all)) service_interests.push("translation");
+  if (/مطار|ترانزيت|بوابة|airport|terminal|gate|layover|connection/i.test(all)) service_interests.push("airport_help");
+  if (/طوارئ|جواز|شنطة ضاعت|مريض|مرض|شرطة|سفارة|emergency|passport|lost bag|police|embassy|illness/i.test(all)) service_interests.push("emergency");
+  if (/أكل|اكل|مطعم|حلال|منيو|food|restaurant|halal|dietary/i.test(all)) service_interests.push("food");
+  if (/شنطة|الشنطة|ماذا أحضر|ماذا احضر|packing|pack|luggage|bag/i.test(all)) service_interests.push("packing");
+  if (/تنقل|مواصلات|تاكسي|مترو|باص|transfer|transport|taxi|metro|bus|uber/i.test(all)) service_interests.push("transport");
 
   if (/عائلة|أطفال|اطفال|kids|children|family/i.test(all)) {
+    service_interests.push("family");
     concerns.push("family-friendly");
   }
   if (/زوج|زوجتي|زوجي|شهر عسل|honeymoon|couple|romantic/i.test(all)) {
+    service_interests.push("honeymoon");
     concerns.push("romantic");
   }
   if (/لوحدي|solo|alone|وحدي/i.test(all)) concerns.push("solo-comfort");
@@ -167,6 +176,10 @@ function inferCompanionContext(query: string, transcript: string): Partial<Trave
   if (/طقس|حر|برد|مطر|weather|rain|hot|cold/i.test(all)) concerns.push("weather");
   if (/لغة|ترجم|ترجمة|translation|translate|menu|sign|ticket|منيو|لافتة|تذكرة/i.test(all)) concerns.push("language-help");
   if (/مطار|ترانزيت|بوابة|airport|terminal|gate|layover|connection/i.test(all)) concerns.push("airport-help");
+  if (/طوارئ|جواز|شنطة ضاعت|مريض|مرض|شرطة|سفارة|emergency|passport|lost bag|police|embassy|illness/i.test(all)) concerns.push("emergency");
+  if (/أكل|اكل|مطعم|حلال|food|restaurant|halal|dietary/i.test(all)) concerns.push("food");
+  if (/شنطة|الشنطة|ماذا أحضر|ماذا احضر|packing|pack|luggage|bag/i.test(all)) concerns.push("packing");
+  if (/تنقل|مواصلات|تاكسي|مترو|باص|transfer|transport|taxi|metro|bus|uber/i.test(all)) concerns.push("transport");
   if (/متردد|محتار|مو متأكد|unsure|confused|hesitant|not sure/i.test(all)) concerns.push("uncertain");
 
   if (/قريب من|near|قريب|وسط|center|downtown/i.test(all)) hotel_preferences.push("central");

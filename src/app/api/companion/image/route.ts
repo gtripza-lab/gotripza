@@ -33,8 +33,11 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "auth_required" }, { status: 401 });
+  }
   try {
-    await ensurePremium(user?.id ?? null);
+    await ensurePremium(user.id);
   } catch {
     return NextResponse.json({ error: "companion_required" }, { status: 402 });
   }

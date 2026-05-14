@@ -34,8 +34,9 @@ async function logTrialEvent(req: NextRequest, name: string, startedAt: string, 
 }
 
 export async function GET(req: NextRequest) {
+  const user = await getCurrentUser();
   const state = getTrialState(req.cookies.get(RYA_TRIAL_COOKIE)?.value);
-  return NextResponse.json({ ...state, trialDays: RYA_TRIAL_DAYS });
+  return NextResponse.json({ ...state, trialDays: RYA_TRIAL_DAYS, signedIn: Boolean(user), authRequired: !user });
 }
 
 export async function POST(req: NextRequest) {
@@ -47,6 +48,11 @@ export async function POST(req: NextRequest) {
     failOpen: false,
   });
   if (!rl.allowed) return rateLimitResponse(rl);
+
+  const user = await getCurrentUser();
+  if (!user) {
+    return NextResponse.json({ error: "auth_required" }, { status: 401 });
+  }
 
   const existing = req.cookies.get(RYA_TRIAL_COOKIE)?.value;
   const startedAt = existing && getTrialState(existing).startedAt
@@ -69,6 +75,9 @@ export async function POST(req: NextRequest) {
     path: "/",
     maxAge: 60 * 60 * 24 * 365,
   });
-  if (!existing) void logTrialEvent(req, "companion_trial_started", startedAt, sid);
+  // Log every signed-in activation attempt so the admin can see who installed
+  // or re-activated Rya Companion from mobile, even if a trial cookie already
+  // existed before login.
+  void logTrialEvent(req, "companion_trial_started", startedAt, sid);
   return res;
 }

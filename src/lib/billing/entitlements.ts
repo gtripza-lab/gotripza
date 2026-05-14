@@ -5,7 +5,7 @@ import "server-only";
  *
  * Launch policy (RIA_PLUS_GATING_ENABLED=false):
  *   • Every signed-in user gets premium via the launch_free plan.
- *   • Anonymous users get a generous free experience.
+ *   • Anonymous users can browse, but premium Companion tools require sign-in.
  *
  * Paid policy (RIA_PLUS_GATING_ENABLED=true):
  *   • Premium = subscription.status in (active, trialing) AND plan in
@@ -16,8 +16,6 @@ import "server-only";
  */
 import { getSubscription, ensureLaunchFreeSubscription } from "@/lib/ai/memory/store";
 import { createSupabaseService } from "@/lib/supabase/service";
-import { cookies } from "next/headers";
-import { getTrialState, RYA_TRIAL_COOKIE } from "@/lib/companion/trial";
 
 const GATING_ON = process.env.RIA_PLUS_GATING_ENABLED === "true";
 
@@ -40,10 +38,6 @@ export async function getEntitlement(
   userId: string | null | undefined,
 ): Promise<Entitlement> {
   if (!userId) {
-    const trial = getTrialState((await cookies()).get(RYA_TRIAL_COOKIE)?.value);
-    if (trial.active) {
-      return { isPremium: true, plan: "mobile_trial", reason: "mobile_trial" };
-    }
     return { isPremium: false, plan: null, reason: "anonymous" };
   }
 

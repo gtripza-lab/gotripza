@@ -37,8 +37,13 @@ import {
   CheckCircle2,
   CloudSun,
   ClipboardCheck,
+  Camera,
+  HeartHandshake,
+  Siren,
+  Utensils,
   Luggage,
   Navigation,
+  Route,
 } from "lucide-react";
 import { useChat } from "./ChatContext";
 import { RayaAgentModal } from "./RayaAgentModal";
@@ -597,10 +602,16 @@ function TripNowPanel({
 function lifecycleIcon(action: LifecycleAction) {
   if (action.kind === "airport") return Navigation;
   if (action.kind === "translate") return Languages;
+  if (action.kind === "image") return Camera;
   if (action.id === "weather-packing") return CloudSun;
   if (action.kind === "safety") return ShieldAlert;
   if (action.kind === "budget") return WalletCards;
   if (action.kind === "data") return Zap;
+  if (action.kind === "packing") return Luggage;
+  if (action.kind === "transport") return Route;
+  if (action.kind === "emergency") return Siren;
+  if (action.kind === "food") return Utensils;
+  if (action.kind === "family" || action.kind === "romance") return HeartHandshake;
   if (action.kind === "review") return ClipboardCheck;
   if (action.kind === "booking") return Plane;
   return Luggage;

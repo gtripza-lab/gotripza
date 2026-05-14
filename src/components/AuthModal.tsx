@@ -12,9 +12,12 @@ interface Props {
   open: boolean;
   onClose: () => void;
   locale: Locale;
+  nextPath?: string;
+  title?: string;
+  description?: string;
 }
 
-export function AuthModal({ open, onClose, locale }: Props) {
+export function AuthModal({ open, onClose, locale, nextPath, title, description }: Props) {
   const isAr = locale === "ar";
   const [email, setEmail] = useState("");
   const [step, setStep]   = useState<Step>("idle");
@@ -35,7 +38,7 @@ export function AuthModal({ open, onClose, locale }: Props) {
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmed,
         options: {
-          emailRedirectTo: `${appUrl}/auth/callback?next=/${locale}/search`,
+          emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(nextPath ?? `/${locale}/search`)}`,
           shouldCreateUser: true,
         },
       });
@@ -127,12 +130,12 @@ export function AuthModal({ open, onClose, locale }: Props) {
                       <Mail className="h-5 w-5 text-brand-primary" />
                     </div>
                     <h2 className="text-xl font-bold text-white">
-                      {isAr ? "مرحباً بك في GoTripza" : "Welcome to GoTripza"}
+                      {title ?? (isAr ? "مرحباً بك في GoTripza" : "Welcome to GoTripza")}
                     </h2>
                     <p className="mt-1 text-sm text-white/40">
-                      {isAr
+                      {description ?? (isAr
                         ? "أدخل بريدك الإلكتروني — سنرسل لك رابط دخول فوري"
-                        : "Enter your email — we'll send you a magic link"}
+                        : "Enter your email — we'll send you a magic link")}
                     </p>
                   </div>
 
