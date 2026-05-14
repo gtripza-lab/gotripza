@@ -8,11 +8,12 @@ import { detectGeo } from "@/lib/geo";
 
 export const dynamic = "force-dynamic";
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string };
-}) {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
   const isAr = params.locale === "ar";
   return {
     title: isAr
@@ -34,17 +35,18 @@ export async function generateMetadata({
   };
 }
 
-export default async function SearchPage({
-  params,
-  searchParams,
-}: {
-  params: { locale: string };
-  searchParams?: { q?: string };
-}) {
+export default async function SearchPage(
+  props: {
+    params: Promise<{ locale: string }>;
+    searchParams?: Promise<{ q?: string }>;
+  }
+) {
+  const searchParams = await props.searchParams;
+  const params = await props.params;
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
-  const { currency } = detectGeo();
+  const { currency } = await detectGeo();
   // Read ?q= from URL (e.g. from homepage suggestion chips or blog CTAs)
   const initialMessage = searchParams?.q?.trim() || undefined;
 

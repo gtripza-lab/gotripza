@@ -14,7 +14,7 @@ import {
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
-type Props = { params: { locale: string; slug: string } };
+type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export async function generateStaticParams() {
   return READY_TRIP_PLANS.flatMap((page) => [
@@ -23,7 +23,8 @@ export async function generateStaticParams() {
   ]);
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   if (!isLocale(params.locale)) return {};
   const page = getReadyTripPlan(params.slug);
   if (!page) return {};
@@ -55,7 +56,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default function ReadyTripPlanPage({ params }: Props) {
+export default async function ReadyTripPlanPage(props: Props) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const page = getReadyTripPlan(params.slug);
   if (!page) notFound();

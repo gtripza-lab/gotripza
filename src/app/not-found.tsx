@@ -1,9 +1,9 @@
 import { headers } from "next/headers";
 import Link from "next/link";
 
-function detectLocale(): "ar" | "en" {
+async function detectLocale(): Promise<"ar" | "en"> {
   try {
-    const h = headers();
+    const h = await headers();
     // Next.js sets x-url (full URL) or x-invoke-path on server
     const url =
       h.get("x-url") ??
@@ -16,8 +16,8 @@ function detectLocale(): "ar" | "en" {
   }
 }
 
-export default function GlobalNotFound() {
-  const locale = detectLocale();
+export default async function GlobalNotFound() {
+  const locale = await detectLocale();
   const isAr = locale === "ar";
 
   return (

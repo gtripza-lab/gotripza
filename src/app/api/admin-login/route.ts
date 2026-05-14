@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHmac, timingSafeEqual } from "crypto";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -33,12 +33,15 @@ function safeEqual(a: string, b: string): boolean {
 
 export async function POST(req: NextRequest) {
   // B1: brute-force protection — 5 attempts per 15 minutes per IP+sid
-  const rl = await rateLimit(req, "admin-login", { limit: 5, windowSec: 900 });
+  const rl = await rateLimit(req, "admin-login", {
+    limit: 5,
+    windowSec: 900,
+    burstLimit: 3,
+    burstWindowSec: 60,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 900) } },
-    );
+    return rateLimitResponse(rl);
   }
 
   let key = "";

@@ -5,7 +5,7 @@ import {
   getWorkflowId,
   type AgentWorkflowKey,
 } from "@/lib/openai/agent-workflows";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,9 +30,15 @@ function pickWorkflow(input: string): AgentWorkflowKey {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = await rateLimit(req, "raya-agent-session", { limit: 20, windowSec: 60 });
+  const rl = await rateLimit(req, "raya-agent-session", {
+    limit: 20,
+    windowSec: 60,
+    burstLimit: 4,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    return rateLimitResponse(rl);
   }
 
   let key: AgentWorkflowKey = "travel_research";

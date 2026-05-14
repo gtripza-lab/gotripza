@@ -38,7 +38,7 @@ export async function trackClick(input: TrackClickInput): Promise<TrackClickResu
   try {
     const sb = createSupabaseService();
     const user = await getCurrentUser().catch(() => null);
-    const cookieSid = cookies().get("gtz_sid")?.value ?? null;
+    const cookieSid = (await cookies()).get("gtz_sid")?.value ?? null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (sb as any)
       .from("booking_clicks")

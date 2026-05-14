@@ -8,7 +8,8 @@ import { getDictionary } from "@/i18n/get-dictionary";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
-export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const isAr = params.locale === "ar";
   const title = isAr
     ? "تنبيهات أمان السفر مع ريا | GoTripza"
@@ -48,7 +49,8 @@ const GUIDES = [
   },
 ];
 
-export default async function TravelSafetyPage({ params }: { params: { locale: string } }) {
+export default async function TravelSafetyPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const dict = await getDictionary(locale);

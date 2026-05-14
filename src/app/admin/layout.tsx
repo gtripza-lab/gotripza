@@ -23,8 +23,8 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const authed = isAdminAuthenticated();
+export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+  const authed = await isAdminAuthenticated();
   if (!authed) redirect("/en/admin");
 
   return (

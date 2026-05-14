@@ -8,6 +8,7 @@ import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { BottomNav } from "@/components/BottomNav";
 import { TravelpayoutsProvider } from "@/components/TravelpayoutsProvider";
 import { CookieConsent } from "@/components/CookieConsent";
+import { AnalyticsInit } from "@/components/AnalyticsInit";
 
 const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
 
@@ -35,11 +36,12 @@ const BASE = "https://gotripza.com";
 const GSC_VERIFY = process.env.NEXT_PUBLIC_GSC_VERIFICATION
   ?? "pfI1Dg7jVz9s_y0IHGvW78r-IDgc3MDh0RT6rqoYJDQ";
 
-export function generateMetadata({
-  params,
-}: {
-  params: { locale: string };
-}): Metadata {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const isAr = params.locale === "ar";
 
   const title = isAr
@@ -166,13 +168,18 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export default function LocaleLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: { locale: string };
-}) {
+export default async function LocaleLayout(
+  props: {
+    children: React.ReactNode;
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
+
+  const {
+    children
+  } = props;
+
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dir = localeMeta[locale as Locale].dir;
@@ -213,17 +220,7 @@ export default function LocaleLayout({
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
               strategy="afterInteractive"
             />
-            <Script id="ga4-init" strategy="afterInteractive">
-              {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', '${GA_ID}', {
-                  page_path: window.location.pathname,
-                  cookie_flags: 'SameSite=None;Secure',
-                });
-              `}
-            </Script>
+            <AnalyticsInit gaId={GA_ID} />
           </>
          )}
       </body>

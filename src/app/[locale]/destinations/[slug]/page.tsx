@@ -24,7 +24,7 @@ import { InternalLinks, SeoBreadcrumb } from "@/components/seo/InternalLinks";
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
-interface Props { params: { locale: string; slug: string } }
+interface Props { params: Promise<{ locale: string; slug: string }> }
 
 export async function generateStaticParams() {
   return DESTINATION_SLUGS.flatMap((slug) => [
@@ -33,7 +33,8 @@ export async function generateStaticParams() {
   ]);
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   if (!isLocale(params.locale)) return {};
   const dest = getDestination(params.slug);
   if (!dest) return {};
@@ -77,7 +78,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function DestinationHubPage({ params }: Props) {
+export default async function DestinationHubPage(props: Props) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";

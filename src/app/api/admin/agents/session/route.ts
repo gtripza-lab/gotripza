@@ -5,6 +5,7 @@ import {
   getWorkflowId,
   type AgentWorkflowKey,
 } from "@/lib/openai/agent-workflows";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -15,7 +16,16 @@ function getUserId(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  if (!isAdminAuthenticated()) {
+  const rl = await rateLimit(req, "admin-agent-session", {
+    limit: 12,
+    windowSec: 60,
+    burstLimit: 3,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
+  if (!(await isAdminAuthenticated())) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 

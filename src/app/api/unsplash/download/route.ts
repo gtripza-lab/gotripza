@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { triggerUnsplashDownload } from "@/lib/unsplash";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 /**
  * POST /api/unsplash/download
@@ -9,6 +10,15 @@ import { triggerUnsplashDownload } from "@/lib/unsplash";
  * selects a hotel image, etc.). Required by Unsplash API guidelines.
  */
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, "unsplash-download", {
+    limit: 60,
+    windowSec: 60,
+    burstLimit: 10,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   try {
     const { downloadLocation } = (await req.json()) as { downloadLocation?: string };
     if (!downloadLocation || typeof downloadLocation !== "string") {

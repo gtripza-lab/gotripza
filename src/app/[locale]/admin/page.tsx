@@ -6,16 +6,17 @@ import { AdminLoginForm } from "@/components/AdminLoginForm";
 export const metadata = { title: "Admin", robots: "noindex,nofollow" };
 export const dynamic = "force-dynamic";
 
-export default async function AdminPage({
-  params,
-}: {
-  params: { locale: string };
-}) {
+export default async function AdminPage(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
   const { locale } = params;
   if (!isLocale(locale)) notFound();
 
   // Already authenticated → send straight to the new ops console
-  if (isAdminAuthenticated()) redirect("/admin/dashboard");
+  if (await isAdminAuthenticated()) redirect("/admin/dashboard");
 
   if (!process.env.ADMIN_KEY) {
     return (

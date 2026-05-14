@@ -11,7 +11,7 @@ import { AdminAutoRefresh } from "@/components/admin/AdminAutoRefresh";
 
 const AreaChartCard = dynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.AreaChartCard })),
-  { ssr: false },
+  {},
 );
 
 export const metadata = { title: "لوحة التشغيل" };

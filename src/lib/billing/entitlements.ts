@@ -40,7 +40,7 @@ export async function getEntitlement(
   userId: string | null | undefined,
 ): Promise<Entitlement> {
   if (!userId) {
-    const trial = getTrialState(cookies().get(RYA_TRIAL_COOKIE)?.value);
+    const trial = getTrialState((await cookies()).get(RYA_TRIAL_COOKIE)?.value);
     if (trial.active) {
       return { isPremium: true, plan: "mobile_trial", reason: "mobile_trial" };
     }

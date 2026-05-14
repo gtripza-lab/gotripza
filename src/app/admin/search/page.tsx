@@ -5,11 +5,11 @@ import dynamic from "next/dynamic";
 
 const AreaChartCard = dynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.AreaChartCard })),
-  { ssr: false },
+  {},
 );
 const BarChartCard = dynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.BarChartCard })),
-  { ssr: false },
+  {},
 );
 import { MousePointerClick, Plane, Hotel, LayoutGrid, DollarSign, ShieldCheck } from "lucide-react";
 

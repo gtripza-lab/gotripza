@@ -39,7 +39,13 @@ function buildSummary(query: string, response?: string): string {
 export async function POST(request: NextRequest) {
   try {
     // B1: production rate limit (30/min)
-    const rl = await rateLimit(request, "history", { limit: 30, windowSec: 60 });
+    const rl = await rateLimit(request, "history", {
+      limit: 30,
+      windowSec: 60,
+      burstLimit: 10,
+      burstWindowSec: 10,
+      failOpen: true,
+    });
     if (!rl.allowed) {
       return NextResponse.json({ ok: true });
     }

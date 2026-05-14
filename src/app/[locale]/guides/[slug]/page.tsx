@@ -17,7 +17,7 @@ import { formatBestMonths } from "@/lib/seo-destinations";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
-type Props = { params: { locale: string; slug: string } };
+type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export async function generateStaticParams() {
   return getSeoIntentPages().flatMap((page) => [
@@ -26,7 +26,8 @@ export async function generateStaticParams() {
   ]);
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   if (!isLocale(params.locale)) return {};
   const page = getSeoIntentPage(params.slug);
   if (!page) return {};
@@ -90,7 +91,8 @@ function guideBullets(kind: string, isAr: boolean, subject: string, months: stri
     : [`Best months for ${subject}: ${months}.`, "Avoid peak crowds if comfort matters more than events.", "Rya helps choose timing by budget, weather, and travel style."];
 }
 
-export default function GuidePage({ params }: Props) {
+export default async function GuidePage(props: Props) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";

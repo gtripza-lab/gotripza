@@ -1,4 +1,3 @@
-"use client";
 import Image from "next/image";
 
 // Santorini sunset — hotlinked directly from Unsplash as required by their guidelines

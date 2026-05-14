@@ -22,11 +22,12 @@ export async function generateStaticParams({
   return slugs.map((slug) => ({ slug }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string; slug: string };
-}) {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string; slug: string }>;
+  }
+) {
+  const params = await props.params;
   const post = getPost(params.slug, (params.locale as Locale) ?? "ar");
   if (!post) return {};
   return {
@@ -43,11 +44,12 @@ export async function generateMetadata({
   };
 }
 
-export default async function BlogPostPage({
-  params,
-}: {
-  params: { locale: string; slug: string };
-}) {
+export default async function BlogPostPage(
+  props: {
+    params: Promise<{ locale: string; slug: string }>;
+  }
+) {
+  const params = await props.params;
   const { locale, slug } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);

@@ -35,7 +35,13 @@ const ALLOWED_EVENTS = new Set([
 
 export async function POST(req: NextRequest) {
   // B1: rate limit at 120/min — analytics is high-volume but not infinite
-  const rl = await rateLimit(req, "log-event", { limit: 120, windowSec: 60 });
+  const rl = await rateLimit(req, "log-event", {
+    limit: 120,
+    windowSec: 60,
+    burstLimit: 30,
+    burstWindowSec: 10,
+    failOpen: true,
+  });
   if (!rl.allowed) {
     return NextResponse.json({ ok: true }); // silent drop
   }

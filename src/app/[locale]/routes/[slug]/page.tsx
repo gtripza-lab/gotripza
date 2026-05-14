@@ -24,7 +24,7 @@ function bestMonthsLabel(destSlug: string, isAr: boolean): string {
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
-interface Props { params: { locale: string; slug: string } }
+interface Props { params: Promise<{ locale: string; slug: string }> }
 
 export async function generateStaticParams() {
   return ROUTE_SLUGS.flatMap((slug) => [
@@ -33,7 +33,8 @@ export async function generateStaticParams() {
   ]);
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   if (!isLocale(params.locale)) return {};
   const route = getRoutePair(params.slug);
   if (!route) return {};
@@ -124,7 +125,8 @@ function routePlanningBrief(route: RoutePair, isAr: boolean) {
       };
 }
 
-export default async function RoutePage({ params }: Props) {
+export default async function RoutePage(props: Props) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";

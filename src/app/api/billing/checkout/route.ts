@@ -12,10 +12,20 @@ import { NextRequest, NextResponse } from "next/server";
 import { getStripe, STRIPE_CONFIGURED, RIA_PLUS_PRICES } from "@/lib/billing/stripe";
 import { hasGoTripzaAffiliateBookingSignal } from "@/lib/billing/entitlements";
 import { getCurrentUser } from "@/lib/auth/session";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, "billing-checkout", {
+    limit: 10,
+    windowSec: 60,
+    burstLimit: 3,
+    burstWindowSec: 20,
+    failOpen: false,
+  });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   if (!STRIPE_CONFIGURED) {
     return NextResponse.json(
       { error: "stripe_not_configured" },

@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { headers } from "next/headers";
 
-function detectLocaleFromPath(): "ar" | "en" {
+async function detectLocaleFromPath(): Promise<"ar" | "en"> {
   try {
-    const headersList = headers();
+    const headersList = await headers();
     const referer = headersList.get("referer") ?? "";
     const pathname = headersList.get("x-invoke-path") ?? referer;
     return pathname.includes("/en") ? "en" : "ar";
@@ -12,8 +12,8 @@ function detectLocaleFromPath(): "ar" | "en" {
   }
 }
 
-export default function LocaleNotFound() {
-  const locale = detectLocaleFromPath();
+export default async function LocaleNotFound() {
+  const locale = await detectLocaleFromPath();
   const isAr = locale === "ar";
 
   return (

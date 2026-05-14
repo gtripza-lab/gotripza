@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${origin}/?auth_error=missing_code`);
   }
 
-  const sb = createSupabaseServer();
+  const sb = await createSupabaseServer();
   const { data, error } = await sb.auth.exchangeCodeForSession(code);
 
   if (error || !data.session?.user) {

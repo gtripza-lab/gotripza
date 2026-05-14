@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { getCurrentUser } from "@/lib/auth/session";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyTable = any;
@@ -34,12 +34,15 @@ const CreateBody = z.object({
 
 export async function POST(req: NextRequest) {
   // B1: aggressive rate limit (5/min) — anti-spam for the open ticket form
-  const rl = await rateLimit(req, "support", { limit: 5, windowSec: 60 });
+  const rl = await rateLimit(req, "support", {
+    limit: 5,
+    windowSec: 60,
+    burstLimit: 2,
+    burstWindowSec: 20,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 60) } },
-    );
+    return rateLimitResponse(rl);
   }
 
   let body: unknown;

@@ -13,7 +13,7 @@ import {
   findAnyCity,
 } from "@/lib/mock-intent";
 import { resolveIata } from "@/lib/iata";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/observability/sentry";
 import { createSupabaseService } from "@/lib/supabase/service";
 
@@ -725,12 +725,15 @@ export async function POST(req: NextRequest) {
   }
 
   // B1: Production rate limit — Supabase-backed sliding window, composite key
-  const rl = await rateLimit(req, "parse", { limit: 20, windowSec: 60 });
+  const rl = await rateLimit(req, "parse", {
+    limit: 20,
+    windowSec: 60,
+    burstLimit: 5,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 60) } },
-    );
+    return rateLimitResponse(rl);
   }
 
   let query = "";

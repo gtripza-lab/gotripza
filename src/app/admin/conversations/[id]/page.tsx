@@ -193,11 +193,12 @@ function MessageBubble({ msg }: { msg: MessageRow }) {
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
-export default async function ConversationDetailPage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default async function ConversationDetailPage(
+  props: {
+    params: Promise<{ id: string }>;
+  }
+) {
+  const params = await props.params;
   const conversation: ConversationDetail | null = await getConversationDetail(
     params.id
   );

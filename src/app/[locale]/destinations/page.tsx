@@ -8,9 +8,10 @@ import { fetchPhotos, type UnsplashPhoto } from "@/lib/unsplash";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
-interface Props { params: { locale: string } }
+interface Props { params: Promise<{ locale: string }> }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   const isAr = params.locale === "ar";
   const title = isAr
     ? "دليل الوجهات السياحية — أفضل 50 وجهة في العالم"
@@ -48,7 +49,8 @@ const FEATURED_SLUGS = [
   "rome", "barcelona",
 ];
 
-export default async function DestinationsIndexPage({ params }: Props) {
+export default async function DestinationsIndexPage(props: Props) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";

@@ -23,7 +23,7 @@ import { Footer } from "@/components/Footer";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
 interface PageProps {
-  params: { locale: string; slug: string };
+  params: Promise<{ locale: string; slug: string }>;
 }
 
 /**
@@ -57,7 +57,8 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata(props: PageProps): Promise<Metadata> {
+  const params = await props.params;
   if (!isLocale(params.locale)) return {};
   const locale = params.locale as Locale;
   const { destination, origin, type } = parseSlug(params.slug);
@@ -119,7 +120,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function TripPage({ params }: PageProps) {
+export default async function TripPage(props: PageProps) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";

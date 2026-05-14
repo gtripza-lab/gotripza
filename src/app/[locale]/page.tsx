@@ -21,24 +21,24 @@ import { detectGeo } from "@/lib/geo";
 // Below-fold client components — deferred to reduce initial JS parse time
 const MobileMockups = dynamic(
   () => import("@/components/MobileMockups").then((m) => m.MobileMockups),
-  { ssr: false, loading: () => <div className="h-64" /> },
+  { loading: () => <div className="h-64" /> },
 );
 const ValuesGrid = dynamic(
   () => import("@/components/ValuesGrid").then((m) => m.ValuesGrid),
-  { ssr: false, loading: () => <div className="h-40" /> },
+  { loading: () => <div className="h-40" /> },
 );
 const OurValues = dynamic(
   () => import("@/components/OurValues").then((m) => m.OurValues),
-  { ssr: false, loading: () => <div className="h-40" /> },
+  { loading: () => <div className="h-40" /> },
 );
 const TrustSection = dynamic(
   () => import("@/components/TrustSection").then((m) => m.TrustSection),
-  { ssr: false, loading: () => <div className="h-40" /> },
+  { loading: () => <div className="h-40" /> },
 );
 // SocialProof is a floating toast — never needs SSR
 const SocialProof = dynamic(
   () => import("@/components/SocialProof").then((m) => m.SocialProof),
-  { ssr: false },
+  {},
 );
 
 const BASE = "https://gotripza.com";
@@ -97,11 +97,12 @@ const FAQ_EN = [
   },
 ];
 
-export function generateMetadata({
-  params,
-}: {
-  params: { locale: string };
-}): Metadata {
+export async function generateMetadata(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+): Promise<Metadata> {
+  const params = await props.params;
   const locale = params.locale;
   const isAr = locale === "ar";
 
@@ -140,15 +141,16 @@ export function generateMetadata({
   };
 }
 
-export default async function LandingPage({
-  params,
-}: {
-  params: { locale: string };
-}) {
+export default async function LandingPage(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
-  const { currency } = detectGeo();
+  const { currency } = await detectGeo();
   const isAr = locale === "ar";
   const faqItems = isAr ? FAQ_AR : FAQ_EN;
 

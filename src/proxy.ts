@@ -32,9 +32,42 @@ function envCsrfHosts(): Set<string> {
 
 // Routes that handle external webhooks — exempt from CSRF (signature-verified)
 const WEBHOOK_ROUTES = ["/api/webhook/", "/api/billing/webhook"];
+const CSRF_EXEMPT_ROUTES = ["/api/csp-report"];
 
 function isWebhookRoute(pathname: string): boolean {
   return WEBHOOK_ROUTES.some((p) => pathname.startsWith(p));
+}
+
+function isCsrfExemptRoute(pathname: string): boolean {
+  return CSRF_EXEMPT_ROUTES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+function makeNonce() {
+  return crypto.randomUUID().replace(/-/g, "");
+}
+
+function makeCsp(nonce: string) {
+  const isDev = process.env.NODE_ENV !== "production";
+  return [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'self'",
+    `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://www.google-analytics.com https://tp.media https://*.travelpayouts.com https://*.jetradar.com https://*.aviasales.com https://emrld.ltd`,
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://images.unsplash.com https://*.tp.media https://*.travelpayouts.com https://photo.hotellook.com https://*.hotellook.com https://emrld.ltd https://*.emrld.ltd https://www.google-analytics.com https://www.googletagmanager.com",
+    "frame-src 'self' https://search.gotripza.com https://*.tp.media https://*.travelpayouts.com https://*.jetradar.com https://hotellook.com https://*.hotellook.com https://www.aviasales.com https://www.googletagmanager.com",
+    "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://*.travelpayouts.com https://tp.media https://api.travelpayouts.com https://hotellook.com https://engine.hotellook.com https://*.supabase.co https://api.openai.com https://emrld.ltd https://*.emrld.ltd",
+    "font-src 'self' data:",
+    "form-action 'self' https://search.gotripza.com https://hotellook.com",
+    "report-uri /api/csp-report",
+  ].join("; ");
+}
+
+function attachSecurityHeaders(res: NextResponse, nonce: string) {
+  res.headers.set("Content-Security-Policy", makeCsp(nonce));
+  res.headers.set("X-Nonce", nonce);
+  return res;
 }
 
 function csrfReject(req: NextRequest): NextResponse | null {
@@ -43,6 +76,7 @@ function csrfReject(req: NextRequest): NextResponse | null {
   // Skip non-API paths and webhooks
   if (!req.nextUrl.pathname.startsWith("/api/")) return null;
   if (isWebhookRoute(req.nextUrl.pathname)) return null;
+  if (isCsrfExemptRoute(req.nextUrl.pathname)) return null;
 
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
@@ -88,10 +122,16 @@ function redirectToCleanLocaleHome(req: NextRequest, locale: string) {
   return NextResponse.redirect(url, 308);
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
+  const nonce = makeNonce();
+  const requestHeaders = new Headers(req.headers);
+  const csp = makeCsp(nonce);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("Content-Security-Policy", csp);
+
   // ── B7: CSRF check (API POSTs only) ──────────────────────────────────────
   const csrfRes = csrfReject(req);
-  if (csrfRes) return csrfRes;
+  if (csrfRes) return attachSecurityHeaders(csrfRes, nonce);
 
   const { pathname } = req.nextUrl;
   const locale = pickLocale(req);
@@ -100,28 +140,34 @@ export function middleware(req: NextRequest) {
   // /?q={search_term_string}. Keep it out of the index by canonicalizing it.
   const q = req.nextUrl.searchParams.get("q");
   if (q === "{search_term_string}") {
-    return redirectToCleanLocaleHome(req, locale);
+    return attachSecurityHeaders(redirectToCleanLocaleHome(req, locale), nonce);
   }
 
   // Defensive canonicalization for malformed absolute URLs requested as paths,
   // e.g. /https://gotripza.com or Vercel-normalized /https:/gotripza.com.
   if (/^\/https?:\/+/.test(pathname)) {
-    return redirectToCleanLocaleHome(req, locale);
+    return attachSecurityHeaders(redirectToCleanLocaleHome(req, locale), nonce);
   }
 
   // ── Main domain locale redirect ────────────────────────────────────────────
   const hasLocale = locales.some(
     (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`),
   );
-  if (hasLocale) return NextResponse.next();
+  if (hasLocale) {
+    return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
+  }
 
   // Skip rewrites for /api/* and /admin/* (standalone routes, no locale prefix)
-  if (pathname.startsWith("/api/")) return NextResponse.next();
-  if (pathname.startsWith("/admin")) return NextResponse.next();
+  if (pathname.startsWith("/api/")) {
+    return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
+  }
+  if (pathname.startsWith("/admin")) {
+    return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
+  }
 
   const url = req.nextUrl.clone();
   url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
-  return NextResponse.redirect(url);
+  return attachSecurityHeaders(NextResponse.redirect(url), nonce);
 }
 
 export const config = {

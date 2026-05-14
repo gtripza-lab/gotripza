@@ -9,7 +9,8 @@ import { getDictionary } from "@/i18n/get-dictionary";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
-export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const isAr = params.locale === "ar";
   const title = isAr ? "Rya Companion — رفيقك الذكي أثناء السفر" : "Rya Companion — Your Smart Travel Companion";
   const description = isAr
@@ -47,7 +48,8 @@ const FEATURES_EN = [
   "Airport, transport, and activity assistance",
 ];
 
-export default async function PlusPage({ params }: { params: { locale: string } }) {
+export default async function PlusPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const dict = await getDictionary(locale);

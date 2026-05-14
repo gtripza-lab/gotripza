@@ -5,7 +5,7 @@ import { PaymentMethods } from "./PaymentMethods";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Locale } from "@/i18n/config";
 
-export function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
+export async function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const legalBase = `/${locale}`;
 
   // Each service icon links to its natural destination

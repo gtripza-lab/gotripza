@@ -17,9 +17,9 @@ export interface GeoContext {
  * Works on Vercel (x-vercel-ip-country) and Cloudflare (cf-ipcountry).
  * Returns safe defaults when headers are unavailable (e.g. local dev).
  */
-export function detectGeo(): GeoContext {
+export async function detectGeo(): Promise<GeoContext> {
   try {
-    const h = headers();
+    const h = await headers();
     const raw =
       h.get("x-vercel-ip-country") ??
       h.get("cf-ipcountry") ??
@@ -35,8 +35,8 @@ export function detectGeo(): GeoContext {
 }
 
 /** Legacy alias — kept for PaymentMethods compatibility */
-export function detectRegion(): Region {
-  return detectGeo().region;
+export async function detectRegion(): Promise<Region> {
+  return (await detectGeo()).region;
 }
 
 function resolveRegion(country: string | null): Region {

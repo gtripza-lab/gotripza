@@ -8,7 +8,8 @@ import { getAllPosts } from "@/lib/blog";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
-export function generateMetadata({ params }: { params: { locale: string } }) {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const isAr = params.locale === "ar";
   return {
     title: isAr ? "دليل السفر" : "Travel Guide",
@@ -18,11 +19,12 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
   };
 }
 
-export default async function BlogListPage({
-  params,
-}: {
-  params: { locale: string };
-}) {
+export default async function BlogListPage(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);

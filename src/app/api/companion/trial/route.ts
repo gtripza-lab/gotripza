@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { getTrialState, RYA_TRIAL_COOKIE, RYA_TRIAL_DAYS } from "@/lib/companion/trial";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -38,6 +39,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = await rateLimit(req, "companion_trial", {
+    limit: 10,
+    windowSec: 60,
+    burstLimit: 3,
+    burstWindowSec: 15,
+    failOpen: false,
+  });
+  if (!rl.allowed) return rateLimitResponse(rl);
+
   const existing = req.cookies.get(RYA_TRIAL_COOKIE)?.value;
   const startedAt = existing && getTrialState(existing).startedAt
     ? getTrialState(existing).startedAt!

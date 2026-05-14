@@ -11,7 +11,8 @@ export const metadata: Metadata = {
   robots: "noindex,nofollow",
 };
 
-export default async function AccountPage({ params }: { params: { locale: string } }) {
+export default async function AccountPage(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const dict = await getDictionary(locale);

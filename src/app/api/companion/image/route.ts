@@ -3,7 +3,7 @@ import OpenAI from "openai";
 import { getCurrentUser } from "@/lib/auth/session";
 import { ensurePremium } from "@/lib/billing/entitlements";
 import { HAS_OPENAI_KEY, MODEL_LITE } from "@/lib/ai/config";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,9 +21,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "openai_not_configured" }, { status: 503 });
   }
 
-  const rl = await rateLimit(req, "companion_image", { limit: 8, windowSec: 60 });
+  const rl = await rateLimit(req, "companion_image", {
+    limit: 8,
+    windowSec: 60,
+    burstLimit: 2,
+    burstWindowSec: 15,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    return rateLimitResponse(rl);
   }
 
   const user = await getCurrentUser();

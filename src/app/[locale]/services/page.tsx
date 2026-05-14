@@ -6,7 +6,8 @@ import { getDictionary } from "@/i18n/get-dictionary";
 import { TravelerServicesGrid, type TravelerServiceCard } from "@/components/TravelerServicesGrid";
 import type { Metadata } from "next";
 
-export function generateMetadata({ params }: { params: { locale: string } }): Metadata {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const params = await props.params;
   const isAr = params.locale === "ar";
   return {
     title: isAr
@@ -213,11 +214,12 @@ const SERVICES: TravelerServiceCard[] = [
   },
 ];
 
-export default async function ServicesPage({
-  params,
-}: {
-  params: { locale: string };
-}) {
+export default async function ServicesPage(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const dict = await getDictionary(locale);

@@ -14,7 +14,7 @@ export type CurrentUser = {
 /** Returns the signed-in user (if any), reading from request cookies. */
 export async function getCurrentUser(): Promise<CurrentUser | null> {
   try {
-    const sb = createSupabaseServer();
+    const sb = await createSupabaseServer();
     const {
       data: { user },
     } = await sb.auth.getUser();
@@ -34,9 +34,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
  * this reader is just for the parse route's use.
  */
 import { cookies } from "next/headers";
-export function getAnonSessionId(): string | null {
+export async function getAnonSessionId(): Promise<string | null> {
   try {
-    const c = cookies().get("gtz_sid");
+    const c = (await cookies()).get("gtz_sid");
     return c?.value ?? null;
   } catch {
     return null;

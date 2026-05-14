@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth/session";
 import { deleteTripPlan, getTripPlans, saveTripPlan, TripPlansSetupError } from "@/lib/trip-plans/store";
 import type { TripPlan } from "@/lib/trip-planner";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -21,9 +21,15 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const rl = await rateLimit(req, "trip-plans", { limit: 30, windowSec: 60 });
+  const rl = await rateLimit(req, "trip-plans", {
+    limit: 30,
+    windowSec: 60,
+    burstLimit: 8,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    return rateLimitResponse(rl);
   }
 
   const user = await getCurrentUser();
@@ -51,9 +57,15 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const rl = await rateLimit(req, "trip-plans-delete", { limit: 20, windowSec: 60 });
+  const rl = await rateLimit(req, "trip-plans-delete", {
+    limit: 20,
+    windowSec: 60,
+    burstLimit: 6,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+    return rateLimitResponse(rl);
   }
 
   const user = await getCurrentUser();

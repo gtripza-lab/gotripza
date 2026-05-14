@@ -6,11 +6,11 @@ import nextDynamic from "next/dynamic";
 
 const BarChartCard = nextDynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.BarChartCard })),
-  { ssr: false },
+  {},
 );
 const DonutChart = nextDynamic(
   () => import("@/components/admin/AdminCharts").then((m) => ({ default: m.DonutChart })),
-  { ssr: false },
+  {},
 );
 
 export const metadata = { title: "المراقبة" };

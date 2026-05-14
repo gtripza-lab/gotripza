@@ -11,7 +11,7 @@ import type { Destination } from "@/lib/seo-destinations";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 
-interface Props { params: { locale: string; slug: string } }
+interface Props { params: Promise<{ locale: string; slug: string }> }
 
 export async function generateStaticParams() {
   return DESTINATION_SLUGS.flatMap((slug) => [
@@ -20,7 +20,8 @@ export async function generateStaticParams() {
   ]);
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   if (!isLocale(params.locale)) return {};
   const dest = getDestination(params.slug);
   if (!dest) return {};
@@ -91,7 +92,8 @@ function hotelIntentBrief(dest: Destination, isAr: boolean) {
     : `The best area to stay in ${dest.nameEn} depends on your trip goal: attractions, calm, budget, or transport. Rya can help choose based on your itinerary.`;
 }
 
-export default async function HotelsPage({ params }: Props) {
+export default async function HotelsPage(props: Props) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";

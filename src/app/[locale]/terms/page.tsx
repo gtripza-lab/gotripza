@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { Navbar } from "@/components/Navbar";
@@ -6,7 +7,8 @@ import { Footer } from "@/components/Footer";
 
 const BASE = "https://gotripza.com";
 
-export function generateMetadata({ params }: { params: { locale: string } }) {
+export async function generateMetadata(props: { params: Promise<{ locale: string }> }) {
+  const params = await props.params;
   const locale = params.locale;
   const canonical = `${BASE}/${locale}/terms`;
   return {
@@ -29,11 +31,12 @@ export function generateMetadata({ params }: { params: { locale: string } }) {
   };
 }
 
-export default async function TermsPage({
-  params,
-}: {
-  params: { locale: string };
-}) {
+export default async function TermsPage(
+  props: {
+    params: Promise<{ locale: string }>;
+  }
+) {
+  const params = await props.params;
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dict = await getDictionary(locale as Locale);
@@ -85,7 +88,7 @@ export default async function TermsPage({
               <Section title="الإفصاح عن العلاقات التجارية">
                 <p>
                   قد تحصل GoTripza على عمولة مالية من شركاء الإحالة عند إتمام عمليات الحجز عبر روابطنا. هذه العمولة لا تُضاف إلى سعر الخدمة التي تدفعها ولا تؤثر عليه. للمزيد، راجع{" "}
-                  <a href="/ar/disclosure" className="text-brand-primary hover:underline">صفحة الإفصاح عن الشراكات</a>.
+                  <Link href="/ar/disclosure" className="text-brand-primary hover:underline">صفحة الإفصاح عن الشراكات</Link>.
                 </p>
               </Section>
 
@@ -155,7 +158,7 @@ export default async function TermsPage({
               <Section title="Commercial Relationships Disclosure">
                 <p>
                   GoTripza may receive a referral commission from affiliate partners when bookings are completed through our links. This commission is not added to the price you pay and does not affect it. See our{" "}
-                  <a href="/en/disclosure" className="text-brand-primary hover:underline">Affiliate Disclosure</a> page for full details.
+                  <Link href="/en/disclosure" className="text-brand-primary hover:underline">Affiliate Disclosure</Link> page for full details.
                 </p>
               </Section>
 

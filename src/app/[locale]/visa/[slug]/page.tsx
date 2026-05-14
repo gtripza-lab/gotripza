@@ -15,7 +15,7 @@ import type { Destination } from "@/lib/seo-destinations";
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 const MARKER = process.env.NEXT_PUBLIC_TRAVELPAYOUTS_MARKER ?? "522867";
 
-interface Props { params: { locale: string; slug: string } }
+interface Props { params: Promise<{ locale: string; slug: string }> }
 
 export async function generateStaticParams() {
   return DESTINATION_SLUGS.flatMap((slug) => [
@@ -24,7 +24,8 @@ export async function generateStaticParams() {
   ]);
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params;
   if (!isLocale(params.locale)) return {};
   const dest = getDestination(params.slug);
   if (!dest) return {};
@@ -142,7 +143,8 @@ function officialCheckSteps(dest: Destination, isAr: boolean) {
     : ["Open the official government or embassy website.", "Select nationality, trip length, and travel purpose.", "Review documents, fees, and processing time.", "Keep digital and printed copies of the application and documents."];
 }
 
-export default async function VisaPage({ params }: Props) {
+export default async function VisaPage(props: Props) {
+  const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";

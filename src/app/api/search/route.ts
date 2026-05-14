@@ -4,7 +4,7 @@ import { TripIntentSchema } from "@/lib/ai/schemas/intent";
 import type { Currency } from "@/lib/utils";
 import { resolveIata, iataToCity } from "@/lib/iata";
 import { buildHotelUrl, buildAviasalesUrl } from "@/lib/partners";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/observability/sentry";
 import { z } from "zod";
 
@@ -35,12 +35,15 @@ function normCurrency(input: string | undefined): Currency {
 
 export async function POST(req: NextRequest) {
   // B1: Production rate limit
-  const rl = await rateLimit(req, "search", { limit: 30, windowSec: 60 });
+  const rl = await rateLimit(req, "search", {
+    limit: 30,
+    windowSec: 60,
+    burstLimit: 8,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 60) } },
-    );
+    return rateLimitResponse(rl);
   }
 
   try {

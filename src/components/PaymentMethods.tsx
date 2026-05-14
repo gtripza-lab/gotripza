@@ -17,14 +17,14 @@ const WORLD_METHODS: Method[] = [
   { name: "Klarna", subtitle: "Pay later" },
 ];
 
-export function PaymentMethods({
+export async function PaymentMethods({
   dict,
   variant = "row",
 }: {
   dict: Dictionary;
   variant?: "row" | "compact";
 }) {
-  const region = detectRegion();
+  const region = await detectRegion();
   const methods = region === "gulf" ? GULF_METHODS : WORLD_METHODS;
   const label =
     dict.payments?.title ??

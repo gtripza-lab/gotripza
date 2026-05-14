@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildTripPlan, type PlannerTripType } from "@/lib/trip-planner";
-import { rateLimit } from "@/lib/security/rate-limit";
+import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -14,12 +14,15 @@ const TRIP_TYPES: PlannerTripType[] = [
 ];
 
 export async function POST(req: NextRequest) {
-  const rl = await rateLimit(req, "plan", { limit: 30, windowSec: 60 });
+  const rl = await rateLimit(req, "plan", {
+    limit: 30,
+    windowSec: 60,
+    burstLimit: 8,
+    burstWindowSec: 10,
+    failOpen: false,
+  });
   if (!rl.allowed) {
-    return NextResponse.json(
-      { error: "rate_limited" },
-      { status: 429, headers: { "Retry-After": String(rl.retryAfter || 60) } },
-    );
+    return rateLimitResponse(rl);
   }
 
   try {
