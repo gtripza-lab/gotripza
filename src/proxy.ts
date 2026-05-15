@@ -179,6 +179,6 @@ export const config = {
   matcher: [
     // Run on /api/* (for CSRF) and on locale routes (for redirect)
     "/api/:path*",
-    "/((?!_next|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|map|txt|xml|woff|woff2)$).*)",
+    "/((?!_next|favicon.ico|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|map|txt|xml|webmanifest|woff|woff2)$).*)",
   ],
 };

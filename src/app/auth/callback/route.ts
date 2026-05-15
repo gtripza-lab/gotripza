@@ -19,7 +19,8 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") || "/";
+  const rawNext = searchParams.get("next") || "/";
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : "/";
 
   if (!code) {
     return NextResponse.redirect(`${origin}/?auth_error=missing_code`);
@@ -49,5 +50,5 @@ export async function GET(req: NextRequest) {
     ensureLaunchFreeSubscription(user.id),
   ]).catch((e) => console.warn("[auth/callback] provision warn:", e));
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return NextResponse.redirect(new URL(next, origin));
 }
