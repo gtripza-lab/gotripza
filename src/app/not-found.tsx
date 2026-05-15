@@ -26,7 +26,7 @@ export default async function GlobalNotFound() {
         style={{
           margin: 0,
           minHeight: "100vh",
-          background: "#0a0a14",
+          background: "#060A13",
           color: "#fff",
           display: "flex",
           alignItems: "center",
@@ -42,7 +42,7 @@ export default async function GlobalNotFound() {
             style={{
               fontSize: "5rem",
               fontWeight: 800,
-              color: "rgba(90,108,255,0.25)",
+              color: "rgba(59,130,246,0.25)",
               margin: 0,
             }}
           >
@@ -72,7 +72,7 @@ export default async function GlobalNotFound() {
             href={`/${locale}`}
             style={{
               display: "inline-block",
-              background: "#5a6cff",
+              background: "linear-gradient(135deg, #3B82F6 0%, #8B5CF6 52%, #00D4B3 100%)",
               color: "#fff",
               padding: "0.65rem 1.5rem",
               borderRadius: "9999px",
@@ -81,7 +81,7 @@ export default async function GlobalNotFound() {
               fontSize: "0.9rem",
             }}
           >
-            {isAr ? "→ العودة للرئيسية" : "← Back to GoTripza"}
+            {isAr ? "→ العودة إلى ريا" : "← Back to Rya"}
           </Link>
         </div>
       </body>

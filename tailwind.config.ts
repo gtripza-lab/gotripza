@@ -17,11 +17,10 @@ const config: Config = {
           700: "#1F2A4E",
         },
         brand: {
-          primary: "#5A6CFF",
-          deep: "#085CFF",
+          primary: "#3B82F6",
+          deep: "#2563EB",
           mint: "#00D4B3",
-          // Softened from #8B5CF6 (harsh) → #7C6EE0 (premium muted indigo-violet)
-          violet: "#7C6EE0",
+          violet: "#8B5CF6",
         },
         surface: {
           DEFAULT: "#0B1020",
@@ -37,14 +36,14 @@ const config: Config = {
       },
       backgroundImage: {
         "gradient-brand":
-          "linear-gradient(135deg, #5A6CFF 0%, #7C6EE0 50%, #00D4B3 100%)",
+          "linear-gradient(135deg, #3B82F6 0%, #8B5CF6 48%, #00D4B3 100%)",
         "gradient-hero":
-          "radial-gradient(ellipse at top, rgba(90,108,255,0.25) 0%, rgba(11,16,32,0) 60%)",
+          "radial-gradient(ellipse at top, rgba(59,130,246,0.25) 0%, rgba(11,16,32,0) 60%)",
         "gradient-card":
           "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)",
       },
       boxShadow: {
-        glow: "0 0 60px -10px rgba(90,108,255,0.45)",
+        glow: "0 0 60px -10px rgba(59,130,246,0.45)",
         glowMint: "0 0 60px -10px rgba(0,212,179,0.45)",
         card: "0 8px 32px rgba(8, 12, 30, 0.6)",
       },

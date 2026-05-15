@@ -45,12 +45,12 @@ export async function generateMetadata(
   const isAr = params.locale === "ar";
 
   const title = isAr
-    ? "GoTripza — رفيقك الذكي للسفر | AI Travel Companion"
-    : "GoTripza — Your AI Travel Companion | Flights & Trip Planning";
+    ? "Rya by GoTripza — رفيقة السفر الذكية"
+    : "Rya by GoTripza — AI Travel Companion";
 
   const description = isAr
-    ? "خطط رحلتك مع ريا: قارن الطيران، افهم التأشيرة والميزانية، واختر خدماتك من تأمين وشرائح وأنشطة وسيارات."
-    : "Plan your trip with Rya: compare flights, understand visa and budget needs, and choose essentials like insurance, eSIMs, activities, and cars.";
+    ? "ريا رفيقة سفر ذكية تساعدك قبل الرحلة وأثناءها: تخطيط، ميزانية، ترجمة، مطارات، أمان، وخدمات سفر في الوقت المناسب."
+    : "Rya is your AI travel companion before and during the trip: planning, budget, translation, airports, safety, and useful travel services at the right moment.";
 
   const keywords: string[] = isAr
     ? [
@@ -71,6 +71,8 @@ export async function generateMetadata(
         "فلاي ناس",
         "دليل اختيار الفندق",
         "GoTripza",
+        "Rya by GoTripza",
+        "ريا رفيقة السفر",
       ]
     : [
         "cheap flights",
@@ -87,23 +89,25 @@ export async function generateMetadata(
         "cheap flights from Saudi Arabia",
         "travel booking",
         "GoTripza",
+        "Rya by GoTripza",
+        "Rya travel companion",
         "free travel planner",
         "best flight prices",
         "flight deals",
       ];
 
   const ogTitle = isAr
-    ? "GoTripza — ريا رفيقة السفر الذكية"
-    : "GoTripza — Rya AI Travel Companion";
+    ? "Rya by GoTripza — رفيقة السفر الذكية"
+    : "Rya by GoTripza — AI Travel Companion";
 
   const ogDescription = isAr
-    ? "قارن الطيران وخطط ميزانيتك واختر خدمات الرحلة مع ريا."
-    : "Compare flights, plan your budget, and choose trip essentials with Rya.";
+    ? "سافر بذكاء مع ريا: تخطيط، ترجمة، مطارات، أمان، وخدمات سفر وقت الحاجة."
+    : "Travel smarter with Rya: planning, translation, airports, safety, and trip services when useful.";
 
   return {
     title: {
       default: title,
-      template: "%s | GoTripza",
+      template: "%s | Rya by GoTripza",
     },
     description,
     keywords,
@@ -113,7 +117,7 @@ export async function generateMetadata(
     }),
     openGraph: {
       type: "website",
-      siteName: "GoTripza",
+      siteName: "Rya by GoTripza",
       title: ogTitle,
       description: ogDescription,
       images: [{ url: "/og-image.png", width: 1200, height: 630 }],
@@ -146,7 +150,7 @@ export async function generateMetadata(
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: "GoTripza",
+      title: "Rya",
     },
     formatDetection: {
       telephone: false,
@@ -156,8 +160,8 @@ export async function generateMetadata(
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a14" },
-    { media: "(prefers-color-scheme: light)", color: "#5a6cff" },
+    { media: "(prefers-color-scheme: dark)", color: "#060A13" },
+    { media: "(prefers-color-scheme: light)", color: "#3B82F6" },
   ],
   width: "device-width",
   initialScale: 1,

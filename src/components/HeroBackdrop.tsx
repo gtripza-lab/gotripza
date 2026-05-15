@@ -22,21 +22,23 @@ export function HeroBackdrop() {
         style={{ objectPosition: "50% 40%" }}
       />
 
-      {/* Soft purple-pink overlay */}
+      {/* Rya global-tech overlay */}
       <div
         className="absolute inset-0"
         style={{
           background:
-            "linear-gradient(180deg, rgba(180,140,220,0.25) 0%, rgba(120,100,200,0.15) 40%, rgba(20,10,40,0.55) 100%)",
+            "linear-gradient(180deg, rgba(6,10,19,0.72) 0%, rgba(11,16,32,0.82) 45%, rgba(6,10,19,0.96) 100%)",
         }}
       />
+
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px] opacity-55" />
 
       {/* Brand glow center */}
       <div
         className="absolute top-1/3 start-1/2 h-[320px] w-[320px] -translate-x-1/2 rounded-full blur-3xl"
         style={{
           background:
-            "radial-gradient(circle at 50% 50%, rgba(180, 140, 255, 0.20) 0%, transparent 65%)",
+            "radial-gradient(circle at 50% 50%, rgba(59,130,246,0.25) 0%, rgba(0,212,179,0.11) 46%, transparent 70%)",
         }}
       />
 

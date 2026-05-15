@@ -2,15 +2,15 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Rya Companion — GoTripza",
+    name: "Rya by GoTripza",
     short_name: "Rya",
     description:
-      "Install Rya, GoTripza's mobile travel companion for planning, translation, safety, airports, and trip help.",
+      "Install Rya by GoTripza, your AI travel companion for planning, translation, safety, airports, and trip help.",
     start_url: "/ar/search?source=pwa",
     scope: "/",
     display: "standalone",
-    background_color: "#0a0a14",
-    theme_color: "#5a6cff",
+    background_color: "#060A13",
+    theme_color: "#3B82F6",
     orientation: "portrait-primary",
     categories: ["travel", "lifestyle"],
     icons: [

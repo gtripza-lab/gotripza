@@ -45,12 +45,12 @@ const BASE = "https://gotripza.com";
 
 const FAQ_AR = [
   {
-    q: "ما هو GoTripza؟",
-    a: "GoTripza هو مساعد سفر ذكاء اصطناعي مجاني. مساعدتك الذكية ريا تساعدك في البحث عن أرخص تذاكر الطيران، اختيار منطقة السكن المناسبة، وتخطيط رحلتك كاملاً.",
+    q: "ما هي Rya by GoTripza؟",
+    a: "ريا هي رفيقة سفر ذكية من GoTripza تساعدك قبل الرحلة وأثناءها: التخطيط، الميزانية، الترجمة، المطار، الأمان، والخدمات المناسبة في وقتها.",
   },
   {
-    q: "كيف أبحث عن أرخص رحلات الطيران؟",
-    a: "اكتب وجهتك وتواريخك في مربع البحث واضغط على ابدأ مع ريا. ريا تقارن أسعار أكثر من 180 شركة طيران في الوقت الفعلي وتعطيك أفضل الخيارات بالسعر والوقت.",
+    q: "كيف أبدأ مع ريا؟",
+    a: "اكتب لريا وجهتك أو موقفك بكلماتك العادية. إذا أصبحت جاهزاً للمقارنة، ستقترح الرحلات أو الخدمات المناسبة داخل المحادثة بدون ضغط.",
   },
   {
     q: "هل GoTripza مجاني تماماً؟",
@@ -72,12 +72,12 @@ const FAQ_AR = [
 
 const FAQ_EN = [
   {
-    q: "What is GoTripza?",
-    a: "GoTripza is built around Rya, a travel companion that helps you plan, prepare, and choose useful trip services at the right moment.",
+    q: "What is Rya by GoTripza?",
+    a: "Rya is GoTripza's AI travel companion for help before and during the trip: planning, budget, translation, airports, safety, and useful services at the right moment.",
   },
   {
-    q: "How do I find the cheapest flights?",
-    a: "Start a conversation with Rya, share your destination and dates, and she will bring in flight options when you are ready to compare.",
+    q: "How do I start with Rya?",
+    a: "Tell Rya your destination or travel moment in your own words. When you are ready to compare, she brings in flights or services naturally inside the conversation.",
   },
   {
     q: "Is GoTripza completely free?",
@@ -107,12 +107,12 @@ export async function generateMetadata(
   const isAr = locale === "ar";
 
   const title = isAr
-    ? "GoTripza — ريا رفيقة السفر الذكية"
-    : "GoTripza — Rya AI Travel Companion";
+    ? "Rya by GoTripza — رفيقة السفر الذكية"
+    : "Rya by GoTripza — AI Travel Companion";
 
   const description = isAr
-    ? "تحدث مع ريا كرفيقة سفر تفهم رحلتك، تتذكر تفضيلاتك، وتساعدك في التخطيط والميزانية والترجمة والأمان وخدمات السفر عند الحاجة."
-    : "Talk to Rya like a travel companion who understands your trip, remembers your preferences, and helps with planning, budgeting, translation, safety, and travel services when needed.";
+    ? "ريا رفيقة سفر ذكية تفهم رحلتك وتساعدك قبل السفر وأثناءه: تخطيط، ميزانية، ترجمة، أمان، مطار، وخدمات سفر في الوقت المناسب."
+    : "Rya is an AI travel companion that understands your trip and helps before and during travel: planning, budget, translation, safety, airports, and useful services at the right moment.";
 
   return {
     title,

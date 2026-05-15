@@ -1,26 +1,26 @@
 {
   "nav": {
-    "flights": "Flights",
+    "flights": "Trips",
     "hotels": "Hotels",
     "packages": "Packages",
     "explore": "Explore",
     "blog": "Travel Guide",
     "signin": "Sign in",
-    "getStarted": "Start free"
+    "getStarted": "Ask Rya"
   },
   "hero": {
-    "badge": "Rya — your AI travel companion",
-    "title1": "A travel companion",
-    "title2": "that understands you",
-    "subtitle": "Rya understands your destination, budget, concerns, and travel style, then helps with planning, booking, and trip services inside one calm conversation.",
+    "badge": "Rya by GoTripza — global AI travel companion",
+    "title1": "Travel smarter",
+    "title2": "with Rya",
+    "subtitle": "Rya understands your trip before suggesting anything: destination, budget, dates, travel style, and the real moments you may face along the way.",
     "placeholder": "Tell Rya about your trip or travel moment...",
     "cta": "Talk to Rya",
     "voice": "Voice search",
-    "tagline": "Your calm companion before and during travel.",
+    "tagline": "Your AI travel companion before and during the trip.",
     "proof": [
-      "Remembers your trip context",
-      "Natural recommendations, no pressure",
-      "Trusted travel services when useful"
+      "Understands traveler intent",
+      "Helps before and during the trip",
+      "Suggests services at the right moment"
     ],
     "suggestions": {
       "title": "Try:",
@@ -33,8 +33,8 @@
     }
   },
   "brandStory": {
-    "title": "How Rya Helps",
-    "body": "Start with a natural conversation. Rya understands your destination, budget, and travel style, then recommends the right plan and services inside the conversation when they are genuinely useful.",
+    "title": "Rya first. GoTripza behind it.",
+    "body": "GoTripza is no longer just a place to search for trips. Rya is the interface that understands you, keeps context, and turns planning and travel services into one natural conversation.",
     "highlights": [
       "Personal travel memory",
       "Calm planning",
@@ -198,7 +198,7 @@
     "activitiesDesc": "Discover top activities and guided tours"
   },
   "footer": {
-    "tagline": "Travel smarter with Rya.",
+    "tagline": "Rya by GoTripza — your AI travel companion.",
     "rights": "All rights reserved",
     "about": "About",
     "contact": "Contact",

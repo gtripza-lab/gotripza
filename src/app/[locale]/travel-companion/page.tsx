@@ -12,8 +12,8 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
   const params = await props.params;
   const isAr = params.locale === "ar";
   const title = isAr
-    ? "ريا رفيقة السفر الذكية | GoTripza"
-    : "Rya AI Travel Companion | GoTripza";
+    ? "Rya by GoTripza — رفيقة السفر الذكية"
+    : "Rya by GoTripza — AI Travel Companion";
   const description = isAr
     ? "تعرف على ريا: رفيقة سفر ذكية تساعدك قبل الرحلة وأثناءها في التخطيط، الترجمة، الميزانية، الأمان، وخدمات السفر المناسبة."
     : "Meet Rya, the AI travel companion that helps before and during your trip with planning, translation, budgeting, safety, and useful travel services.";
@@ -30,7 +30,7 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
         "x-default": `${BASE}/en/travel-companion`,
       },
     },
-    openGraph: { title, description, url, type: "website", siteName: "GoTripza" },
+    openGraph: { title, description, url, type: "website", siteName: "Rya by GoTripza" },
   };
 }
 

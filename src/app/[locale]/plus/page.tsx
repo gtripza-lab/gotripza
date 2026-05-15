@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import {
   BadgeDollarSign,
@@ -12,7 +13,6 @@ import {
   PlaneLanding,
   ShieldAlert,
   Siren,
-  Sparkles,
   Utensils,
 } from "lucide-react";
 import { Footer } from "@/components/Footer";
@@ -26,7 +26,7 @@ const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const params = await props.params;
   const isAr = params.locale === "ar";
-  const title = isAr ? "Rya Companion — رفيقك الذكي أثناء السفر" : "Rya Companion — Your Smart Travel Companion";
+  const title = isAr ? "Rya by GoTripza — رفيقة السفر الذكية" : "Rya by GoTripza — AI Travel Companion";
   const description = isAr
     ? "مساعدة سفر مستمرة أثناء رحلتك: ترجمة، فهم صور، ميزانية، أمان، مطارات، واقتراحات ذكية طوال الرحلة."
     : "Trip-long travel help: translation, image help, budgeting, safety guidance, airport support, and smarter suggestions throughout your trip.";
@@ -149,22 +149,32 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
       <main className="min-h-screen bg-ink-950 px-4 pb-24 pt-10" dir={isAr ? "rtl" : "ltr"}>
         <section className="mx-auto max-w-5xl">
           <div className="text-center">
+            <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/[0.04] ring-1 ring-white/10">
+              <Image
+                src="/brand/rya/rya-app-icon.png"
+                alt="Rya by GoTripza"
+                width={80}
+                height={80}
+                className="rounded-3xl"
+                priority
+              />
+            </div>
             <p className="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-brand-primary/[0.08] px-4 py-2 text-sm text-brand-primary">
               <Crown className="h-4 w-4" />
-              {isAr ? "رفيق سفر عالمي، وليس اشتراك ذكاء اصطناعي" : "A global travel companion, not an AI subscription"}
+              {isAr ? "Rya by GoTripza — رفيقة سفر عالمية" : "Rya by GoTripza — global travel companion"}
             </p>
-            <h1 className="mt-5 font-display text-3xl font-bold text-white sm:text-5xl">
-              {isAr ? "Rya Companion معك في كل موقف سفر" : "Rya Companion for Every Travel Moment"}
+            <h1 className="mt-5 font-display text-4xl font-black tracking-tight text-white sm:text-6xl">
+              {isAr ? "ريا معك قبل الرحلة وأثناءها" : "Rya stays with you before and during the trip"}
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-white/50 sm:text-base">
               {isAr
-                ? "ريا تتذكر رحلتك وتساعدك في اللحظات التي يخاف منها المسافرون فعلاً: المطار، الترجمة، الصور، الميزانية، الاحتيال، الطوارئ، والطعام."
-                : "Rya remembers your trip and helps with the moments travelers actually worry about: airports, translation, images, budget, scams, emergencies, and food."}
+                ? "قيمة Rya Companion ليست في الدردشة، بل في أنها تعرف سياق رحلتك وتساعدك في المطار، الترجمة، الصور، الميزانية، الأمان، والطعام عندما تحتاجها فعلاً."
+                : "Rya Companion is not just chat. It remembers your trip context and helps with airports, translation, images, budgeting, safety, and food exactly when you need it."}
             </p>
           </div>
 
           <div className="mt-10 grid gap-5 md:grid-cols-2">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6">
+            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.04] p-6 shadow-card">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-semibold text-white">
@@ -174,7 +184,13 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                     {isAr ? "مساعدة سفر طوال الرحلة" : "Travel help throughout the trip"}
                   </p>
                 </div>
-                <Sparkles className="h-8 w-8 text-brand-primary" />
+                <Image
+                  src="/brand/rya/rya-social-profile.png"
+                  alt=""
+                  width={56}
+                  height={56}
+                  className="rounded-2xl"
+                />
               </div>
               <div className="mt-6">
                 <div className="flex flex-wrap items-end gap-3">
@@ -205,7 +221,8 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
               </div>
             </div>
 
-            <div className="rounded-2xl border border-brand-mint/20 bg-brand-mint/[0.06] p-6">
+            <div className="relative overflow-hidden rounded-2xl border border-brand-mint/20 bg-brand-mint/[0.06] p-6">
+              <div className="pointer-events-none absolute -end-16 -top-16 h-44 w-44 rounded-full bg-brand-primary/20 blur-3xl" />
               <h2 className="text-xl font-semibold text-white">
                 {isAr ? "التثبيت على الجوال" : "Install on mobile"}
               </h2>
