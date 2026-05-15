@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { X, Mail, CheckCircle, Loader2 } from "lucide-react";
+import { X, Mail, CheckCircle, Loader2, LogIn } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import type { Locale } from "@/i18n/config";
 
-type Step = "idle" | "loading" | "sent" | "error";
+type Step = "idle" | "loading" | "oauth" | "sent" | "error";
 
 interface Props {
   open: boolean;
@@ -22,13 +22,60 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
   const [email, setEmail] = useState("");
   const [step, setStep]   = useState<Step>("idle");
   const [errMsg, setErrMsg] = useState("");
+  const [cooldownUntil, setCooldownUntil] = useState<number>(0);
+  const [now, setNow] = useState<number>(() => Date.now());
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+  const callbackUrl = `${appUrl}/auth/callback?next=${encodeURIComponent(nextPath ?? `/${locale}/search`)}`;
+  const cooldownSeconds = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
+  const isEmailCoolingDown = cooldownSeconds > 0;
+
+  const friendlyError = useMemo(() => {
+    const lower = errMsg.toLowerCase();
+    if (lower.includes("rate limit") || lower.includes("too many") || lower.includes("exceeded")) {
+      return isAr
+        ? "أرسلنا رابطاً قبل قليل. انتظر قليلاً أو استخدم تسجيل الدخول عبر Google."
+        : "We sent a link recently. Please wait a moment or continue with Google.";
+    }
+    if (lower.includes("provider") || lower.includes("oauth")) {
+      return isAr
+        ? "تسجيل Google يحتاج تفعيله من Supabase أولاً. استخدم البريد الآن أو فعّل Google Provider."
+        : "Google sign-in must be enabled in Supabase first. Use email for now or enable the Google provider.";
+    }
+    return errMsg;
+  }, [errMsg, isAr]);
+
+  useEffect(() => {
+    try {
+      const saved = Number(window.localStorage.getItem("gotripza_auth_email_cooldown_until") ?? 0);
+      if (saved > Date.now()) setCooldownUntil(saved);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!open || !cooldownUntil) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [cooldownUntil, open]);
+
+  function startEmailCooldown(seconds = 60) {
+    const until = Date.now() + seconds * 1000;
+    setCooldownUntil(until);
+    setNow(Date.now());
+    try {
+      window.localStorage.setItem("gotripza_auth_email_cooldown_until", String(until));
+    } catch {
+      /* ignore */
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !trimmed.includes("@")) return;
+    if (isEmailCoolingDown) return;
 
     setStep("loading");
     setErrMsg("");
@@ -38,7 +85,7 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmed,
         options: {
-          emailRedirectTo: `${appUrl}/auth/callback?next=${encodeURIComponent(nextPath ?? `/${locale}/search`)}`,
+          emailRedirectTo: callbackUrl,
           shouldCreateUser: true,
         },
       });
@@ -46,8 +93,38 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
       if (error) {
         setStep("error");
         setErrMsg(error.message);
+        if (/rate limit|too many|exceeded/i.test(error.message)) {
+          startEmailCooldown(300);
+        }
       } else {
+        startEmailCooldown(60);
         setStep("sent");
+      }
+    } catch (err) {
+      setStep("error");
+      setErrMsg((err as Error).message);
+    }
+  }
+
+  async function handleGoogleSignIn() {
+    setStep("oauth");
+    setErrMsg("");
+    try {
+      const supabase = createSupabaseBrowser();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: callbackUrl,
+          queryParams: {
+            access_type: "offline",
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) {
+        setStep("error");
+        setErrMsg(error.message);
       }
     } catch (err) {
       setStep("error");
@@ -121,6 +198,13 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
                   >
                     {isAr ? "حسناً" : "Got it"}
                   </button>
+                  {isEmailCoolingDown && (
+                    <p className="text-xs text-white/35">
+                      {isAr
+                        ? `يمكنك طلب رابط جديد بعد ${cooldownSeconds} ثانية.`
+                        : `You can request another link in ${cooldownSeconds}s.`}
+                    </p>
+                  )}
                 </div>
               ) : (
                 /* ── Email form ── */
@@ -152,13 +236,9 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
                                  focus:border-brand-primary/50 transition"
                     />
 
-                    {errMsg && (
-                      <p className="text-xs text-red-400 px-1">{errMsg}</p>
-                    )}
-
                     <button
                       type="submit"
-                      disabled={step === "loading" || !email.trim()}
+                      disabled={step === "loading" || isEmailCoolingDown || !email.trim()}
                       className="flex items-center justify-center gap-2 w-full rounded-xl bg-brand-primary
                                  py-3 text-sm font-semibold text-white transition
                                  hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
@@ -168,11 +248,56 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
                           <Loader2 className="h-4 w-4 animate-spin" />
                           {isAr ? "جارٍ الإرسال…" : "Sending…"}
                         </>
+                      ) : isEmailCoolingDown ? (
+                        isAr ? `انتظر ${cooldownSeconds} ثانية` : `Wait ${cooldownSeconds}s`
                       ) : (
                         isAr ? "إرسال رابط الدخول" : "Send magic link"
                       )}
                     </button>
+
+                    <div className="flex items-center gap-3 py-1">
+                      <div className="h-px flex-1 bg-white/10" />
+                      <span className="text-[11px] text-white/30">
+                        {isAr ? "أو" : "or"}
+                      </span>
+                      <div className="h-px flex-1 bg-white/10" />
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      disabled={step === "oauth" || step === "loading"}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06]
+                                 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/[0.10]
+                                 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {step === "oauth" ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          {isAr ? "جارٍ التحويل…" : "Redirecting…"}
+                        </>
+                      ) : (
+                        <>
+                          <LogIn className="h-4 w-4" />
+                          {isAr ? "المتابعة باستخدام Google" : "Continue with Google"}
+                        </>
+                      )}
+                    </button>
                   </form>
+
+                  {isEmailCoolingDown && step !== "loading" && (
+                    <p className="mt-3 rounded-xl border border-amber-400/15 bg-amber-400/10 px-3 py-2 text-xs leading-5 text-amber-100/75">
+                      {isAr
+                        ? `لحماية حسابك، انتظر ${cooldownSeconds} ثانية قبل طلب رابط جديد. يمكنك استخدام Google فوراً.`
+                        : `To protect your account, wait ${cooldownSeconds}s before requesting another link. You can use Google immediately.`}
+                    </p>
+                  )}
+
+                  {friendlyError && (
+                    <p className="mt-3 rounded-xl border border-red-400/15 bg-red-400/10 px-3 py-2 text-xs leading-5 text-red-100/80">
+                      {friendlyError}
+                    </p>
+                  )}
 
                   <p className="mt-5 text-center text-[11px] text-white/25 leading-relaxed">
                     {isAr
