@@ -22,6 +22,7 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
     { label: isAr ? "الوجهات" : "Destinations", href: `/${locale}/destinations` },
     { label: isAr ? "احتياجات المسافر" : "Traveler Services", href: `/${locale}/services` },
     { label: isAr ? "Rya Companion" : "Rya Companion", href: `/${locale}/plus` },
+    { label: isAr ? "كأس العالم 2026" : "World Cup 2026", href: `/${locale}/world-cup-2026` },
     { label: isAr ? "حسابي" : "Account", href: `/${locale}/account` },
     { label: dict.nav.blog,     href: `/${locale}/blog`            },
   ];

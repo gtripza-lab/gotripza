@@ -8,6 +8,7 @@ import {
 import { ROUTE_SLUGS } from "@/lib/route-pairs";
 import { getSeoIntentPages } from "@/lib/seo-intent-pages";
 import { READY_TRIP_PLAN_SLUGS } from "@/lib/ready-trip-plans";
+import { WORLD_CUP_PAGES } from "@/lib/world-cup-2026";
 
 const BASE_URL = "https://gotripza.com";
 const locales = ["en", "ar"] as const;
@@ -19,6 +20,7 @@ const staticRoutes = [
   { path: "/plus", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/ai-travel-assistant", priority: 0.95, changeFrequency: "monthly" as const },
   { path: "/travel-companion", priority: 0.95, changeFrequency: "monthly" as const },
+  { path: "/world-cup-2026", priority: 0.98, changeFrequency: "weekly" as const },
   { path: "/travel-translation", priority: 0.88, changeFrequency: "monthly" as const },
   { path: "/travel-safety", priority: 0.88, changeFrequency: "monthly" as const },
   { path: "/travel-insurance", priority: 0.86, changeFrequency: "monthly" as const },
@@ -113,6 +115,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Ready itinerary pages for high-intent trip planning searches.
   for (const slug of READY_TRIP_PLAN_SLUGS) {
     entries.push(...makeEntry(`/trip-plans/${slug}`, 0.88, "monthly"));
+  }
+
+  // FIFA World Cup 2026 travel companion cluster.
+  for (const page of WORLD_CUP_PAGES) {
+    const priority = page.kind === "city" ? 0.9 : page.kind === "stadium" ? 0.87 : 0.84;
+    entries.push(...makeEntry(`/world-cup-2026/${page.slug}`, priority, "weekly"));
   }
 
   // Blog posts
