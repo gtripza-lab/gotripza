@@ -65,7 +65,7 @@ export function PlusCheckoutButton({
         locale={locale}
         nextPath={`/${locale}/plus?activate=companion`}
         title={isAr ? "سجّل دخولك لتفعيل Rya Companion" : "Sign in to activate Rya Companion"}
-        description={isAr ? "نحفظ التفعيل في حسابك حتى تظهر في الأدمن وتستطيع استخدامها على الجوال." : "We’ll save activation to your account so it appears in admin and works on mobile."}
+        description={isAr ? "نحفظ Rya Companion في حسابك حتى تعمل معك على الجوال وتحتفظ بسياق رحلتك." : "We’ll save Rya Companion to your account so it works on mobile and keeps your trip context."}
       />
     </div>
   );

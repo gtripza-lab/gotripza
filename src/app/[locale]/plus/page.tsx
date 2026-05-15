@@ -45,21 +45,21 @@ export async function generateMetadata(props: { params: Promise<{ locale: string
 }
 
 const FEATURES_AR = [
-  "تفعيل كامل على الجوال بعد تسجيل الدخول",
-  "ذاكرة سفر تحفظ خطتك وتفضيلاتك ومخاوفك",
-  "خدمات يومية داخل ريا وليست روابط مزعجة",
-  "مساعدات مخصصة قبل السفر وأثناءه وبعد العودة",
-  "تنبيهات ذكية للخدمات عندما تحتاجها فقط",
-  "تظهر بيانات التفعيل في لوحة الأدمن",
+  "تعمل على الجوال كرفيق سفر خاص بعد تسجيل الدخول",
+  "تحفظ سياق رحلتك: الوجهة، الميزانية، التفضيلات، والمخاوف",
+  "فهم صور القوائم واللوحات والتذاكر والفواتير أثناء السفر",
+  "ترجمة مواقف حقيقية مع السائق، الفندق، المطعم، والمطار",
+  "مساعدة المطار، التنقل، الشنطة، الطوارئ، الأمان، والأكل الحلال",
+  "اقتراحات هادئة للخدمات عند الحاجة فقط، بدون إزعاج أو روابط عشوائية",
 ];
 
 const FEATURES_EN = [
-  "Full mobile activation after sign-in",
-  "Travel memory for your plan, preferences, and concerns",
-  "Daily travel tools inside Rya, not noisy link spam",
-  "Personal help before, during, and after the trip",
-  "Service nudges only when contextually useful",
-  "Activation appears in the admin dashboard",
+  "Works on mobile as your private travel companion after sign-in",
+  "Remembers trip context: destination, budget, preferences, and concerns",
+  "Understands menus, signs, tickets, and receipts from images",
+  "Helps with real conversations at taxis, hotels, restaurants, and airports",
+  "Airport, transport, packing, emergency, safety, and halal food support",
+  "Calm service suggestions only when useful, without random link spam",
 ];
 
 const SERVICES = [
@@ -188,8 +188,8 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                 </div>
                 <p className="mt-2 text-sm text-white/40">
                   {isAr
-                    ? "جرّب كامل قوة Rya Companion مجاناً الآن. يجب تسجيل الدخول حتى نحفظ التفعيل في حسابك ونظهره في الأدمن."
-                    : "Try the full Rya Companion experience free right now. Sign-in is required so activation is saved to your account and visible in admin."}
+                    ? "قيمة Rya Companion هي 39$ لكل رحلة، ومتاحة الآن مجاناً لفترة محدودة. سجّل دخولك مرة واحدة لتبقى تجربتك محفوظة على جوالك طوال الرحلة."
+                    : "Rya Companion is valued at $39 per trip and is free for a limited time. Sign in once so your companion stays saved on mobile throughout the trip."}
                 </p>
               </div>
               <ul className="mt-6 space-y-3">
@@ -273,8 +273,8 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-white/48">
                   {isAr
-                    ? "العميل يسجّل الدخول، نفعّل Rya Companion في حسابه، ونحفظ بيانات التفعيل في الأدمن. بعدها يستطيع تثبيتها على الجوال واستخدام الخدمات أثناء السفر."
-                    : "The traveler signs in, Rya Companion activates on their account, and activation is saved in admin. Then they can install it on mobile and use the services during travel."}
+                    ? "ابدأ التجربة الآن، ثبّت ريا على جوالك، ودعها ترافقك في المطار، المطعم، الشارع، الفندق، واللحظات التي تحتاج فيها قراراً سريعاً وواضحاً."
+                    : "Start now, install Rya on your phone, and let it help at the airport, restaurant, street, hotel, and every moment where you need a clear next step."}
                 </p>
               </div>
               <PlusCheckoutButton locale={locale} interval="monthly" />

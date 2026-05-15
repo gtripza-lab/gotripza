@@ -524,12 +524,22 @@ export type UserStat = {
   recentAppUsers: {
     event: string;
     user_id: string | null;
+    user_name: string | null;
     user_email: string | null;
     session_id: string | null;
     created_at: string;
     locale: string | null;
   }[];
-  topUsers: { user_id: string; conv_count: number; last_active: string }[];
+  topUsers: { user_id: string; user_name: string | null; user_email: string | null; conv_count: number; last_active: string }[];
+  customers: {
+    user_id: string;
+    name: string | null;
+    email: string | null;
+    created_at: string | null;
+    updated_at: string | null;
+    conv_count: number;
+    last_active: string | null;
+  }[];
 };
 
 export async function getUserStats(): Promise<UserStat | null> {
@@ -537,7 +547,7 @@ export async function getUserStats(): Promise<UserStat | null> {
     const db = createSupabaseService() as AnyTable;
     const d7 = daysAgo(7);
 
-    const [regRes, anonSess, newUsers, activeCons, topRes, appEvents] = await Promise.all([
+    const [regRes, anonSess, newUsers, activeCons, topRes, appEvents, profilesRes] = await Promise.all([
       db.from("conversations").select("user_id").not("user_id", "is", null),
       db.from("conversations").select("session_id").is("user_id", null).gte("started_at", d7),
       db.from("conversations").select("user_id").not("user_id", "is", null).gte("started_at", d7),
@@ -548,11 +558,25 @@ export async function getUserStats(): Promise<UserStat | null> {
         .in("name", ["pwa_app_installed", "pwa_standalone_opened", "companion_trial_started", "pwa_install_cta_clicked"])
         .order("created_at", { ascending: false })
         .limit(200),
+      db.from("profiles")
+        .select("id,email,display_name,created_at,updated_at")
+        .order("created_at", { ascending: false })
+        .limit(500),
     ]);
 
     const registered = new Set((regRes.data ?? []).map((r: { user_id: string }) => r.user_id));
     const newWeekSet = new Set((newUsers.data ?? []).map((r: { user_id: string }) => r.user_id));
     const activeSet  = new Set((activeCons.data ?? []).map((r: { user_id: string }) => r.user_id));
+
+    type ProfileRow = {
+      id: string;
+      email: string | null;
+      display_name: string | null;
+      created_at: string | null;
+      updated_at: string | null;
+    };
+    const profiles = (profilesRes.data ?? []) as ProfileRow[];
+    const profileMap = new Map(profiles.map((profile) => [profile.id, profile]));
 
     // Top users by conversation count
     const userConvMap = new Map<string, { count: number; last: string }>();
@@ -563,7 +587,16 @@ export async function getUserStats(): Promise<UserStat | null> {
       userConvMap.set(r.user_id, cur);
     }
     const topUsers = Array.from(userConvMap.entries())
-      .map(([user_id, v]) => ({ user_id, conv_count: v.count, last_active: v.last }))
+      .map(([user_id, v]) => {
+        const profile = profileMap.get(user_id);
+        return {
+          user_id,
+          user_name: profile?.display_name ?? null,
+          user_email: profile?.email ?? null,
+          conv_count: v.count,
+          last_active: v.last,
+        };
+      })
       .sort((a, b) => b.conv_count - a.conv_count)
       .slice(0, 20);
 
@@ -591,7 +624,27 @@ export async function getUserStats(): Promise<UserStat | null> {
       session_id: typeof row.payload?.session_id === "string" ? row.payload.session_id : null,
       created_at: row.created_at,
       locale: row.locale,
-    }));
+    })).map((row) => {
+      const profile = row.user_id ? profileMap.get(row.user_id) : null;
+      return {
+        ...row,
+        user_name: profile?.display_name ?? null,
+        user_email: profile?.email ?? row.user_email,
+      };
+    });
+
+    const customers = profiles.map((profile) => {
+      const activity = userConvMap.get(profile.id);
+      return {
+        user_id: profile.id,
+        name: profile.display_name,
+        email: profile.email,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at,
+        conv_count: activity?.count ?? 0,
+        last_active: activity?.last || null,
+      };
+    });
 
     return {
       totalRegistered: registered.size,
@@ -603,6 +656,7 @@ export async function getUserStats(): Promise<UserStat | null> {
       standaloneOpens: standaloneIdentity.size,
       recentAppUsers,
       topUsers,
+      customers,
     };
   } catch (err) {
     console.error("[admin/data] getUserStats:", err);

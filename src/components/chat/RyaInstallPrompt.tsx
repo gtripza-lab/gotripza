@@ -151,7 +151,7 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
         locale={locale}
         nextPath={`/${locale}/search?source=companion-install`}
         title={isAr ? "سجّل دخولك لتثبيت Rya Companion" : "Sign in to install Rya Companion"}
-        description={isAr ? "نحفظ التفعيل والتثبيت في حسابك حتى تظهر بياناته في الأدمن وتستطيع استخدام ريا المستشارة." : "We save activation and install intent to your account so it appears in admin and enables Companion on mobile."}
+        description={isAr ? "نحفظ التفعيل في حسابك حتى تستطيع استخدام ريا المستشارة على الجوال مع ذاكرة رحلتك." : "We save activation to your account so Companion works on mobile with your trip memory."}
       />
     </div>
   );
