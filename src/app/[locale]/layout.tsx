@@ -224,6 +224,18 @@ export default async function LocaleLayout(
               src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
               strategy="afterInteractive"
             />
+            <Script id="google-analytics-init" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                window.gtag = window.gtag || gtag;
+                gtag('js', new Date());
+                gtag('config', '${GA_ID}', {
+                  send_page_view: false,
+                  cookie_flags: 'SameSite=None;Secure'
+                });
+              `}
+            </Script>
             <AnalyticsInit gaId={GA_ID} />
           </>
          )}
