@@ -151,12 +151,52 @@ function maybeDistanceAdvice(query: string) {
   });
 }
 
+function normalizeSupportText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 500);
+}
+
+function supportFingerprint(value: string) {
+  const normalized = normalizeSupportText(value);
+  let hash = 0;
+  for (let i = 0; i < normalized.length; i++) {
+    hash = (hash * 31 + normalized.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36);
+}
+
+async function findRecentDuplicateSupportTicket(db: AnyTable, query: string) {
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const normalized = normalizeSupportText(query);
+  const { data, error } = await db
+    .from("support_requests")
+    .select("id,body,metadata,created_at")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  if (error) return null;
+  const fingerprint = supportFingerprint(query);
+  return ((data ?? []) as Array<{ id?: number; body?: string | null; metadata?: { fingerprint?: string; source?: string } | null }>)
+    .find((row) => {
+      const fromRia = row.metadata?.source === "ria_chat";
+      const sameFingerprint = row.metadata?.fingerprint === fingerprint;
+      const sameBody = normalizeSupportText(row.body ?? "") === normalized;
+      return fromRia && (sameFingerprint || sameBody);
+    }) ?? null;
+}
+
 function detectSupportIntent(query: string) {
   const q = query.toLowerCase();
-  const isSupport =
-    /دعم|مشكلة|خطأ|خلل|لا يعمل|ما يشتغل|لم تصل|ما وصلت|شكوى|استرجاع|استرداد|support|ticket|issue|bug|not working|complaint|refund/i.test(
-      q,
-    );
+  const explicitEscalation =
+    /افتح(?:وا)?\s*(?:تذكرة|طلب)|ارفع(?:ها)?\s*(?:للدعم|للمشرف|للادارة|للإدارة)|تواصل(?:وا)?\s*معي|كلم(?:وا)?ني|أبغى\s*دعم|ابغى\s*دعم|أريد\s*دعم|احتاج\s*دعم|احتاج\s*مساعدة|شكوى|استرجاع|استرداد|open\s+(?:a\s+)?ticket|support\s+ticket|contact\s+support|escalate|complaint|refund/i.test(q);
+  const platformIssue =
+    /(?:تسجيل\s*الدخول|الدخول|حساب|قوقل|جوجل|google|نموذج\s*الدعم|الدعم|الأدمن|الادمن|الرسايل|الرسائل|login|sign\s*in|support\s*form|admin|messages?).{0,60}(?:لا\s*يعمل|ما\s*يشتغل|مشكلة|خطأ|خلل|ما\s*توصل|لم\s*تصل|not\s*working|issue|bug)|(?:لا\s*يعمل|ما\s*يشتغل|مشكلة|خطأ|خلل|ما\s*توصل|لم\s*تصل|not\s*working|issue|bug).{0,60}(?:تسجيل\s*الدخول|الدخول|حساب|قوقل|جوجل|google|نموذج\s*الدعم|الدعم|الأدمن|الادمن|الرسايل|الرسائل|login|sign\s*in|support\s*form|admin|messages?)/i.test(q);
+  const isSupport = explicitEscalation || platformIssue;
   if (!isSupport) return null;
 
   const category =
@@ -177,7 +217,7 @@ function detectSupportIntent(query: string) {
         ? "high"
         : "normal";
 
-  return { category, priority };
+  return { category, priority, reason: explicitEscalation ? "explicit_escalation" : "platform_issue" };
 }
 
 async function maybeCreateSupportTicket(req: NextRequest, query: string) {
@@ -190,10 +230,51 @@ async function maybeCreateSupportTicket(req: NextRequest, query: string) {
     const user = await getCurrentUser();
     const sessionId = req.cookies.get("gtz_sid")?.value ?? null;
     const db = createSupabaseService() as AnyTable;
+    const duplicate = await findRecentDuplicateSupportTicket(db, query);
+    if (duplicate?.id) {
+      return NextResponse.json({
+        intent: {
+          origin: null,
+          destination: null,
+          departure_date: null,
+          return_date: null,
+          adults: 2,
+          budget_usd: null,
+          trip_type: null,
+          cabin_class: null,
+          notes: null,
+        },
+        context: {
+          origin: null,
+          destination: null,
+          departure_date: null,
+          return_date: null,
+          adults: 2,
+          budget_usd: null,
+          trip_type: null,
+          cabin_class: null,
+        },
+        locale,
+        mode: "advice",
+        message: isAr
+          ? `التذكرة موجودة بالفعل رقم #${duplicate.id}. لن أكررها، لكن أقدر أساعدك هنا بخطوات سريعة إلى أن يراجعها فريق GoTripza.`
+          : `Ticket #${duplicate.id} already exists. I will not duplicate it, but I can still help you here with quick steps while the GoTripza team reviews it.`,
+        wants: ["flights", "hotels"],
+        followup: null,
+        tips: null,
+        budget_verdict: null,
+        confidence: null,
+        destination_intel: null,
+        clarification_needed: false,
+        clarification_question: null,
+        mock: false,
+      });
+    }
     const { data, error } = await db
       .from("support_requests")
       .insert({
         user_id: user?.id ?? null,
+        contact_email: user?.email ?? null,
         category: support.category,
         priority: support.priority,
         subject: isAr ? "طلب دعم من محادثة ريا" : "Support request from Raya chat",
@@ -201,7 +282,12 @@ async function maybeCreateSupportTicket(req: NextRequest, query: string) {
         ai_summary: isAr
           ? "تم إنشاء التذكرة تلقائياً من محادثة ريا."
           : "Automatically created from Raya chat.",
-        metadata: { source: "ria_chat", session_id: sessionId },
+        metadata: {
+          source: "ria_chat",
+          session_id: sessionId,
+          fingerprint: supportFingerprint(query),
+          reason: support.reason,
+        },
       })
       .select("id")
       .single();

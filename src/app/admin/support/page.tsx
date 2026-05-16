@@ -22,6 +22,14 @@ function priorityBadge(priority: string | null) {
   return <span className={`${base} bg-white/[0.08] text-white/55`}>عادية</span>;
 }
 
+function requestSource(row: SupportRow) {
+  const source = row.metadata?.source;
+  if (source === "ria_chat") {
+    return <span className="rounded-md bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-medium text-violet-200/80">من ريا</span>;
+  }
+  return <span className="rounded-md bg-white/[0.05] px-1.5 py-0.5 text-[10px] font-medium text-white/30">نموذج الدعم</span>;
+}
+
 function isThisWeek(dateStr: string): boolean {
   const d = new Date(dateStr);
   const now = new Date();
@@ -172,6 +180,7 @@ export default async function SupportPage() {
                         <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-white/35">
                           {row.category}
                         </span>
+                        {requestSource(row)}
                         {row.subject && (
                           <span className="text-xs font-medium text-white/70">{row.subject}</span>
                         )}

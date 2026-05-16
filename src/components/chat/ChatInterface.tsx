@@ -160,9 +160,15 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     };
   }, []);
 
-  // Auto-scroll to bottom on new messages
+  function scrollChatToBottom(behavior: ScrollBehavior = "auto") {
+    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+  }
+
+  // Auto-scroll to bottom on new messages. Use instant scrolling on mobile so
+  // iOS keyboard resizing does not animate the whole conversation upward.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+    scrollChatToBottom(isMobile ? "auto" : "smooth");
   }, [messages.length, isThinking]);
 
   // Cleanup voice on unmount
@@ -254,7 +260,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
   return (
     <div
-      className="chat-viewport-lock flex h-full min-w-0 flex-col"
+      className="chat-viewport-lock flex h-full min-h-0 min-w-0 flex-col overflow-hidden"
       style={{
         background: "linear-gradient(160deg, #06111e 0%, #0a1a30 50%, #071524 100%)",
         borderRadius: "inherit",
@@ -283,7 +289,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="hidden items-center gap-1 sm:flex">
           <button
             type="button"
             onClick={() => setAgentOpen(true)}
@@ -330,23 +336,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
         }}
       />
 
-      <TravelMomentRail
-        locale={locale}
-        context={travelContext}
-        onPrompt={(prompt, label) => {
-          logEvent("ria_quick_action_clicked", {
-            source: "travel_moment_rail",
-            label,
-            stage: travelContext.booking_stage ?? null,
-            locale,
-          });
-          void sendMessage(prompt);
-        }}
-      />
-
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
-        className="chat-viewport-lock flex-1 min-h-0 min-w-0 overflow-y-auto px-2.5 py-4 space-y-4 sm:px-4 sm:py-5 sm:space-y-5"
+        className="chat-viewport-lock flex-1 min-h-0 min-w-0 overflow-y-auto px-2.5 py-4 space-y-4 scroll-pb-28 sm:px-4 sm:py-5 sm:space-y-5"
         style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain", overscrollBehaviorX: "none" }}
       >
         <AnimatePresence initial={false}>
@@ -397,7 +389,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="chat-viewport-lock sticky bottom-0 z-20 shrink-0 border-t border-white/[0.06] px-2 pt-2 sm:px-4 sm:pt-3 backdrop-blur-xl"
+        className="chat-viewport-lock relative z-30 shrink-0 border-t border-white/[0.06] px-2 pt-2 sm:px-4 sm:pt-3 backdrop-blur-xl"
         style={{ background: "linear-gradient(180deg, rgba(6,17,30,0.72), rgba(6,17,30,0.96))", paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
       >
         <div className="mx-auto flex w-full max-w-3xl items-end gap-1.5 rounded-[1.35rem] border border-white/[0.12] bg-white/[0.07] p-1.5 shadow-2xl shadow-black/25 ring-1 ring-black/10 transition focus-within:border-violet-400/45 focus-within:bg-white/[0.09] focus-within:ring-violet-400/[0.18] sm:gap-2 sm:rounded-[1.6rem] sm:p-2">
@@ -426,7 +418,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => {
-              window.setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 90);
+              window.setTimeout(() => scrollChatToBottom("auto"), 260);
             }}
             enterKeyHint="send"
             inputMode="text"
@@ -442,10 +434,14 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             rows={1}
             className="min-h-[36px] min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base leading-5 text-white/92 placeholder:text-white/32 focus:outline-none sm:min-h-[40px] sm:px-2 sm:py-2.5 sm:text-sm"
             style={{ maxHeight: "120px" }}
+            disabled={false}
             onInput={(e) => {
               const t = e.currentTarget;
               t.style.height = "auto";
               t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+            }}
+            onClick={() => {
+              window.setTimeout(() => scrollChatToBottom("auto"), 260);
             }}
           />
 
@@ -615,87 +611,6 @@ function lifecycleIcon(action: LifecycleAction) {
   if (action.kind === "review") return ClipboardCheck;
   if (action.kind === "booking") return Plane;
   return Luggage;
-}
-
-function TravelMomentRail({
-  locale,
-  context,
-  onPrompt,
-}: {
-  locale: import("@/i18n/config").Locale;
-  context: TravelContext;
-  onPrompt: (prompt: string, label: string) => void;
-}) {
-  const isAr = locale === "ar";
-  const destination = context.destination;
-  const stage = deriveTripLifecycle(context);
-  const tripPanelVisible =
-    Boolean(context.destination || context.departure_date || context.booking_stage) &&
-    stage !== "browsing" &&
-    stage !== "support";
-  if (tripPanelVisible) return null;
-
-  const actions = getLifecycleActions(context, locale);
-  const destinationHint = destination
-    ? isAr
-      ? ` وجهتي الحالية هي ${destination}.`
-      : ` My current destination is ${destination}.`
-    : "";
-  const items = actions.length >= 4 ? actions.slice(0, 4).map((action) => ({
-    label: action.label,
-    icon: lifecycleIcon(action),
-    prompt: action.prompt,
-  })) : [
-    {
-      label: isAr ? "ترجمة" : "Translate",
-      icon: Languages,
-      prompt: isAr
-        ? `أحتاج مساعدة ترجمة أثناء السفر.${destinationHint} اسألني عن العبارة أو الصورة أو الموقف، ثم أعطني صياغة طبيعية قصيرة.`
-        : `I need translation help during travel.${destinationHint} Ask me for the phrase, image, or situation, then give me a short natural wording.`,
-    },
-    {
-      label: isAr ? "المطار" : "Airport",
-      icon: Landmark,
-      prompt: isAr
-        ? `أنا في المطار وأحتاج إرشاد خطوة بخطوة.${destinationHint} اسألني عن المرحلة الحالية ثم ساعدني بهدوء.`
-        : `I am at the airport and need step-by-step help.${destinationHint} Ask where I am in the process, then guide me calmly.`,
-    },
-    {
-      label: isAr ? "الأمان" : "Safety",
-      icon: ShieldAlert,
-      prompt: isAr
-        ? `أعطني تنبيهات أمان واحتيال سياحي عملية.${destinationHint} اجعلها مختصرة وهادئة ومناسبة للمسافر.`
-        : `Give me practical safety and travel scam guidance.${destinationHint} Keep it calm, concise, and traveler-friendly.`,
-    },
-    {
-      label: isAr ? "الميزانية" : "Budget",
-      icon: WalletCards,
-      prompt: isAr
-        ? `ساعدني أراجع ميزانية رحلتي.${destinationHint} اسألني عن عدد الأيام وطريقة السفر ثم أعطني تقديرًا واضحًا.`
-        : `Help me review my trip budget.${destinationHint} Ask about trip length and travel style, then give me a clear estimate.`,
-    },
-  ];
-
-  return (
-    <div className="shrink-0 border-b border-white/[0.05] bg-black/10 px-3 py-2 sm:hidden">
-      <div className="flex max-w-full gap-2 overflow-x-auto scroll-hide">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => onPrompt(item.prompt, item.label)}
-              className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.04] px-3 text-[11px] font-medium text-white/52 transition active:scale-[0.98] active:bg-violet-500/[0.18]"
-            >
-              <Icon className="h-3.5 w-3.5 text-brand-mint/80" />
-              <span>{item.label}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 function travelerLabelAr(value: string) {
@@ -982,7 +897,7 @@ function QuickActionBar({
 
   return (
     <div className="flex max-w-full gap-2 overflow-x-auto pb-1 scroll-hide">
-      {actions.map((action) => {
+      {actions.slice(0, 5).map((action, index) => {
         const Icon = action.icon;
         return (
           <button
@@ -999,7 +914,9 @@ function QuickActionBar({
               });
               onAction(action.prompt);
             }}
-            className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.04] px-3 text-[11px] font-medium text-white/50 transition hover:border-violet-400/30 hover:bg-violet-500/[0.12] hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-40"
+            className={`h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.04] px-3 text-[11px] font-medium text-white/50 transition hover:border-violet-400/30 hover:bg-violet-500/[0.12] hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-40 ${
+              index > 2 ? "hidden sm:inline-flex" : "inline-flex"
+            }`}
           >
             <Icon className="h-3.5 w-3.5" />
             <span>{action.label}</span>

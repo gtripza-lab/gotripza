@@ -761,6 +761,7 @@ export type SupportRow = {
   created_at: string;
   updated_at: string | null;
   user_id?: string | null;
+  metadata?: Record<string, unknown> | null;
 };
 
 export async function getSupportRequests(): Promise<{ rows: SupportRow[]; total: number }> {
@@ -769,7 +770,7 @@ export async function getSupportRequests(): Promise<{ rows: SupportRow[]; total:
     const { data, count } = await db
       .from("support_requests")
       .select(
-        "id,user_id,category,status,priority,subject,body,ai_summary,contact_email,created_at,updated_at",
+        "id,user_id,category,status,priority,subject,body,ai_summary,contact_email,created_at,updated_at,metadata",
         { count: "exact" },
       )
       .order("created_at", { ascending: false })
