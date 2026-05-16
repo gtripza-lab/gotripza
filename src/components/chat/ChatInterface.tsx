@@ -135,6 +135,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   const [isListening, setIsListening] = useState(false);
   const [isImageReading, setIsImageReading] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -180,6 +181,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     const q = input.trim();
     if (!q) return;
     setInput("");
+    setToolsOpen(false);
     requestAnimationFrame(() => {
       if (inputRef.current) inputRef.current.style.height = "auto";
     });
@@ -402,11 +404,21 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           />
           <button
             type="button"
+            onClick={() => setToolsOpen((value) => !value)}
+            aria-expanded={toolsOpen}
+            aria-label={isAr ? "أدوات ريا" : "Rya tools"}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/42 transition hover:bg-white/[0.10] hover:text-white/75 sm:hidden"
+          >
+            <Plus className={`h-4 w-4 transition ${toolsOpen ? "rotate-45 text-brand-mint" : ""}`} />
+          </button>
+
+          <button
+            type="button"
             onClick={() => imageInputRef.current?.click()}
             disabled={isImageReading}
             aria-label={isAr ? "فهم صورة" : "Analyze image"}
             title={isAr ? "فهم صورة مع Rya Companion" : "Image help with Rya Companion"}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/42 transition hover:bg-white/[0.10] hover:text-white/75 disabled:opacity-40 sm:h-10 sm:w-10"
+            className="hidden h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/42 transition hover:bg-white/[0.10] hover:text-white/75 disabled:opacity-40 sm:flex sm:h-10 sm:w-10"
           >
             <Plus className={`h-4 w-4 ${isImageReading ? "animate-pulse text-brand-mint" : ""}`} />
           </button>
@@ -418,7 +430,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => {
-              window.setTimeout(() => scrollChatToBottom("auto"), 260);
+              if (typeof window !== "undefined" && window.innerWidth >= 768) {
+                window.setTimeout(() => scrollChatToBottom("auto"), 260);
+              }
             }}
             enterKeyHint="send"
             inputMode="text"
@@ -441,7 +455,9 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
               t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
             }}
             onClick={() => {
-              window.setTimeout(() => scrollChatToBottom("auto"), 260);
+              if (typeof window !== "undefined" && window.innerWidth >= 768) {
+                window.setTimeout(() => scrollChatToBottom("auto"), 260);
+              }
             }}
           />
 
@@ -451,7 +467,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onClick={handleVoice}
             disabled={isListening}
             aria-label={isAr ? "بحث صوتي" : "Voice search"}
-            className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 min-[430px]:flex sm:h-10 sm:w-10 ${
+            className={`hidden h-9 w-9 shrink-0 items-center justify-center rounded-full transition disabled:opacity-40 sm:flex sm:h-10 sm:w-10 ${
               isListening
                 ? "animate-pulse bg-rose-500/20 text-rose-400"
                 : "text-white/42 hover:bg-white/[0.10] hover:text-white/75"
@@ -472,6 +488,41 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           </button>
         </div>
 
+        <AnimatePresence>
+          {toolsOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 6 }}
+              className="mx-auto mt-2 grid w-full max-w-3xl grid-cols-2 gap-2 sm:hidden"
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setToolsOpen(false);
+                  imageInputRef.current?.click();
+                }}
+                disabled={isImageReading}
+                className="flex h-10 items-center justify-center gap-2 rounded-2xl border border-white/[0.10] bg-white/[0.06] text-xs font-medium text-white/65 disabled:opacity-40"
+              >
+                <Camera className={`h-4 w-4 ${isImageReading ? "animate-pulse text-brand-mint" : ""}`} />
+                {isAr ? "فهم صورة" : "Image help"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setToolsOpen(false);
+                  handleVoice();
+                }}
+                disabled={isListening}
+                className="flex h-10 items-center justify-center gap-2 rounded-2xl border border-white/[0.10] bg-white/[0.06] text-xs font-medium text-white/65 disabled:opacity-40"
+              >
+                {isListening ? <MicOff className="h-4 w-4 text-rose-400" /> : <Mic className="h-4 w-4" />}
+                {isAr ? "إملاء صوتي" : "Voice input"}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

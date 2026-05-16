@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Cookie, X, ShieldCheck } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Locale } from "@/i18n/config";
 
 const STORAGE_KEY = "gtripza_cookie_consent";
@@ -23,7 +24,9 @@ type ConsentValue = "accepted" | "essential";
 
 export function CookieConsent({ locale }: { locale: Locale }) {
   const [visible, setVisible] = useState(false);
+  const pathname = usePathname();
   const isAr = locale === "ar";
+  const isChatScreen = pathname?.includes("/search");
 
   useEffect(() => {
     try {
@@ -44,6 +47,40 @@ export function CookieConsent({ locale }: { locale: Locale }) {
   return (
     <AnimatePresence>
       {visible && (
+        isChatScreen ? (
+          <motion.div
+            key="cookie-banner-chat"
+            role="dialog"
+            aria-label={isAr ? "إشعار ملفات تعريف الارتباط" : "Cookie consent"}
+            initial={{ y: -16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -16, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 280, damping: 32 }}
+            dir={isAr ? "rtl" : "ltr"}
+            className="fixed inset-x-2 top-2 z-50 mx-auto max-w-sm"
+          >
+            <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-ink-950/92 p-2 text-[11px] text-white/58 shadow-2xl shadow-black/25 backdrop-blur-xl">
+              <Cookie className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+              <span className="min-w-0 flex-1 truncate">
+                {isAr ? "نستخدم الكوكيز لتحسين التجربة." : "We use cookies to improve your experience."}
+              </span>
+              <button
+                type="button"
+                onClick={() => dismiss("essential")}
+                className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 font-medium text-white/70"
+              >
+                {isAr ? "لاحقاً" : "Later"}
+              </button>
+              <button
+                type="button"
+                onClick={() => dismiss("accepted")}
+                className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-ink-950"
+              >
+                {isAr ? "موافق" : "OK"}
+              </button>
+            </div>
+          </motion.div>
+        ) : (
         <motion.div
           key="cookie-banner"
           role="dialog"
@@ -118,6 +155,7 @@ export function CookieConsent({ locale }: { locale: Locale }) {
             </div>
           </div>
         </motion.div>
+        )
       )}
     </AnimatePresence>
   );
