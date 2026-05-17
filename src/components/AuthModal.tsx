@@ -8,6 +8,25 @@ import type { Locale } from "@/i18n/config";
 
 type Step = "idle" | "loading" | "oauth" | "sent" | "error";
 
+function fireSignupConversion() {
+  try {
+    const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
+    const convLabel = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONV_LABEL;
+    if (typeof window.gtag === "function" && adsId && convLabel) {
+      window.gtag("event", "conversion", {
+        send_to: `${adsId}/${convLabel}`,
+        value: 5.0,
+        currency: "USD",
+      });
+    }
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "sign_up", { method: "magic_link" });
+    }
+  } catch {
+    // Never block the user flow
+  }
+}
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -98,6 +117,7 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
         }
       } else {
         startEmailCooldown(60);
+        fireSignupConversion();
         setStep("sent");
       }
     } catch (err) {
@@ -125,6 +145,11 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
       if (error) {
         setStep("error");
         setErrMsg(error.message);
+      } else {
+        fireSignupConversion();
+        if (typeof window.gtag === "function") {
+          window.gtag("event", "sign_up", { method: "google" });
+        }
       }
     } catch (err) {
       setStep("error");
@@ -143,7 +168,6 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
     <AnimatePresence>
       {open && (
         <>
-          {/* Backdrop */}
           <motion.div
             key="auth-backdrop"
             className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm"
@@ -153,7 +177,6 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
             onClick={handleClose}
           />
 
-          {/* Modal */}
           <motion.div
             key="auth-modal"
             className="fixed inset-0 z-[61] flex items-center justify-center p-4"
@@ -167,7 +190,6 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
               dir={isAr ? "rtl" : "ltr"}
               onClick={(e) => e.stopPropagation()}
             >
-              {/* Close */}
               <button
                 onClick={handleClose}
                 className="absolute top-4 end-4 flex h-8 w-8 items-center justify-center rounded-full text-white/40 hover:text-white/80 hover:bg-white/[0.06] transition"
@@ -177,7 +199,6 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
               </button>
 
               {step === "sent" ? (
-                /* ── Success state ── */
                 <div className="flex flex-col items-center py-4 text-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-green-500/10">
                     <CheckCircle className="h-7 w-7 text-green-400" />
@@ -207,7 +228,6 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
                   )}
                 </div>
               ) : (
-                /* ── Email form ── */
                 <>
                   <div className="mb-6">
                     <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-brand-primary/10 mb-4">
@@ -231,17 +251,13 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
                       placeholder={isAr ? "بريدك الإلكتروني" : "your@email.com"}
                       autoFocus
                       autoComplete="email"
-                      className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3
-                                 text-sm text-white placeholder-white/25 outline-none
-                                 focus:border-brand-primary/50 transition"
+                      className="w-full rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm text-white placeholder-white/25 outline-none focus:border-brand-primary/50 transition"
                     />
 
                     <button
                       type="submit"
                       disabled={step === "loading" || isEmailCoolingDown || !email.trim()}
-                      className="flex items-center justify-center gap-2 w-full rounded-xl bg-brand-primary
-                                 py-3 text-sm font-semibold text-white transition
-                                 hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="flex items-center justify-center gap-2 w-full rounded-xl bg-brand-primary py-3 text-sm font-semibold text-white transition hover:brightness-110 disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {step === "loading" ? (
                         <>
@@ -257,9 +273,7 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
 
                     <div className="flex items-center gap-3 py-1">
                       <div className="h-px flex-1 bg-white/10" />
-                      <span className="text-[11px] text-white/30">
-                        {isAr ? "أو" : "or"}
-                      </span>
+                      <span className="text-[11px] text-white/30">{isAr ? "أو" : "or"}</span>
                       <div className="h-px flex-1 bg-white/10" />
                     </div>
 
@@ -267,9 +281,7 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
                       type="button"
                       onClick={handleGoogleSignIn}
                       disabled={step === "oauth" || step === "loading"}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06]
-                                 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/[0.10]
-                                 disabled:cursor-not-allowed disabled:opacity-50"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.06] py-3 text-sm font-semibold text-white/80 transition hover:bg-white/[0.10] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {step === "oauth" ? (
                         <>
