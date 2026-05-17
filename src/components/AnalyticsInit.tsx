@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 declare global {
   interface Window {
@@ -10,8 +10,28 @@ declare global {
   }
 }
 
+function fireAdsConversionOnce() {
+  try {
+    const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
+    const convLabel = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONV_LABEL;
+    if (typeof window.gtag === "function" && adsId && convLabel) {
+      window.gtag("event", "conversion", {
+        send_to: `${adsId}/${convLabel}`,
+        value: 5.0,
+        currency: "USD",
+      });
+    }
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "sign_up", { method: "oauth_callback" });
+    }
+  } catch {
+    /* never block */
+  }
+}
+
 export function AnalyticsInit({ gaId }: { gaId: string }) {
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     window.dataLayer = window.dataLayer || [];
@@ -21,6 +41,19 @@ export function AnalyticsInit({ gaId }: { gaId: string }) {
       };
     }
   }, []);
+
+  // Detect successful auth callback (_signup=1) and fire conversion once
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("_signup") === "1") {
+      fireAdsConversionOnce();
+      // Clean the param from the URL without a full reload
+      params.delete("_signup");
+      const newSearch = params.toString();
+      const cleanUrl = window.location.pathname + (newSearch ? `?${newSearch}` : "");
+      router.replace(cleanUrl, { scroll: false });
+    }
+  }, [pathname, router]);
 
   useEffect(() => {
     if (!gaId || typeof window.gtag !== "function") return;
