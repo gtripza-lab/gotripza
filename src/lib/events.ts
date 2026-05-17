@@ -28,7 +28,10 @@ export type EventName =
   | "trip_plan_rya_followup_clicked"
   | "trip_plan_day_removed"
   | "trip_plan_day_swapped"
-  | "trip_plan_day_lightened";
+  | "trip_plan_day_lightened"
+  | "auth_initiated"
+  | "signup_complete"
+  | "signin_complete";
 
 export type EventPayload = Record<string, unknown>;
 
