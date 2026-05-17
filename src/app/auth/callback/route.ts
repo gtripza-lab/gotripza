@@ -38,6 +38,10 @@ export async function GET(req: NextRequest) {
 
   const user = data.session.user;
 
+  // Detect new signup: created_at within the last 30 seconds
+  const createdAt = user.created_at ? new Date(user.created_at).getTime() : 0;
+  const isNewUser = Date.now() - createdAt < 30_000;
+
   // Provision profile + entitlement on first login. Both are idempotent.
   await Promise.all([
     upsertProfile(user.id, {
@@ -50,5 +54,11 @@ export async function GET(req: NextRequest) {
     ensureLaunchFreeSubscription(user.id),
   ]).catch((e) => console.warn("[auth/callback] provision warn:", e));
 
-  return NextResponse.redirect(new URL(next, origin));
+  // For new signups, pass a flag so the client can fire the Ads conversion event
+  const redirectUrl = new URL(next, origin);
+  if (isNewUser) {
+    redirectUrl.searchParams.set("_signup", "1");
+  }
+
+  return NextResponse.redirect(redirectUrl);
 }
