@@ -9,6 +9,7 @@ export function BottomNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
   const isAr = locale === "ar";
   const isSearchPage = pathname === `/${locale}/search`;
+  const isAdsLandingPage = pathname === `/${locale}/rya`;
 
   const items = [
     {
@@ -33,7 +34,7 @@ export function BottomNav({ locale }: { locale: Locale }) {
     },
   ];
 
-  if (isSearchPage) return null;
+  if (isSearchPage || isAdsLandingPage) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-30 flex w-[100dvw] max-w-[100dvw] overflow-hidden border-t border-white/5 bg-[#0d0d12]/90 backdrop-blur-xl md:hidden">
