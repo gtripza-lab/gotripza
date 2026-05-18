@@ -28,18 +28,31 @@ export async function generateMetadata(
   }
 ) {
   const params = await props.params;
-  const post = getPost(params.slug, (params.locale as Locale) ?? "ar");
+  if (!isLocale(params.locale)) return {};
+  const locale = params.locale as Locale;
+  const post = getPost(params.slug, locale);
   if (!post) return {};
+  const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
   return {
     title: `${post.title}`,
     description: post.description,
     keywords: post.keywords,
+    alternates: {
+      canonical: `${BASE}/${locale}/blog/${params.slug}`,
+      languages: {
+        en: `${BASE}/en/blog/${params.slug}`,
+        ar: `${BASE}/ar/blog/${params.slug}`,
+        "x-default": `${BASE}/en/blog/${params.slug}`,
+      },
+    },
     openGraph: {
       title: post.title,
       description: post.description,
+      url: `${BASE}/${locale}/blog/${params.slug}`,
       images: post.coverImage ? [{ url: post.coverImage }] : [],
       type: "article",
       publishedTime: post.date,
+      siteName: "GoTripza",
     },
   };
 }

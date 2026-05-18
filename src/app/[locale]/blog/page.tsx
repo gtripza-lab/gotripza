@@ -8,14 +8,34 @@ import { getAllPosts } from "@/lib/blog";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 
+const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
+
 export async function generateMetadata(props: { params: Promise<{ locale: string }> }) {
   const params = await props.params;
+  if (!isLocale(params.locale)) return {};
   const isAr = params.locale === "ar";
+  const title = isAr ? "دليل السفر | Rya by GoTripza" : "Travel Guide | Rya by GoTripza";
+  const description = isAr
+    ? "مقالات ودلائل سفر شاملة لأفضل الوجهات — طيران، مناطق سكن، تأمين، شرائح eSIM، ونصائح ريا لتخطيط رحلة أذكى."
+    : "Comprehensive travel guides for top destinations — flights, stay areas, insurance, eSIMs, and Rya's smarter trip planning tips.";
   return {
-    title: isAr ? "دليل السفر" : "Travel Guide",
-    description: isAr
-      ? "مقالات ودلائل سفر شاملة لأفضل الوجهات — طيران، مناطق سكن، ونصائح موفّرة."
-      : "Comprehensive travel guides for top destinations — flights, stay areas, and money-saving tips.",
+    title,
+    description,
+    alternates: {
+      canonical: `${BASE}/${params.locale}/blog`,
+      languages: {
+        en: `${BASE}/en/blog`,
+        ar: `${BASE}/ar/blog`,
+        "x-default": `${BASE}/en/blog`,
+      },
+    },
+    openGraph: {
+      type: "website",
+      title,
+      description,
+      url: `${BASE}/${params.locale}/blog`,
+      siteName: "GoTripza",
+    },
   };
 }
 

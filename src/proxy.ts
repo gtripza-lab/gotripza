@@ -141,6 +141,17 @@ export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   const locale = pickLocale(req);
 
+  // Google has occasionally retried malformed legacy URLs such as /& or
+  // /ar/& after manual indexing requests. Canonicalize them instead of
+  // letting the locale redirect create a crawlable 404.
+  const isAmpersandOnlyPath =
+    pathname === "/&" ||
+    pathname === "/%26" ||
+    locales.some((l) => pathname === `/${l}/&` || pathname === `/${l}/%26`);
+  if (isAmpersandOnlyPath) {
+    return attachSecurityHeaders(redirectToCleanLocaleHome(req, locale), nonce);
+  }
+
   // Google picked up the old WebSite SearchAction template as a literal URL:
   // /?q={search_term_string}. Keep it out of the index by canonicalizing it.
   const q = req.nextUrl.searchParams.get("q");
