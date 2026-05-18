@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans, Cairo } from "next/font/google";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 import "../globals.css";
@@ -188,6 +189,7 @@ export default async function LocaleLayout(
   const { locale } = params;
   if (!isLocale(locale)) notFound();
   const dir = localeMeta[locale as Locale].dir;
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html lang={locale} dir={dir} className="dark" suppressHydrationWarning>
@@ -217,6 +219,7 @@ export default async function LocaleLayout(
           id="travelpayouts-drive"
           src="https://emrld.ltd/NTIyODY3.js?t=522867"
           strategy="afterInteractive"
+          nonce={nonce}
         />
 
         {GOOGLE_TAG_ID && (
@@ -224,8 +227,9 @@ export default async function LocaleLayout(
             <Script
               src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}`}
               strategy="afterInteractive"
+              nonce={nonce}
             />
-            <Script id="google-analytics-init" strategy="afterInteractive">
+            <Script id="google-analytics-init" strategy="afterInteractive" nonce={nonce}>
               {`
                 window.dataLayer = window.dataLayer || [];
                 function gtag(){dataLayer.push(arguments);}
