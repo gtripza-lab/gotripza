@@ -34,6 +34,9 @@ const ALLOWED_EVENTS = new Set([
   "trip_plan_day_removed",
   "trip_plan_day_swapped",
   "trip_plan_day_lightened",
+  "auth_initiated",
+  "signup_complete",
+  "signin_complete",
 ]);
 
 export async function POST(req: NextRequest) {

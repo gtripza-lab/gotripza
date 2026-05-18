@@ -35,10 +35,37 @@ export type EventName =
 
 export type EventPayload = Record<string, unknown>;
 
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+function toAnalyticsPayload(payload: EventPayload): EventPayload {
+  const safePayload: EventPayload = {};
+
+  for (const [key, value] of Object.entries(payload)) {
+    if (value === null || value === undefined) continue;
+    if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+      safePayload[key] = value;
+    }
+  }
+
+  return safePayload;
+}
+
 /** Fire-and-forget event log. Never throws, never blocks UI. */
 export function logEvent(name: EventName, payload: EventPayload = {}): void {
   if (typeof window === "undefined") return;
   try {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", name, {
+        ...toAnalyticsPayload(payload),
+        event_category: "gotripza",
+        page_path: window.location.pathname,
+      });
+    }
+
     void fetch("/api/log-event", {
       method: "POST",
       headers: { "content-type": "application/json" },
