@@ -2,28 +2,12 @@
 /**
  * RyaAdsAuthTrigger
  * CTA button used on the /rya ads landing page.
- * Fires a Google Ads conversion event when the user clicks.
+ * Tracks CTA engagement; Ads conversion fires after signup/auth succeeds.
  */
 import { useState } from "react";
 import { AuthModal } from "@/components/AuthModal";
 import type { Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
-
-function fireAdsConversion() {
-  try {
-    const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
-    const convLabel = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONV_LABEL;
-    if (typeof window.gtag === "function" && adsId && convLabel) {
-      window.gtag("event", "conversion", {
-        send_to: `${adsId}/${convLabel}`,
-        value: 5.0,
-        currency: "USD",
-      });
-    }
-  } catch {
-    // Never block the user flow
-  }
-}
 
 function fireGA4Event(eventName: string) {
   try {
@@ -63,7 +47,6 @@ export function RyaAdsAuthTrigger({ locale, variant }: Props) {
 
   function handleClick() {
     fireGA4Event("rya_cta_click");
-    fireAdsConversion();
     setOpen(true);
   }
 

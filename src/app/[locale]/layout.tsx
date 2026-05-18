@@ -9,8 +9,9 @@ import { BottomNav } from "@/components/BottomNav";
 import { TravelpayoutsProvider } from "@/components/TravelpayoutsProvider";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AnalyticsInit } from "@/components/AnalyticsInit";
+import { GA_MEASUREMENT_ID, GOOGLE_ADS_ID } from "@/lib/analytics/google";
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ?? "G-SYD1GBC1LZ";
+const GOOGLE_TAG_ID = GA_MEASUREMENT_ID || GOOGLE_ADS_ID;
 
 const sans = Inter({
   subsets: ["latin"],
@@ -218,10 +219,10 @@ export default async function LocaleLayout(
           strategy="afterInteractive"
         />
 
-        {GA_ID && (
+        {GOOGLE_TAG_ID && (
           <>
             <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_ID}`}
+              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_TAG_ID}`}
               strategy="afterInteractive"
             />
             <Script id="google-analytics-init" strategy="afterInteractive">
@@ -230,13 +231,16 @@ export default async function LocaleLayout(
                 function gtag(){dataLayer.push(arguments);}
                 window.gtag = window.gtag || gtag;
                 gtag('js', new Date());
-                gtag('config', '${GA_ID}', {
+                ${GA_MEASUREMENT_ID ? `gtag('config', '${GA_MEASUREMENT_ID}', {
                   send_page_view: false,
                   cookie_flags: 'SameSite=None;Secure'
-                });
+                });` : ""}
+                ${GOOGLE_ADS_ID ? `gtag('config', '${GOOGLE_ADS_ID}', {
+                  cookie_flags: 'SameSite=None;Secure'
+                });` : ""}
               `}
             </Script>
-            <AnalyticsInit gaId={GA_ID} />
+            {GA_MEASUREMENT_ID && <AnalyticsInit gaId={GA_MEASUREMENT_ID} />}
           </>
          )}
       </body>

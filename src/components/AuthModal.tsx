@@ -4,17 +4,17 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, Mail, CheckCircle, Loader2, LogIn } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
+import { getGoogleAdsConversionTarget } from "@/lib/analytics/google";
 import type { Locale } from "@/i18n/config";
 
 type Step = "idle" | "loading" | "oauth" | "sent" | "error";
 
 function fireSignupConversion() {
   try {
-    const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
-    const convLabel = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONV_LABEL;
-    if (typeof window.gtag === "function" && adsId && convLabel) {
+    const conversionTarget = getGoogleAdsConversionTarget();
+    if (typeof window.gtag === "function" && conversionTarget) {
       window.gtag("event", "conversion", {
-        send_to: `${adsId}/${convLabel}`,
+        send_to: conversionTarget,
         value: 5.0,
         currency: "USD",
       });

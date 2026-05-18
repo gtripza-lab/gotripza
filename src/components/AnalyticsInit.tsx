@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { getGoogleAdsConversionTarget } from "@/lib/analytics/google";
 
 declare global {
   interface Window {
@@ -12,11 +13,10 @@ declare global {
 
 function fireAdsConversionOnce() {
   try {
-    const adsId = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID;
-    const convLabel = process.env.NEXT_PUBLIC_GOOGLE_ADS_CONV_LABEL;
-    if (typeof window.gtag === "function" && adsId && convLabel) {
+    const conversionTarget = getGoogleAdsConversionTarget();
+    if (typeof window.gtag === "function" && conversionTarget) {
       window.gtag("event", "conversion", {
-        send_to: `${adsId}/${convLabel}`,
+        send_to: conversionTarget,
         value: 5.0,
         currency: "USD",
       });
