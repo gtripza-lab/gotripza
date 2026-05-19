@@ -11,6 +11,7 @@ import { TravelpayoutsProvider } from "@/components/TravelpayoutsProvider";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AnalyticsInit } from "@/components/AnalyticsInit";
 import { GA_MEASUREMENT_ID, GOOGLE_ADS_ID } from "@/lib/analytics/google";
+import { X_PIXEL_ID } from "@/lib/analytics/x";
 
 const GOOGLE_TAG_ID = GA_MEASUREMENT_ID || GOOGLE_ADS_ID;
 
@@ -247,6 +248,16 @@ export default async function LocaleLayout(
             {GA_MEASUREMENT_ID && <AnalyticsInit gaId={GA_MEASUREMENT_ID} />}
           </>
          )}
+        {X_PIXEL_ID && (
+          <Script id="x-ads-pixel" strategy="afterInteractive" nonce={nonce}>
+            {`
+              !function(e,t,n,s,u,a){e.twq||(s=e.twq=function(){s.exe?s.exe.apply(s,arguments):s.queue.push(arguments);
+              },s.version='1.1',s.queue=[],u=t.createElement(n),u.async=!0,u.src='https://static.ads-twitter.com/uwt.js',
+              a=t.getElementsByTagName(n)[0],a.parentNode.insertBefore(u,a))}(window,document,'script');
+              twq('config','${X_PIXEL_ID}');
+            `}
+          </Script>
+        )}
       </body>
     </html>
   );

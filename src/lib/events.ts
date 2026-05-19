@@ -38,6 +38,7 @@ export type EventPayload = Record<string, unknown>;
 declare global {
   interface Window {
     gtag?: (...args: unknown[]) => void;
+    twq?: (...args: unknown[]) => void;
   }
 }
 
@@ -54,14 +55,49 @@ function toAnalyticsPayload(payload: EventPayload): EventPayload {
   return safePayload;
 }
 
+function toXEventName(name: EventName): string | null {
+  if (name === "signup_complete" || name === "signin_complete" || name === "companion_trial_started") {
+    return "CompleteRegistration";
+  }
+
+  if (name === "auth_initiated") return "Lead";
+
+  if (name === "search_submitted" || name === "chat_message_sent" || name === "trip_plan_generated") {
+    return "Search";
+  }
+
+  if (
+    name === "book_clicked" ||
+    name === "affiliate_upsell_clicked" ||
+    name === "traveler_service_clicked" ||
+    name === "pwa_install_cta_clicked" ||
+    name === "pwa_app_installed"
+  ) {
+    return "ViewContent";
+  }
+
+  return null;
+}
+
 /** Fire-and-forget event log. Never throws, never blocks UI. */
 export function logEvent(name: EventName, payload: EventPayload = {}): void {
   if (typeof window === "undefined") return;
   try {
+    const analyticsPayload = toAnalyticsPayload(payload);
+
     if (typeof window.gtag === "function") {
       window.gtag("event", name, {
-        ...toAnalyticsPayload(payload),
+        ...analyticsPayload,
         event_category: "gotripza",
+        page_path: window.location.pathname,
+      });
+    }
+
+    const xEventName = toXEventName(name);
+    if (xEventName && typeof window.twq === "function") {
+      window.twq("track", xEventName, {
+        ...analyticsPayload,
+        event_name: name,
         page_path: window.location.pathname,
       });
     }

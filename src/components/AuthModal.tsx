@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { X, Mail, CheckCircle, Loader2, LogIn } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { getGoogleAdsConversionTarget } from "@/lib/analytics/google";
+import { trackXEvent } from "@/lib/analytics/x";
 import type { Locale } from "@/i18n/config";
 
 type Step = "idle" | "loading" | "oauth" | "sent" | "error";
@@ -22,6 +23,7 @@ function fireSignupConversion() {
     if (typeof window.gtag === "function") {
       window.gtag("event", "sign_up", { method: "magic_link" });
     }
+    trackXEvent("CompleteRegistration", { method: "magic_link" });
   } catch {
     // Never block the user flow
   }
@@ -150,6 +152,7 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
         if (typeof window.gtag === "function") {
           window.gtag("event", "sign_up", { method: "google" });
         }
+        trackXEvent("CompleteRegistration", { method: "google" });
       }
     } catch (err) {
       setStep("error");

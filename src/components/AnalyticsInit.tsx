@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { getGoogleAdsConversionTarget } from "@/lib/analytics/google";
+import { trackXEvent, trackXPageView } from "@/lib/analytics/x";
 
 declare global {
   interface Window {
@@ -24,6 +25,7 @@ function fireAdsConversionOnce() {
     if (typeof window.gtag === "function") {
       window.gtag("event", "sign_up", { method: "oauth_callback" });
     }
+    trackXEvent("CompleteRegistration", { method: "oauth_callback" });
   } catch {
     /* never block */
   }
@@ -66,6 +68,10 @@ export function AnalyticsInit({ gaId }: { gaId: string }) {
       page_location: window.location.href,
       page_title: document.title,
       send_to: gaId,
+    });
+    trackXPageView({
+      page_path: pagePath,
+      page_location: window.location.href,
     });
   }, [gaId, pathname]);
 
