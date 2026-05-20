@@ -149,6 +149,41 @@ export default async function DestinationHubPage(props: Props) {
       label: isAr ? `أفضل مناطق السكن في ${name}` : `Best stay areas in ${dest.nameEn}`,
       icon: "🏨",
     },
+    {
+      href: `/${locale}/trip-cost/${params.slug}/from-london`,
+      label: isAr ? `تكلفة رحلة ${name}` : `${dest.nameEn} trip cost from London`,
+      icon: "💸",
+    },
+    {
+      href: `/${locale}/family-travel/${params.slug}`,
+      label: isAr ? `${name} للعائلات` : `${dest.nameEn} family travel`,
+      icon: "👨‍👩‍👧",
+    },
+    {
+      href: `/${locale}/travel-safety/${params.slug}`,
+      label: isAr ? `الأمان في ${name}` : `${dest.nameEn} travel safety`,
+      icon: "🛡️",
+    },
+    {
+      href: `/${locale}/transportation/${params.slug}`,
+      label: isAr ? `المواصلات في ${name}` : `${dest.nameEn} transportation`,
+      icon: "🚆",
+    },
+    {
+      href: `/${locale}/esim/${params.slug}`,
+      label: isAr ? `eSIM في ${name}` : `${dest.nameEn} eSIM guide`,
+      icon: "📶",
+    },
+    {
+      href: `/${locale}/travel-insurance/${params.slug}`,
+      label: isAr ? `تأمين السفر إلى ${name}` : `${dest.nameEn} travel insurance`,
+      icon: "✅",
+    },
+    {
+      href: `/${locale}/travel-scams/${params.slug}`,
+      label: isAr ? `تجنب الاحتيال في ${name}` : `${dest.nameEn} scam prevention`,
+      icon: "⚠️",
+    },
   ];
 
   return (

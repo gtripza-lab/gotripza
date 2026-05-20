@@ -3,8 +3,9 @@ import { motion } from "framer-motion";
 import { ShieldCheck, Lock, Star, BadgeCheck, Zap } from "lucide-react";
 import Link from "next/link";
 import type { Dictionary } from "@/i18n/get-dictionary";
+import type { Locale } from "@/i18n/config";
 
-type Props = { dict: Dictionary; locale: "ar" | "en" };
+type Props = { dict: Dictionary; locale: Locale };
 
 // Each badge links to a page that proves the claim:
 // "Verified Partner"   → /about   (our partner network)

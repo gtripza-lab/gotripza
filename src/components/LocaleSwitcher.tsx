@@ -13,8 +13,9 @@ export function LocaleSwitcher({
   overDark?: boolean;
 }) {
   const pathname = usePathname() ?? "/";
-  const next = locales.find((l) => l !== current) ?? "en";
-  const stripped = pathname.replace(/^\/(ar|en)(?=\/|$)/, "");
+  const index = locales.indexOf(current);
+  const next = locales[(index + 1) % locales.length] ?? "en";
+  const stripped = pathname.replace(/^\/(ar|en|fr|de|es|it|pt|ko|ja|zh|nl)(?=\/|$)/, "");
   const href = `/${next}${stripped || ""}`;
 
   return (

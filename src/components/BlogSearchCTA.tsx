@@ -3,9 +3,10 @@
 import { useRouter } from "next/navigation";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import type { Locale } from "@/i18n/config";
 
 interface BlogSearchCTAProps {
-  locale: "ar" | "en";
+  locale: Locale;
   destination?: string;
 }
 

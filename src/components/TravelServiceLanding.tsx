@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Locale } from "@/i18n/config";
 
 type Benefit = { ar: string; en: string };
 
@@ -12,7 +13,7 @@ export function TravelServiceLanding({
   bodyEn,
   benefits,
 }: {
-  locale: "ar" | "en";
+  locale: Locale;
   eyebrowAr: string;
   eyebrowEn: string;
   titleAr: string;

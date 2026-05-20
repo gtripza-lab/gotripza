@@ -7,6 +7,15 @@ The product is not a generic booking engine. Rya is the core experience.
 Primary pages:
 - https://gotripza.com/en
 - https://gotripza.com/ar
+- https://gotripza.com/en/trip-cost/tokyo/from-london
+- https://gotripza.com/en/trip-cost/japan/from-london
+- https://gotripza.com/en/trip-cost/switzerland/from-dubai
+- https://gotripza.com/en/airports/nrt
+- https://gotripza.com/en/family-travel/tokyo
+- https://gotripza.com/en/travel-safety/bali
+- https://gotripza.com/en/travel-scams/bali
+- https://gotripza.com/en/esim/seoul
+- https://gotripza.com/en/travel-insurance/switzerland
 - https://gotripza.com/en/world-cup-2026
 - https://gotripza.com/ar/world-cup-2026
 - https://gotripza.com/en/search
@@ -22,6 +31,9 @@ Primary pages:
 Core positioning:
 - Rya is an AI travel companion, not a chatbot demo.
 - Rya helps with planning, budgeting, safety, translation, airports, eSIMs, travel insurance, activities, and trip decisions.
+- Rya by GoTripza publishes structured travel intelligence pages for trip costs, destination planning, airports, family travel, honeymoon travel, solo travel, luxury travel, budget travel, digital nomad planning, seasonal travel, safety, scam prevention, transportation, eSIM, and insurance.
+- Trip cost pages are origin-market specific and include city-level and country-level planning contexts, daily budget bands, destination currency, seasonality, FAQ schema, and Rya planning prompts.
+- Airport pages focus on arrival utility: transfer options, late-arrival caution, eSIM setup, taxi guidance, and links into destination planning.
 - Booking recommendations should appear naturally inside the conversation when useful.
 - Direct hotel inventory is staged separately until provider integration is complete; Rya currently provides stay-area guidance and hotel-picking advice.
 - For FIFA World Cup 2026 content, Rya by GoTripza is a World Cup travel companion for airports, host-city movement, budgets, eSIM, insurance, safety, translation, and trip stress reduction. It is not a ticket reseller or sports news publisher.

@@ -9,9 +9,15 @@ import { ROUTE_SLUGS } from "@/lib/route-pairs";
 import { getSeoIntentPages } from "@/lib/seo-intent-pages";
 import { READY_TRIP_PLAN_SLUGS } from "@/lib/ready-trip-plans";
 import { WORLD_CUP_PAGES } from "@/lib/world-cup-2026";
+import { getTripCostStaticParams } from "@/lib/global-seo-system";
+import { locales } from "@/i18n/config";
+import {
+  getAirportStaticParams,
+  getGuideStaticParams,
+} from "@/lib/global-travel-guides";
+import { getSeoPublishPolicy } from "@/lib/seo-publish-policy";
 
 const BASE_URL = "https://gotripza.com";
-const locales = ["en", "ar"] as const;
 
 const staticRoutes = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
@@ -28,6 +34,8 @@ const staticRoutes = [
   { path: "/travel-activities", priority: 0.86, changeFrequency: "monthly" as const },
   { path: "/smart-travel-planning", priority: 0.9, changeFrequency: "monthly" as const },
   { path: "/destinations", priority: 0.9, changeFrequency: "weekly" as const },
+  { path: "/trip-cost", priority: 0.9, changeFrequency: "weekly" as const },
+  { path: "/airports", priority: 0.84, changeFrequency: "weekly" as const },
   { path: "/routes", priority: 0.88, changeFrequency: "weekly" as const },
   { path: "/hotels", priority: 0.86, changeFrequency: "weekly" as const },
   { path: "/visa", priority: 0.86, changeFrequency: "weekly" as const },
@@ -56,8 +64,7 @@ function makeEntry(
       priority,
       alternates: {
         languages: {
-          en: `${BASE_URL}/en${path}`,
-          ar: `${BASE_URL}/ar${path}`,
+          ...Object.fromEntries(locales.map((lang) => [lang, `${BASE_URL}/${lang}${path}`])),
           "x-default": `${BASE_URL}/en${path}`,
         },
       },
@@ -68,6 +75,7 @@ function makeEntry(
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [];
+  const publishPolicy = getSeoPublishPolicy();
 
   // Static routes
   for (const { path, priority, changeFrequency } of staticRoutes) {
@@ -87,6 +95,37 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Budget pages
   for (const bp of BUDGET_PAGES) {
     entries.push(...makeEntry(`/budget/${bp.slug}`, 0.8, "monthly"));
+  }
+
+  // Global trip-cost pages: origin-market specific budget intelligence.
+  const tripCostSubjects = new Set<string>();
+  for (const page of getTripCostStaticParams(60).filter((item, index, all) => {
+    const subjects = [...new Set(all.map((entry) => entry.destination))];
+    return subjects.indexOf(item.destination) < publishPolicy.tripCostSubjectLimit;
+  })) {
+    if (!tripCostSubjects.has(page.destination)) {
+      tripCostSubjects.add(page.destination);
+      entries.push(...makeEntry(`/trip-cost/${page.destination}`, 0.88, "weekly", page.locale));
+    }
+    entries.push(...makeEntry(`/trip-cost/${page.destination}/${page.origin}`, 0.9, "monthly", page.locale));
+  }
+
+  // Global traveler-intent and trip-prep guide families.
+  const guideFamilyHubs = new Set<string>();
+  for (const page of getGuideStaticParams().filter((item, index, all) => {
+    const destinations = [...new Set(all.map((entry) => entry.destination))];
+    return destinations.indexOf(item.destination) < publishPolicy.guideDestinationLimit;
+  })) {
+    if (!guideFamilyHubs.has(page.seoFamily)) {
+      guideFamilyHubs.add(page.seoFamily);
+      entries.push(...makeEntry(`/${page.seoFamily}`, 0.84, "weekly", page.locale));
+    }
+    entries.push(...makeEntry(`/${page.seoFamily}/${page.destination}`, 0.82, "monthly", page.locale));
+  }
+
+  // Airport arrival guides.
+  for (const page of getAirportStaticParams().slice(0, publishPolicy.airportLimit * locales.length)) {
+    entries.push(...makeEntry(`/airports/${page.code}`, 0.84, "monthly", page.locale));
   }
 
   // Seasonal pages (one per destination)

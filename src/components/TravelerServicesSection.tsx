@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Locale } from "@/i18n/config";
 
 type ServiceItem = {
   icon: string;
@@ -53,7 +54,7 @@ const SERVICES: ServiceItem[] = [
   },
 ];
 
-export function TravelerServicesSection({ locale }: { locale: "ar" | "en" }) {
+export function TravelerServicesSection({ locale }: { locale: Locale }) {
   const isAr = locale === "ar";
 
   return (

@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Plane, Hotel as HotelIcon, Star, ExternalLink, ArrowLeft } from "lucide-react";
-import { isLocale, type Locale } from "@/i18n/config";
+import { contentLocale, isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { generateDestinationDescription } from "@/lib/ai/providers/selector";
 import { searchFlights, searchHotels } from "@/lib/travelpayouts";
@@ -146,7 +146,7 @@ export default async function TripPage(props: PageProps) {
 
   // Fetch in parallel: description, photo, flights, hotels
   const [description, photo, flightsRes, hotelsRes] = await Promise.allSettled([
-    generateDestinationDescription(dest, locale),
+    generateDestinationDescription(dest, contentLocale(locale)),
     fetchPhoto(`${dest} travel city`, "landscape"),
     iataOrigin
       ? searchFlights({ origin: iataOrigin, destination: iataDestination, currency: currency.toLowerCase() })

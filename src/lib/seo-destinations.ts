@@ -2426,6 +2426,63 @@ export const DESTINATIONS: Destination[] = [
     carRental: true,
     activities_partner: true,
   },
+  ...[
+    ["los-angeles", "Los Angeles", "لوس أنجلوس", "United States", "الولايات المتحدة", "LAX", "🇺🇸", "americas", "Los Angeles skyline beaches Hollywood", 120, 260, 650, "USD", [3, 4, 5, 9, 10, 11], ["Santa Monica", "West Hollywood", "Downtown LA", "Beverly Hills"], ["Hollywood and studio tours", "Santa Monica and Venice Beach", "Griffith Observatory", "Getty Center"]],
+    ["toronto", "Toronto", "تورونتو", "Canada", "كندا", "YYZ", "🇨🇦", "americas", "Toronto skyline CN Tower waterfront", 90, 210, 520, "CAD", [5, 6, 9, 10], ["Downtown", "Yorkville", "Harbourfront", "Queen West"], ["CN Tower", "Toronto Islands", "Royal Ontario Museum", "Niagara Falls day trip"]],
+    ["vancouver", "Vancouver", "فانكوفر", "Canada", "كندا", "YVR", "🇨🇦", "americas", "Vancouver mountains skyline Stanley Park", 95, 220, 540, "CAD", [5, 6, 7, 8, 9], ["Downtown", "Coal Harbour", "Yaletown", "Kitsilano"], ["Stanley Park", "Granville Island", "Capilano Bridge", "Whistler day trip"]],
+    ["sydney", "Sydney", "سيدني", "Australia", "أستراليا", "SYD", "🇦🇺", "oceania", "Sydney Opera House harbour Bondi", 100, 230, 600, "AUD", [3, 4, 9, 10, 11], ["Circular Quay", "Darling Harbour", "Surry Hills", "Bondi"], ["Sydney Opera House", "Harbour Bridge", "Bondi Beach", "Blue Mountains day trip"]],
+    ["switzerland", "Switzerland", "سويسرا", "Switzerland", "سويسرا", "ZRH", "🇨🇭", "europe", "Switzerland Alps train lakes villages", 120, 260, 700, "CHF", [5, 6, 9, 10, 12, 1, 2], ["Zurich", "Lucerne", "Interlaken", "Zermatt"], ["Swiss rail journeys", "Alpine villages", "Lake Lucerne", "Matterhorn views"]],
+    ["norway", "Norway", "النرويج", "Norway", "النرويج", "OSL", "🇳🇴", "europe", "Norway fjords northern lights", 110, 240, 650, "NOK", [5, 6, 7, 8, 9, 12, 1, 2], ["Oslo", "Bergen", "Tromso", "Alesund"], ["Fjord cruises", "Northern lights", "Scenic railways", "Arctic winter trips"]],
+    ["iceland", "Iceland", "آيسلندا", "Iceland", "آيسلندا", "KEF", "🇮🇸", "europe", "Iceland waterfalls glaciers northern lights", 130, 270, 720, "ISK", [5, 6, 7, 8, 9, 12, 1, 2], ["Reykjavik", "Golden Circle", "South Coast", "Akureyri"], ["Golden Circle", "Blue Lagoon", "South Coast waterfalls", "Northern lights"]],
+    ["vietnam", "Vietnam", "فيتنام", "Vietnam", "فيتنام", "SGN", "🇻🇳", "asia", "Vietnam Hanoi Hoi An Ha Long Bay", 30, 80, 220, "VND", [2, 3, 4, 10, 11], ["Hanoi", "Hoi An", "Da Nang", "Ho Chi Minh City"], ["Ha Long Bay", "Hoi An old town", "Street food tours", "Mekong Delta"]],
+    ["albania", "Albania", "ألبانيا", "Albania", "ألبانيا", "TIA", "🇦🇱", "europe", "Albania Riviera mountains Berat", 35, 85, 220, "ALL", [5, 6, 9, 10], ["Tirana", "Berat", "Sarande", "Gjirokaster"], ["Albanian Riviera", "Berat old town", "Blue Eye", "Mountain road trips"]],
+    ["georgia", "Georgia", "جورجيا", "Georgia", "جورجيا", "TBS", "🇬🇪", "europe", "Georgia Tbilisi Caucasus mountains wine", 35, 85, 210, "GEL", [4, 5, 6, 9, 10], ["Tbilisi", "Kazbegi", "Batumi", "Kakheti"], ["Old Tbilisi", "Kazbegi mountains", "Wine region tours", "Sulfur baths"]],
+    ["bosnia", "Bosnia", "البوسنة", "Bosnia and Herzegovina", "البوسنة والهرسك", "SJJ", "🇧🇦", "europe", "Bosnia Sarajevo Mostar bridge mountains", 35, 80, 200, "BAM", [5, 6, 9, 10], ["Sarajevo", "Mostar", "Jahorina", "Bihac"], ["Sarajevo old town", "Mostar bridge", "Mountain nature", "Bosnian food tours"]],
+  ].map(([slug, nameEn, nameAr, country, countryAr, iata, flag, region, heroKeyword, budget, mid, luxury, currency, bestMonths, n, a]) => ({
+    slug: slug as string,
+    nameEn: nameEn as string,
+    nameAr: nameAr as string,
+    country: country as string,
+    countryAr: countryAr as string,
+    iata: iata as string,
+    flag: flag as string,
+    region: region as Destination["region"],
+    heroKeyword: heroKeyword as string,
+    taglineEn: `${nameEn} planning made practical with budgets, seasons, safety, and local movement.`,
+    taglineAr: `${nameAr} بتخطيط عملي للميزانية والموسم والأمان والتنقل.`,
+    descriptionEn: `${nameEn} is a priority destination in Rya's global travel intelligence system, with guidance for cost, safety, families, couples, solo travelers, airports, transport, eSIM, insurance, and seasonal planning.`,
+    descriptionAr: `${nameAr} وجهة أساسية في نظام ريا العالمي، مع إرشادات للميزانية والأمان والعائلات وشهر العسل والمسافرين المنفردين والمطارات والتنقل.`,
+    budgetPerDay: { budget: budget as number, mid: mid as number, luxury: luxury as number },
+    currency: currency as string,
+    bestMonths: bestMonths as number[],
+    climate: {
+      en: "Seasonality changes prices and comfort significantly. Check weather, daylight, events, and school holidays before booking.",
+      ar: "الموسمية تؤثر بوضوح على السعر والراحة. راجع الطقس وساعات النهار والفعاليات والعطلات قبل الحجز.",
+    },
+    visaFree: ["US", "UK", "EU", "AU", "CA", "SG", "JP", "KR", "AE"],
+    visaOnArrival: [],
+    eVisa: true,
+    visaNotes: {
+      en: "Visa rules vary by passport and trip purpose. Confirm official entry rules before booking non-refundable travel.",
+      ar: "تختلف التأشيرة حسب الجواز وسبب الرحلة. تحقق من القنوات الرسمية قبل حجز غير قابل للاسترداد.",
+    },
+    clothing: {
+      en: "Pack layers, comfortable shoes, and weather protection. Adjust for mountains, beaches, or city walking.",
+      ar: "اختر ملابس طبقية وحذاء مريحاً وحماية من الطقس. عدّل حسب الجبال أو الشواطئ أو المشي داخل المدن.",
+    },
+    neighborhoods: (n as string[]).map((name) => ({ name, nameAr: name, type: "planning area" })),
+    activities: (a as string[]).map((activity) => ({ en: activity, ar: activity, icon: "✨" })),
+    hotelCategories: [
+      { slug: "central", en: "Central Hotels", ar: "فنادق مركزية" },
+      { slug: "luxury", en: "Luxury Hotels", ar: "فنادق فاخرة" },
+      { slug: "family", en: "Family-Friendly Hotels", ar: "فنادق مناسبة للعائلات" },
+      { slug: "budget", en: "Budget Hotels", ar: "فنادق اقتصادية" },
+    ],
+    comparePairs: ["tokyo", "paris", "dubai"],
+    nearbySlug: ["paris", "london", "istanbul"],
+    carRental: true,
+    activities_partner: true,
+  })),
 ];
 
 /** All slugs for static params generation */
@@ -2462,7 +2519,7 @@ export const MONTH_NAMES_AR = [
 ];
 
 /** Format best months for display */
-export function formatBestMonths(months: number[], locale: "en" | "ar"): string {
+export function formatBestMonths(months: number[], locale: string): string {
   const names = locale === "ar" ? MONTH_NAMES_AR : MONTH_NAMES_EN;
   return months.map((m) => names[m - 1]).join(locale === "ar" ? "، " : ", ");
 }

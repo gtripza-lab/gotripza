@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { TripPlanner } from "@/components/TripPlanner";
-import { isLocale, type Locale } from "@/i18n/config";
+import { contentLocale, isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 import { READY_TRIP_PLANS } from "@/lib/ready-trip-plans";
 
@@ -46,6 +46,7 @@ export default async function PlanPage(props: { params: Promise<{ locale: string
   const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
+  const copyLocale = contentLocale(locale);
   const dict = await getDictionary(locale);
 
   return (
@@ -70,8 +71,8 @@ export default async function PlanPage(props: { params: Promise<{ locale: string
                   href={`/${locale}/trip-plans/${page.slug}`}
                   className="rounded-xl border border-white/[0.07] bg-black/20 p-4 transition hover:border-brand-primary/35 hover:bg-brand-primary/[0.08]"
                 >
-                  <p className="text-sm font-semibold text-white/85">{page.title[locale]}</p>
-                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/45">{page.description[locale]}</p>
+                  <p className="text-sm font-semibold text-white/85">{page.title[copyLocale]}</p>
+                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/45">{page.description[copyLocale]}</p>
                 </Link>
               ))}
             </div>

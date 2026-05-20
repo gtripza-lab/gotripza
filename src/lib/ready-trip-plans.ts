@@ -1,4 +1,4 @@
-import type { Locale } from "@/i18n/config";
+import { contentLocale, type Locale } from "@/i18n/config";
 import type { PlannerTripType, TripPlanInput } from "@/lib/trip-planner";
 
 export type ReadyTripPlanPage = {
@@ -69,7 +69,8 @@ export function getReadyTripPlan(slug: string): ReadyTripPlanPage | undefined {
 }
 
 export function readyTripPlanInput(page: ReadyTripPlanPage, locale: Locale): TripPlanInput {
-  const isAr = locale === "ar";
+  const copyLocale = contentLocale(locale);
+  const isAr = copyLocale === "ar";
   return {
     origin: isAr ? page.origin.ar : page.origin.en,
     destination: isAr ? page.destination.ar : page.destination.en,
@@ -77,7 +78,7 @@ export function readyTripPlanInput(page: ReadyTripPlanPage, locale: Locale): Tri
     budget: isAr ? page.budget.ar : page.budget.en,
     travelers: page.travelers,
     tripType: page.tripType,
-    locale,
+    locale: copyLocale,
     currency: isAr ? "SAR" : "USD",
     interests: page.interests,
   };

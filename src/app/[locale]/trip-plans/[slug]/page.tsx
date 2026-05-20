@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPinned, MessageCircle, Route, Sparkles, WalletCards } from "lucide-react";
-import { isLocale, type Locale } from "@/i18n/config";
+import { contentLocale, isLocale, type Locale } from "@/i18n/config";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { SeoBreadcrumb } from "@/components/seo/InternalLinks";
 import { buildTripPlan } from "@/lib/trip-planner";
@@ -29,9 +29,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const page = getReadyTripPlan(params.slug);
   if (!page) return {};
   const locale = params.locale as Locale;
+  const copyLocale = contentLocale(locale);
   const isAr = locale === "ar";
-  const title = `${page.title[locale]} | GoTripza`;
-  const description = page.description[locale];
+  const title = `${page.title[copyLocale]} | GoTripza`;
+  const description = page.description[copyLocale];
 
   return {
     title,
@@ -62,10 +63,11 @@ export default async function ReadyTripPlanPage(props: Props) {
   const page = getReadyTripPlan(params.slug);
   if (!page) notFound();
   const locale = params.locale as Locale;
+  const copyLocale = contentLocale(locale);
   const isAr = locale === "ar";
   const plan = buildTripPlan(readyTripPlanInput(page, locale));
-  const title = page.title[locale];
-  const description = page.description[locale];
+  const title = page.title[copyLocale];
+  const description = page.description[copyLocale];
   const faq = [
     {
       q: isAr ? `هل هذه خطة نهائية لـ ${plan.destinationName}؟` : `Is this a final ${plan.destinationName} plan?`,

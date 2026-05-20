@@ -7,7 +7,7 @@ export type PostMeta = {
   title: string;
   description: string;
   date: string;
-  locale: "ar" | "en";
+  locale: string;
   slug: string;
   coverImage: string;
   keywords: string[];
@@ -17,8 +17,12 @@ export type Post = PostMeta & { content: string };
 
 const BLOG_DIR = path.join(process.cwd(), "src/content/blog");
 
-export function getPostSlugs(locale: "ar" | "en"): string[] {
-  const dir = path.join(BLOG_DIR, locale);
+function contentLocale(locale: string): "ar" | "en" {
+  return locale === "ar" ? "ar" : "en";
+}
+
+export function getPostSlugs(locale: string): string[] {
+  const dir = path.join(BLOG_DIR, contentLocale(locale));
   if (!fs.existsSync(dir)) return [];
   return fs
     .readdirSync(dir)
@@ -26,15 +30,15 @@ export function getPostSlugs(locale: "ar" | "en"): string[] {
     .map((f) => f.replace(/\.mdx$/, ""));
 }
 
-export function getPost(slug: string, locale: "ar" | "en"): Post | null {
-  const filePath = path.join(BLOG_DIR, locale, `${slug}.mdx`);
+export function getPost(slug: string, locale: string): Post | null {
+  const filePath = path.join(BLOG_DIR, contentLocale(locale), `${slug}.mdx`);
   if (!fs.existsSync(filePath)) return null;
   const raw = fs.readFileSync(filePath, "utf-8");
   const { data, content } = matter(raw);
   return { ...(data as PostMeta), slug, content };
 }
 
-export function getAllPosts(locale: "ar" | "en"): Post[] {
+export function getAllPosts(locale: string): Post[] {
   return getPostSlugs(locale)
     .map((slug) => getPost(slug, locale))
     .filter(Boolean)

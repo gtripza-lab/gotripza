@@ -8,5 +8,7 @@ const dictionaries = {
 
 export type Dictionary = Awaited<ReturnType<(typeof dictionaries)["ar"]>>;
 
-export const getDictionary = async (locale: Locale): Promise<Dictionary> =>
-  dictionaries[locale]();
+export const getDictionary = async (locale: Locale): Promise<Dictionary> => {
+  const contentLocale = locale === "ar" ? "ar" : "en";
+  return dictionaries[contentLocale]();
+};

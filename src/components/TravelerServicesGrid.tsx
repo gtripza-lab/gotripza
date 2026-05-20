@@ -1,5 +1,6 @@
 "use client";
 
+import type { Locale } from "@/i18n/config";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
 
@@ -27,7 +28,7 @@ export function TravelerServicesGrid({
   locale,
 }: {
   services: TravelerServiceCard[];
-  locale: "ar" | "en";
+  locale: Locale;
 }) {
   const isAr = locale === "ar";
 
