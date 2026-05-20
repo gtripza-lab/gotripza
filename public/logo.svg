@@ -1,0 +1,20 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Rya symbol">
+  <defs>
+    <linearGradient id="neo" x1="220" y1="170" x2="820" y2="850" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="48%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#00D4B3"/>
+    </linearGradient>
+    <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="28" result="blur"/>
+      <feColorMatrix in="blur" type="matrix" values="0 0 0 0 0.23 0 0 0 0 0.51 0 0 0 0 0.96 0 0 0 0.45 0"/>
+      <feBlend in="SourceGraphic" mode="screen"/>
+    </filter>
+  </defs>
+  <g filter="url(#glow)">
+    <path d="M310 690 C420 488 535 380 742 328 C606 488 515 636 455 812" stroke="url(#neo)" stroke-width="110" stroke-linecap="round" fill="none"/>
+    <path d="M380 350 C590 330 740 420 828 610" stroke="url(#neo)" stroke-width="76" stroke-linecap="round" fill="none" opacity="0.82"/>
+    <circle cx="774" cy="328" r="42" fill="#00D4B3"/>
+    <path d="M764 156 L802 240 L894 270 L802 302 L764 386 L724 302 L634 270 L724 240 Z" fill="#FFFFFF"/>
+  </g>
+</svg>

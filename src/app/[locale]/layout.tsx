@@ -155,6 +155,14 @@ export async function generateMetadata(
       statusBarStyle: "black-translucent",
       title: "Rya",
     },
+    icons: {
+      icon: [
+        { url: "/favicon.svg", type: "image/svg+xml" },
+        { url: "/icon.png", sizes: "1024x1024", type: "image/png" },
+      ],
+      apple: [{ url: "/apple-icon.png", sizes: "180x180", type: "image/png" }],
+      shortcut: ["/favicon.svg"],
+    },
     formatDetection: {
       telephone: false,
     },

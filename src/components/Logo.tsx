@@ -53,7 +53,7 @@ export function LogoMark({ size = 40 }: { size?: number }) {
       viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="GoTripza"
+      aria-label="Rya"
     >
       <defs>
         <linearGradient id="rya-grad" x1="8" y1="6" x2="58" y2="60" gradientUnits="userSpaceOnUse">
