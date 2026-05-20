@@ -14,6 +14,10 @@ import {
   buildSystemPrompt,
 } from "../prompts/raya-system";
 import {
+  buildRyaQualityDirective,
+  detectUserLanguage,
+} from "../prompts/raya-quality-directives";
+import {
   AI_MAX_RETRIES,
   AI_TIMEOUT_MS,
   HAS_OPENAI_KEY,
@@ -92,6 +96,15 @@ function salvageIntelligence(
   };
 }
 
+function normalizeLocaleForSchema(raw: unknown, fallbackLocale: "ar" | "en") {
+  if (typeof raw !== "object" || raw === null) return raw;
+  const r = raw as Record<string, unknown>;
+  if (r.locale !== "ar" && r.locale !== "en") {
+    return { ...r, locale: fallbackLocale };
+  }
+  return raw;
+}
+
 /**
  * Run Raya intelligence on a user query.
  *
@@ -129,7 +142,8 @@ export async function getTravelIntelligenceWithUsage(
   } = {},
 ): Promise<IntelligenceWithUsage> {
   const t0 = Date.now();
-  const system = buildSystemPrompt();
+  const detectedLanguage = detectUserLanguage(query);
+  const system = buildSystemPrompt(buildRyaQualityDirective(query));
   const memoryBlock = await buildMemoryBlock(options.userId, options.sessionId);
   const summaryBlock = buildSummaryBlock(options.summary ?? null);
   const clientMemoryBlock = buildClientMemoryBlock(options.clientMemory ?? null);
@@ -140,7 +154,7 @@ export async function getTravelIntelligenceWithUsage(
   // the model to treat anything inside as untrusted data.
   const userPrompt = `${memoryBlock}${summaryBlock}${clientMemoryBlock}${ctxBlock}${historyBlock}\n\n<user_message>\n${query}\n</user_message>`;
 
-  const fallbackLocale: "ar" | "en" = /[؀-ۿ]/.test(query) ? "ar" : "en";
+  const fallbackLocale = detectedLanguage.schemaLocale;
 
   const res = await client().chat.completions.create({
     model: MODEL_PRIMARY,
@@ -172,7 +186,8 @@ export async function getTravelIntelligenceWithUsage(
   }
 
   // M3: safeParse + salvage path. Schema drift no longer kills the turn.
-  const result = TravelIntelligenceSchema.safeParse(parsed);
+  const normalizedParsed = normalizeLocaleForSchema(parsed, fallbackLocale);
+  const result = TravelIntelligenceSchema.safeParse(normalizedParsed);
   if (result.success) {
     return { intelligence: result.data, usage };
   }

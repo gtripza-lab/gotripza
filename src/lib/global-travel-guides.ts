@@ -81,7 +81,7 @@ const FAMILY_TITLES: Record<SeoGuideFamily, string> = {
   "travel-scams": "Travel Scam Prevention",
 };
 
-const FAMILY_TITLES_LOCALIZED: Record<Locale, Record<SeoGuideFamily, string>> = {
+const FAMILY_TITLES_LOCALIZED: Partial<Record<Locale, Record<SeoGuideFamily, string>>> = {
   ar: FAMILY_TITLES,
   en: FAMILY_TITLES,
   fr: {
@@ -221,6 +221,10 @@ const FAMILY_TITLES_LOCALIZED: Record<Locale, Record<SeoGuideFamily, string>> = 
   },
 };
 
+function localizedFamilyTitle(locale: Locale, family: SeoGuideFamily) {
+  return FAMILY_TITLES_LOCALIZED[locale]?.[family] ?? FAMILY_TITLES[family];
+}
+
 const FAMILY_INTENT: Record<SeoGuideFamily, string> = {
   "family-travel": "where to stay, how to pace the trip, transport choices, kid-friendly areas, and avoidable stress points",
   honeymoon: "romantic areas, privacy, splurge-worthy experiences, best months, and calm itinerary design",
@@ -268,7 +272,7 @@ export function guideFamilyTitle(family: SeoGuideFamily) {
 }
 
 export function guideTitle(family: SeoGuideFamily, destination: Destination, locale: Locale) {
-  const localized = FAMILY_TITLES_LOCALIZED[locale][family];
+  const localized = localizedFamilyTitle(locale, family);
   if (locale === "ar") return `${destination.nameAr}: ${FAMILY_TITLES[family]}`;
   return `${destination.nameEn} ${localized} Guide`;
 }
@@ -277,7 +281,7 @@ export function guideDescription(family: SeoGuideFamily, destination: Destinatio
   if (locale === "ar") {
     return `دليل عملي عن ${destination.nameAr}: مناطق مناسبة، ميزانية، توقيت، أمان، وربط ذكي مع ريا حسب سياق رحلتك.`;
   }
-  const localized = FAMILY_TITLES_LOCALIZED[locale][family];
+  const localized = localizedFamilyTitle(locale, family);
   return `${destination.nameEn} ${localized}: practical planning guidance covering ${FAMILY_INTENT[family]}, with Rya-ready answers for AI search.`;
 }
 
@@ -293,7 +297,7 @@ export function guideSections(family: SeoGuideFamily, destination: Destination, 
   const isAr = locale === "ar";
   const name = isAr ? destination.nameAr : destination.nameEn;
   if (locale !== "ar" && locale !== "en") {
-    const localizedLead: Record<Exclude<Locale, "ar" | "en">, string> = {
+    const localizedLead: Partial<Record<Exclude<Locale, "ar" | "en">, string>> = {
       fr: `Pour ${name}, commencez par le quartier, le budget quotidien et la saison avant de réserver.`,
       de: `Für ${name} sollten zuerst Lage, Tagesbudget und Reisezeit geprüft werden.`,
       es: `Para ${name}, empieza por la zona, el presupuesto diario y la temporada antes de reservar.`,
@@ -307,7 +311,7 @@ export function guideSections(family: SeoGuideFamily, destination: Destination, 
     return [
       {
         title: "Planning focus",
-        body: localizedLead[locale],
+        body: localizedLead[locale] ?? `For ${name}, start with the right area, daily budget, and season before booking.`,
       },
       {
         title: "Daily budget",

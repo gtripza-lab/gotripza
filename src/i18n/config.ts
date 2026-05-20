@@ -10,6 +10,17 @@ export const locales = [
   "ja",
   "zh",
   "nl",
+  "tr",
+  "hi",
+  "id",
+  "ru",
+  "pl",
+  "th",
+  "vi",
+  "ms",
+  "sv",
+  "no",
+  "da",
 ] as const;
 export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "ar";
@@ -26,6 +37,17 @@ export const localeMeta: Record<Locale, { dir: "ltr" | "rtl"; label: string }> =
   ja: { dir: "ltr", label: "日本語" },
   zh: { dir: "ltr", label: "中文" },
   nl: { dir: "ltr", label: "Nederlands" },
+  tr: { dir: "ltr", label: "Türkçe" },
+  hi: { dir: "ltr", label: "हिन्दी" },
+  id: { dir: "ltr", label: "Bahasa Indonesia" },
+  ru: { dir: "ltr", label: "Русский" },
+  pl: { dir: "ltr", label: "Polski" },
+  th: { dir: "ltr", label: "ไทย" },
+  vi: { dir: "ltr", label: "Tiếng Việt" },
+  ms: { dir: "ltr", label: "Bahasa Melayu" },
+  sv: { dir: "ltr", label: "Svenska" },
+  no: { dir: "ltr", label: "Norsk" },
+  da: { dir: "ltr", label: "Dansk" },
 };
 
 export function isLocale(value: string): value is Locale {

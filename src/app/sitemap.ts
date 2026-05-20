@@ -53,6 +53,7 @@ function makeEntry(
   priority: number,
   changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"],
   localeOverride?: (typeof locales)[number],
+  includeAlternates = true,
 ): MetadataRoute.Sitemap[number][] {
   const entries: MetadataRoute.Sitemap = [];
   const langs = localeOverride ? [localeOverride] : locales;
@@ -62,12 +63,16 @@ function makeEntry(
       lastModified: new Date(),
       changeFrequency,
       priority,
-      alternates: {
-        languages: {
-          ...Object.fromEntries(locales.map((lang) => [lang, `${BASE_URL}/${lang}${path}`])),
-          "x-default": `${BASE_URL}/en${path}`,
-        },
-      },
+      ...(includeAlternates
+        ? {
+            alternates: {
+              languages: {
+                ...Object.fromEntries(locales.map((lang) => [lang, `${BASE_URL}/${lang}${path}`])),
+                "x-default": `${BASE_URL}/en${path}`,
+              },
+            },
+          }
+        : {}),
     });
   }
   return entries;
@@ -75,7 +80,16 @@ function makeEntry(
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const entries: MetadataRoute.Sitemap = [];
-  const publishPolicy = getSeoPublishPolicy();
+  const rawPolicy = getSeoPublishPolicy();
+  const publishPolicy = {
+    ...rawPolicy,
+    // Keep the root sitemap fast and below practical search-engine limits
+    // after adding 22 locales. Pages still exist; this sitemap prioritizes
+    // the strongest indexable programmatic set.
+    tripCostSubjectLimit: Math.min(rawPolicy.tripCostSubjectLimit, 20),
+    guideDestinationLimit: Math.min(rawPolicy.guideDestinationLimit, 35),
+    airportLimit: Math.min(rawPolicy.airportLimit, 20),
+  };
 
   // Static routes
   for (const { path, priority, changeFrequency } of staticRoutes) {
@@ -99,33 +113,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Global trip-cost pages: origin-market specific budget intelligence.
   const tripCostSubjects = new Set<string>();
-  for (const page of getTripCostStaticParams(60).filter((item, index, all) => {
-    const subjects = [...new Set(all.map((entry) => entry.destination))];
-    return subjects.indexOf(item.destination) < publishPolicy.tripCostSubjectLimit;
-  })) {
+  const tripCostParams = getTripCostStaticParams(60);
+  const allowedTripCostSubjects = new Set(
+    [...new Set(tripCostParams.map((entry) => entry.destination))].slice(0, publishPolicy.tripCostSubjectLimit),
+  );
+  for (const page of tripCostParams.filter((item) => allowedTripCostSubjects.has(item.destination))) {
     if (!tripCostSubjects.has(page.destination)) {
       tripCostSubjects.add(page.destination);
-      entries.push(...makeEntry(`/trip-cost/${page.destination}`, 0.88, "weekly", page.locale));
+      entries.push(...makeEntry(`/trip-cost/${page.destination}`, 0.88, "weekly", page.locale, false));
     }
-    entries.push(...makeEntry(`/trip-cost/${page.destination}/${page.origin}`, 0.9, "monthly", page.locale));
+    entries.push(...makeEntry(`/trip-cost/${page.destination}/${page.origin}`, 0.9, "monthly", page.locale, false));
   }
 
   // Global traveler-intent and trip-prep guide families.
   const guideFamilyHubs = new Set<string>();
-  for (const page of getGuideStaticParams().filter((item, index, all) => {
-    const destinations = [...new Set(all.map((entry) => entry.destination))];
-    return destinations.indexOf(item.destination) < publishPolicy.guideDestinationLimit;
-  })) {
+  const guideParams = getGuideStaticParams();
+  const allowedGuideDestinations = new Set(
+    [...new Set(guideParams.map((entry) => entry.destination))].slice(0, publishPolicy.guideDestinationLimit),
+  );
+  for (const page of guideParams.filter((item) => allowedGuideDestinations.has(item.destination))) {
     if (!guideFamilyHubs.has(page.seoFamily)) {
       guideFamilyHubs.add(page.seoFamily);
-      entries.push(...makeEntry(`/${page.seoFamily}`, 0.84, "weekly", page.locale));
+      entries.push(...makeEntry(`/${page.seoFamily}`, 0.84, "weekly", page.locale, false));
     }
-    entries.push(...makeEntry(`/${page.seoFamily}/${page.destination}`, 0.82, "monthly", page.locale));
+    entries.push(...makeEntry(`/${page.seoFamily}/${page.destination}`, 0.82, "monthly", page.locale, false));
   }
 
   // Airport arrival guides.
   for (const page of getAirportStaticParams().slice(0, publishPolicy.airportLimit * locales.length)) {
-    entries.push(...makeEntry(`/airports/${page.code}`, 0.84, "monthly", page.locale));
+    entries.push(...makeEntry(`/airports/${page.code}`, 0.84, "monthly", page.locale, false));
   }
 
   // Seasonal pages (one per destination)

@@ -145,6 +145,15 @@ function companionPhaseMessage(ctx: TravelContext, isAr: boolean): string {
     : `I understand the trip stage: ${label}. I’ll continue from there without repeating the same questions.`;
 }
 
+function tightenGenericOpening(message: string): string {
+  const trimmed = message.trim();
+  const genericOpening =
+    /^(?:[^\n.!?]{0,40}\s+)?(?:is|sounds like|can be|is indeed|is a|is an)\s+(?:a\s+)?(?:fantastic|wonderful|great|beautiful|amazing|excellent|delightful|vibrant|unique)\b[^.!?]*[.!?]\s+/i;
+  const softTravelOpening =
+    /^(?:[A-Z][A-Za-z\s'.-]{1,40}\s+)?(?:sounds wonderful|sounds like a beautiful adventure|is a fantastic choice|is a wonderful starting point|is beautiful even with|can be quite an adventure|can be a bit challenging)[^.!?]*[.!?]\s+/i;
+  return trimmed.replace(genericOpening, "").replace(softTravelOpening, "").trim() || trimmed;
+}
+
 export function postProcess(
   intel: TravelIntelligence,
   history: ChatTurn[],
@@ -166,6 +175,7 @@ export function postProcess(
 
   // Advice: always honor.
   if (intel.mode === "advice") {
+    intel.message = tightenGenericOpening(intel.message);
     return { intel, mergedContext };
   }
 
