@@ -41,7 +41,7 @@ export async function maybeSummarize(
 
   if (!HAS_OPENAI_KEY) {
     // Without OpenAI we just drop the old turns rather than burn tokens
-    // on Gemini for a non-critical optimization.
+    // on a non-critical optimization.
     return { summary: existingSummary, truncatedHistory: recent };
   }
 

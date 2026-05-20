@@ -3,10 +3,10 @@
  * ════════════════════════════════════════════════════════
  * Smart response engine that combines:
  * 1. Local knowledge base (destinations.ts)
- * 2. Gemini AI (for complex conversations)
+ * 2. OpenAI intelligence (for complex conversations)
  * 3. Heuristic fallback (always works, even when APIs fail)
  *
- * Result: Raya ALWAYS has intelligent answers
+ * Result: Rya always has a useful travel answer, even if the AI provider is unavailable.
  */
 
 import { DESTINATIONS, type DestinationProfile } from "./destinations";

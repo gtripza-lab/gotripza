@@ -2,8 +2,8 @@ import "server-only";
 /**
  * Provider Selector — OpenAI only.
  *
- * All Gemini fallback paths removed. Throws on missing key so the parse
- * route's heuristic fallback kicks in cleanly.
+ * OpenAI is the only external AI provider. Throws on missing key so the
+ * parse route's smart local fallback kicks in cleanly.
  */
 import type { TravelIntelligence, ChatTurn } from "../schemas/intelligence";
 import type { TravelContext } from "../schemas/intent";

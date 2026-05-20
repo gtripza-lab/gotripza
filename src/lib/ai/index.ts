@@ -6,8 +6,7 @@ import "server-only";
  * AI/Raya intelligence. Internals (providers, prompts, schemas) are
  * implementation detail.
  *
- * Migration status: Phase 2 — OpenAI + Gemini run side-by-side via
- * AI_PROVIDER flag. Heuristic fallback is owned by the parse route.
+ * Provider status: OpenAI only. Smart local fallback is owned by the parse route.
  */
 
 export {

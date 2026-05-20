@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:security": "vitest run src/lib/security/rate-limit/*.test.ts"
+    "test:security": "vitest run src/lib/security/rate-limit/*.test.ts",
+    "test:rya-quality": "node scripts/rya-quality-eval.mjs"
   },
   "dependencies": {
     "@openai/chatkit-react": "^1.5.1",

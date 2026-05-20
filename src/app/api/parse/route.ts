@@ -5,6 +5,7 @@ import {
   type ChatTurn,
 } from "@/lib/ai";
 import { runRayaOrchestrator } from "@/lib/ai/orchestrator/pipeline";
+import { buildSmartFallbackIntelligence } from "@/lib/ai/smart-fallback";
 import { getCurrentUser } from "@/lib/auth/session";
 import {
   heuristicParse,
@@ -391,7 +392,7 @@ function isFirstUserTurn(history: ChatTurn[]): boolean {
 }
 
 /**
- * Context-aware heuristic fallback when Gemini is unavailable.
+ * Context-aware heuristic fallback when OpenAI is unavailable.
  * Now reads the full conversation history so context accumulates across turns:
  *   Turn 1 user "London"  →  Raya: "When?"
  *   Turn 2 user "June"    →  Raya extracts London+June from full context, asks origin
@@ -1156,15 +1157,69 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
-      "[parse] AI engine error, falling back to heuristic:",
+      "[parse] AI engine error, falling back to smart local intelligence:",
       message,
     );
     void captureError(err, { route: "parse", phase: "orchestrator" });
+    const providerNotice = isProviderError(message)
+      ? "ai_error_using_smart_fallback"
+      : "unknown_error_using_smart_fallback";
+
+    // For deep travel questions, the old keyword fallback was too shallow and
+    // often asked for facts already present in the message. Use a richer local
+    // travel fallback first; keep the legacy fallback only as a hard safety net.
+    try {
+      const intel = buildSmartFallbackIntelligence(query, history, context ?? {
+        destination: null,
+        origin: null,
+        departure_date: null,
+        return_date: null,
+        adults: 2,
+        budget_usd: null,
+        trip_type: null,
+        cabin_class: null,
+        traveler_type: null,
+        hotel_preferences: [],
+        service_interests: [],
+        booking_stage: detectLifecycleFromText(query),
+        concerns: [],
+      }, providerNotice);
+
+      return NextResponse.json({
+        intent: intel.intent,
+        context: {
+          ...(context ?? {}),
+          destination: intel.intent.destination,
+          origin: intel.intent.origin,
+          departure_date: intel.intent.departure_date,
+          return_date: intel.intent.return_date,
+          adults: intel.intent.adults,
+          budget_usd: intel.intent.budget_usd,
+          trip_type: intel.intent.trip_type,
+          cabin_class: intel.intent.cabin_class,
+          booking_stage: mergeLifecycleStage(context?.booking_stage ?? null, detectLifecycleFromText(query)),
+        },
+        locale: intel.locale,
+        mode: intel.mode,
+        message: intel.message,
+        wants: intel.wants,
+        followup: intel.followup,
+        tips: null,
+        budget_verdict: intel.budget_verdict,
+        confidence: intel.confidence,
+        destination_intel: intel.destination_intel,
+        clarification_needed: intel.clarification_needed,
+        clarification_question: intel.clarification_question,
+        mock: true,
+        notice: intel.notice,
+      });
+    } catch (fallbackErr) {
+      void captureError(fallbackErr, { route: "parse", phase: "smart_fallback" });
+    }
+
     return heuristicFallback(
       query,
-      isProviderError(message)
-        ? "ai_error_using_heuristic"
-        : "unknown_error_using_heuristic",
+      providerNotice,
       history,
       context,
     );

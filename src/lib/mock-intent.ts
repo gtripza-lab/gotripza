@@ -483,8 +483,8 @@ export function followupMessage(
 }
 
 /**
- * Best-effort heuristic parser used when Gemini key is invalid.
- * Lets the demo flow work end-to-end without a live LLM.
+ * Best-effort heuristic parser used when OpenAI is unavailable.
+ * Lets the travel flow work end-to-end without a live LLM.
  */
 export function heuristicParse(query: string): TripIntent {
   // ── 1. Try "from ORIGIN to DESTINATION" pattern first (most reliable) ──

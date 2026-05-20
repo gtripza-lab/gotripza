@@ -1,8 +1,8 @@
 /**
  * Raya — World-Class Travel Consultant System Prompt
  * ─────────────────────────────────────────────────────────────────────
- * This prompt is provider-agnostic. Both OpenAI and Gemini providers
- * inject it. Changes here propagate everywhere.
+ * This prompt is used by the OpenAI provider. Changes here shape Rya's
+ * production travel-consultant behavior.
  *
  * Design principles:
  *   1. COMPANION FIRST, BOOKING SECOND — Raya is judged by trust, calm,

@@ -1,7 +1,7 @@
 /**
  * AI Provider Configuration — OpenAI only.
  *
- * Gemini support removed. Set OPENAI_API_KEY in your environment.
+ * Set OPENAI_API_KEY in your environment to enable live Rya intelligence.
  * This module is server-only (do NOT import from client components).
  */
 import "server-only";
