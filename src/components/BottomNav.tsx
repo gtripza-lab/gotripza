@@ -5,9 +5,34 @@ import { Home, Search, CalendarDays, Phone } from "lucide-react";
 import type { Locale } from "@/i18n/config";
 import { cn } from "@/lib/utils";
 
+const bottomNavCopy: Partial<Record<Locale, { home: string; search: string; plan: string; contact: string }>> = {
+  ar: { home: "الرئيسية", search: "بحث", plan: "خطتي", contact: "تواصل" },
+  en: { home: "Home", search: "Search", plan: "Plan", contact: "Contact" },
+  fr: { home: "Accueil", search: "Recherche", plan: "Plan", contact: "Contact" },
+  de: { home: "Start", search: "Suche", plan: "Plan", contact: "Kontakt" },
+  es: { home: "Inicio", search: "Buscar", plan: "Plan", contact: "Contacto" },
+  it: { home: "Home", search: "Cerca", plan: "Piano", contact: "Contatto" },
+  pt: { home: "Início", search: "Buscar", plan: "Plano", contact: "Contato" },
+  ko: { home: "홈", search: "검색", plan: "계획", contact: "문의" },
+  ja: { home: "ホーム", search: "検索", plan: "計画", contact: "連絡" },
+  zh: { home: "首页", search: "搜索", plan: "计划", contact: "联系" },
+  nl: { home: "Home", search: "Zoeken", plan: "Plan", contact: "Contact" },
+  tr: { home: "Ana sayfa", search: "Ara", plan: "Plan", contact: "İletişim" },
+  hi: { home: "होम", search: "खोज", plan: "योजना", contact: "संपर्क" },
+  id: { home: "Beranda", search: "Cari", plan: "Rencana", contact: "Kontak" },
+  ru: { home: "Главная", search: "Поиск", plan: "План", contact: "Контакты" },
+  pl: { home: "Start", search: "Szukaj", plan: "Plan", contact: "Kontakt" },
+  th: { home: "หน้าแรก", search: "ค้นหา", plan: "แผน", contact: "ติดต่อ" },
+  vi: { home: "Trang chủ", search: "Tìm", plan: "Kế hoạch", contact: "Liên hệ" },
+  ms: { home: "Utama", search: "Cari", plan: "Pelan", contact: "Hubungi" },
+  sv: { home: "Hem", search: "Sök", plan: "Plan", contact: "Kontakt" },
+  no: { home: "Hjem", search: "Søk", plan: "Plan", contact: "Kontakt" },
+  da: { home: "Hjem", search: "Søg", plan: "Plan", contact: "Kontakt" },
+};
+
 export function BottomNav({ locale }: { locale: Locale }) {
   const pathname = usePathname();
-  const isAr = locale === "ar";
+  const copy = bottomNavCopy[locale] ?? bottomNavCopy.en!;
   const isSearchPage = pathname === `/${locale}/search`;
   const isAdsLandingPage = pathname === `/${locale}/rya`;
 
@@ -15,22 +40,22 @@ export function BottomNav({ locale }: { locale: Locale }) {
     {
       href: `/${locale}`,
       icon: Home,
-      label: isAr ? "الرئيسية" : "Home",
+      label: copy.home,
     },
     {
       href: `/${locale}/search`,
       icon: Search,
-      label: isAr ? "بحث" : "Search",
+      label: copy.search,
     },
     {
       href: `/${locale}/plan`,
       icon: CalendarDays,
-      label: isAr ? "خطتي" : "Plan",
+      label: copy.plan,
     },
     {
       href: `/${locale}/contact`,
       icon: Phone,
-      label: isAr ? "تواصل" : "Contact",
+      label: copy.contact,
     },
   ];
 

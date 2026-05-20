@@ -11,19 +11,52 @@ import { LocaleSwitcher } from "./LocaleSwitcher";
 import { cn } from "@/lib/utils";
 import { AuthModal } from "./AuthModal";
 
+const navCopy: Partial<Record<Locale, {
+  planner: string;
+  destinations: string;
+  services: string;
+  companion: string;
+  worldCup: string;
+  account: string;
+}>> = {
+  ar: { planner: "خطط رحلتي", destinations: "الوجهات", services: "احتياجات المسافر", companion: "Rya Companion", worldCup: "كأس العالم 2026", account: "حسابي" },
+  en: { planner: "Trip Planner", destinations: "Destinations", services: "Traveler Services", companion: "Rya Companion", worldCup: "World Cup 2026", account: "Account" },
+  fr: { planner: "Planificateur", destinations: "Destinations", services: "Services voyage", companion: "Rya Companion", worldCup: "Coupe du Monde 2026", account: "Compte" },
+  de: { planner: "Reiseplaner", destinations: "Reiseziele", services: "Reiseservices", companion: "Rya Companion", worldCup: "WM 2026", account: "Konto" },
+  es: { planner: "Planificador", destinations: "Destinos", services: "Servicios de viaje", companion: "Rya Companion", worldCup: "Mundial 2026", account: "Cuenta" },
+  it: { planner: "Pianificatore", destinations: "Destinazioni", services: "Servizi viaggio", companion: "Rya Companion", worldCup: "Mondiali 2026", account: "Account" },
+  pt: { planner: "Planejador", destinations: "Destinos", services: "Serviços de viagem", companion: "Rya Companion", worldCup: "Copa 2026", account: "Conta" },
+  ko: { planner: "여행 플래너", destinations: "목적지", services: "여행 서비스", companion: "Rya Companion", worldCup: "월드컵 2026", account: "계정" },
+  ja: { planner: "旅行プランナー", destinations: "目的地", services: "旅行サービス", companion: "Rya Companion", worldCup: "W杯 2026", account: "アカウント" },
+  zh: { planner: "行程规划", destinations: "目的地", services: "旅行服务", companion: "Rya Companion", worldCup: "世界杯 2026", account: "账户" },
+  nl: { planner: "Reisplanner", destinations: "Bestemmingen", services: "Reisdiensten", companion: "Rya Companion", worldCup: "WK 2026", account: "Account" },
+  tr: { planner: "Gezi planlayıcı", destinations: "Rotalar", services: "Seyahat hizmetleri", companion: "Rya Companion", worldCup: "Dünya Kupası 2026", account: "Hesabım" },
+  hi: { planner: "ट्रिप प्लानर", destinations: "गंतव्य", services: "यात्रा सेवाएँ", companion: "Rya Companion", worldCup: "विश्व कप 2026", account: "खाता" },
+  id: { planner: "Perencana trip", destinations: "Destinasi", services: "Layanan travel", companion: "Rya Companion", worldCup: "Piala Dunia 2026", account: "Akun" },
+  ru: { planner: "Планировщик", destinations: "Направления", services: "Сервисы", companion: "Rya Companion", worldCup: "ЧМ 2026", account: "Аккаунт" },
+  pl: { planner: "Plan podróży", destinations: "Kierunki", services: "Usługi podróżne", companion: "Rya Companion", worldCup: "MŚ 2026", account: "Konto" },
+  th: { planner: "วางแผนทริป", destinations: "จุดหมาย", services: "บริการเดินทาง", companion: "Rya Companion", worldCup: "ฟุตบอลโลก 2026", account: "บัญชี" },
+  vi: { planner: "Lập kế hoạch", destinations: "Điểm đến", services: "Dịch vụ du lịch", companion: "Rya Companion", worldCup: "World Cup 2026", account: "Tài khoản" },
+  ms: { planner: "Perancang trip", destinations: "Destinasi", services: "Servis perjalanan", companion: "Rya Companion", worldCup: "Piala Dunia 2026", account: "Akaun" },
+  sv: { planner: "Reseplanerare", destinations: "Destinationer", services: "Resetjänster", companion: "Rya Companion", worldCup: "VM 2026", account: "Konto" },
+  no: { planner: "Reiseplanlegger", destinations: "Reisemål", services: "Reisetjenester", companion: "Rya Companion", worldCup: "VM 2026", account: "Konto" },
+  da: { planner: "Rejseplanlægger", destinations: "Destinationer", services: "Rejsetjenester", companion: "Rya Companion", worldCup: "VM 2026", account: "Konto" },
+};
+
 export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const router = useRouter();
   const isAr = locale === "ar";
+  const copy = navCopy[locale] ?? navCopy.en!;
 
   const items = [
     { label: dict.nav.flights,  href: `/${locale}/search#flights`  },
     { label: dict.nav.hotels,   href: `/${locale}/search#hotels`   },
-    { label: isAr ? "خطط رحلتي" : "Trip Planner", href: `/${locale}/plan` },
-    { label: isAr ? "الوجهات" : "Destinations", href: `/${locale}/destinations` },
-    { label: isAr ? "احتياجات المسافر" : "Traveler Services", href: `/${locale}/services` },
-    { label: isAr ? "Rya Companion" : "Rya Companion", href: `/${locale}/plus` },
-    { label: isAr ? "كأس العالم 2026" : "World Cup 2026", href: `/${locale}/world-cup-2026` },
-    { label: isAr ? "حسابي" : "Account", href: `/${locale}/account` },
+    { label: copy.planner, href: `/${locale}/plan` },
+    { label: copy.destinations, href: `/${locale}/destinations` },
+    { label: copy.services, href: `/${locale}/services` },
+    { label: copy.companion, href: `/${locale}/plus` },
+    { label: copy.worldCup, href: `/${locale}/world-cup-2026` },
+    { label: copy.account, href: `/${locale}/account` },
     { label: dict.nav.blog,     href: `/${locale}/blog`            },
   ];
 
