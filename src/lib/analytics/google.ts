@@ -11,3 +11,26 @@ export function getGoogleAdsConversionTarget() {
   if (!GOOGLE_ADS_ID || !GOOGLE_ADS_CONVERSION_LABEL) return "";
   return `${GOOGLE_ADS_ID}/${GOOGLE_ADS_CONVERSION_LABEL}`;
 }
+
+declare global {
+  interface Window {
+    gtag?: (...args: unknown[]) => void;
+  }
+}
+
+export function fireGoogleAdsConversion(
+  eventName: string,
+  payload: Record<string, string | number | boolean> = {},
+) {
+  if (typeof window === "undefined" || typeof window.gtag !== "function") return;
+
+  const conversionTarget = getGoogleAdsConversionTarget();
+  if (!conversionTarget) return;
+
+  window.gtag("event", "conversion", {
+    send_to: conversionTarget,
+    event_category: "google_ads",
+    event_label: eventName,
+    ...payload,
+  });
+}

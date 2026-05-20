@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { getGoogleAdsConversionTarget } from "@/lib/analytics/google";
+import { fireGoogleAdsConversion, getGoogleAdsConversionTarget } from "@/lib/analytics/google";
 import { trackXEvent, trackXPageView } from "@/lib/analytics/x";
 
 declare global {
@@ -10,6 +10,22 @@ declare global {
     dataLayer?: unknown[];
     gtag?: (...args: unknown[]) => void;
   }
+}
+
+function isGooglePaidVisit(params: URLSearchParams) {
+  const source = params.get("utm_source")?.toLowerCase();
+  return Boolean(
+    params.get("gclid") ||
+      params.get("gbraid") ||
+      params.get("wbraid") ||
+      params.get("gad_source") ||
+      source === "google" ||
+      source === "google_ads",
+  );
+}
+
+function shouldTrackAdsLanding(pathname: string) {
+  return /\/(rya|plus|search|plan)(\/)?$/.test(pathname);
 }
 
 function fireAdsConversionOnce() {
@@ -56,6 +72,21 @@ export function AnalyticsInit({ gaId }: { gaId: string }) {
       router.replace(cleanUrl, { scroll: false });
     }
   }, [pathname, router]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!isGooglePaidVisit(params) || !shouldTrackAdsLanding(pathname)) return;
+
+    const key = `gotripza_ads_landing_${pathname}`;
+    if (window.sessionStorage.getItem(key)) return;
+    window.sessionStorage.setItem(key, "1");
+
+    fireGoogleAdsConversion("ads_landing_view", {
+      value: 1.0,
+      currency: "USD",
+      page_path: pathname,
+    });
+  }, [pathname]);
 
   useEffect(() => {
     if (!gaId || typeof window.gtag !== "function") return;

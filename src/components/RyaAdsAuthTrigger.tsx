@@ -2,11 +2,12 @@
 /**
  * RyaAdsAuthTrigger
  * CTA button used on the /rya ads landing page.
- * Tracks CTA engagement; Ads conversion fires after signup/auth succeeds.
+ * Tracks CTA engagement; final signup conversion fires after auth succeeds.
  */
 import { useState } from "react";
 import { AuthModal } from "@/components/AuthModal";
 import type { Locale } from "@/i18n/config";
+import { fireGoogleAdsConversion } from "@/lib/analytics/google";
 import { cn } from "@/lib/utils";
 
 function fireGA4Event(eventName: string) {
@@ -47,6 +48,11 @@ export function RyaAdsAuthTrigger({ locale, variant }: Props) {
 
   function handleClick() {
     fireGA4Event("rya_cta_click");
+    fireGoogleAdsConversion("rya_cta_click", {
+      value: 2.0,
+      currency: "USD",
+      page_path: window.location.pathname,
+    });
     setOpen(true);
   }
 
