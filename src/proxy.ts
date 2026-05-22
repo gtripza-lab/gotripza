@@ -166,6 +166,12 @@ export function proxy(req: NextRequest) {
   }
 
   // ── Main domain locale redirect ────────────────────────────────────────────
+  // The root route is served by app/route.ts so external partner verifiers
+  // such as Agoda can read domain-level meta tags without following redirects.
+  if (pathname === "/") {
+    return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
+  }
+
   const hasLocale = locales.some(
     (l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`),
   );
