@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-const AGODA_VERIFICATION_META = '<meta name="agd-partner-manual-verification" content="" />';
+const AGODA_VERIFICATION_META = '<meta name="agd-partner-manual-verification" />';
 
 export function GET() {
   return new NextResponse(
