@@ -28,6 +28,7 @@ const TP_PROMO = {
   // Hotels (known universal promo_ids)
   booking:          process.env.NEXT_PUBLIC_TP_PROMO_BOOKING      ?? "4338",
   tripcom:          process.env.NEXT_PUBLIC_TP_PROMO_TRIPCOM      ?? "4064",
+  agoda:            process.env.NEXT_PUBLIC_TP_PROMO_AGODA        ?? "",
   // Everything else: set from your TP dashboard
   discovercars:     process.env.NEXT_PUBLIC_TP_PROMO_DISCOVERCARS ?? "",
   getyourguide:     process.env.NEXT_PUBLIC_TP_PROMO_GYG          ?? "",
@@ -155,6 +156,35 @@ export const PARTNERS: Record<PartnerId, Partner> = {
       if (return_date)    u.searchParams.set("checkout", return_date);
       if (adults)         u.searchParams.set("adult", String(adults));
       return tpLink(TP_PROMO.tripcom, u.toString(), subid);
+    },
+  },
+
+  agoda: {
+    id: "agoda",
+    category: "hotels",
+    name: "Agoda",
+    nameAr: "أجودا",
+    tagline_en: "Asia's #1 hotel platform — best deals in Southeast Asia, MENA & beyond",
+    tagline_ar: "منصة الفنادق الأولى في آسيا — أفضل عروض جنوب شرق آسيا والشرق الأوسط",
+    icon: "🏨",
+    accentColor: "purple",
+    commissionRate: 0.05,
+    revenueModel: "cpa",
+    buildUrl: ({ destination, departure_date, return_date, adults, subid }) => {
+      if (!destination) return null;
+      const u = new URL("https://www.agoda.com/search");
+      u.searchParams.set("city", destination);
+      if (departure_date) u.searchParams.set("checkIn", departure_date);
+      if (return_date)    u.searchParams.set("checkOut", return_date);
+      if (adults)         u.searchParams.set("adults", String(adults));
+      // Direct Agoda Partner CID — used when the user has a direct Agoda
+      // Partners account (partners.agoda.com). Falls back to TP routing if
+      // a Travelpayouts promo_id is set instead. Set at least one of the
+      // env vars: NEXT_PUBLIC_AGODA_CID OR NEXT_PUBLIC_TP_PROMO_AGODA.
+      const cid = process.env.NEXT_PUBLIC_AGODA_CID;
+      if (cid) u.searchParams.set("cid", cid);
+      const direct = u.toString();
+      return tpLink(TP_PROMO.agoda, direct, subid, cid ? direct : undefined);
     },
   },
 
@@ -438,14 +468,15 @@ export function getConfiguredPartners(): Partner[] {
 
 /**
  * Build the best hotel booking URL for a destination.
- * Always goes through Travelpayouts (promo_id=4338 for Booking.com).
- * Falls back to Trip.com (promo_id=4064), then Hotellook (plain TP marker).
+ * Cascade: Booking.com (TP) → Trip.com (TP) → Agoda (TP or direct CID) → Hotellook fallback.
  */
 export function buildHotelUrl(params: PartnerUrlParams & { fallbackHotellookUrl?: string }): string {
   const bookingUrl = buildPartnerUrl("booking", params);
   if (bookingUrl) return bookingUrl;
   const tripUrl = buildPartnerUrl("tripcom", params);
   if (tripUrl) return tripUrl;
+  const agodaUrl = buildPartnerUrl("agoda", params);
+  if (agodaUrl) return agodaUrl;
   // Hard fallback: Hotellook via TP marker (always tracked)
   return params.fallbackHotellookUrl
     ?? `https://tp.media/click?shmarker=${TP_MARKER}&promo_id=4299&source_type=customtab&type=click&custom_url=${encodeURIComponent(`https://www.hotellook.com/search?destination=${encodeURIComponent(params.destination ?? "")}&lang=en`)}`;

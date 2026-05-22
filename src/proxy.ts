@@ -174,7 +174,12 @@ export function proxy(req: NextRequest) {
 
   // Partner verification files must stay at the exact root-level URL. Some
   // partner crawlers do not follow locale redirects for ownership checks.
-  if (pathname === "/agoda-verification.html") {
+  // Match: /agoda-verification.html, /agoda-<hash>.html, /agd-<hash>.html
+  if (
+    pathname === "/agoda-verification.html" ||
+    /^\/agoda-[a-zA-Z0-9_-]+\.html$/.test(pathname) ||
+    /^\/agd-[a-zA-Z0-9_-]+\.html$/.test(pathname)
+  ) {
     return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
   }
 
