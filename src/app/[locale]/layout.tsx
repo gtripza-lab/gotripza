@@ -203,7 +203,7 @@ export default async function LocaleLayout(
   return (
     <html lang={locale} dir={dir} className="dark" suppressHydrationWarning>
       <head>
-        <meta name="agd-partner-manual-verification" />
+        <meta name="agd-partner-manual-verification" content="" />
         {/* Resource hints — speed up connections to critical external origins */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
