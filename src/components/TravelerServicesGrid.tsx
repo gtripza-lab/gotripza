@@ -41,6 +41,12 @@ export function TravelerServicesGrid({
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => {
+            logEvent("travel_service_interest", {
+              provider: s.provider,
+              service: s.resultType,
+              locale,
+              source: "traveler_services_grid",
+            });
             logEvent("traveler_service_clicked", {
               provider: s.provider,
               resultType: s.resultType,

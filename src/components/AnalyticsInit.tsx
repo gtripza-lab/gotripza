@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { fireGoogleAdsConversion, getGoogleAdsConversionTarget } from "@/lib/analytics/google";
 import { trackXEvent, trackXPageView } from "@/lib/analytics/x";
+import { logEvent } from "@/lib/events";
 
 declare global {
   interface Window {
@@ -41,6 +42,7 @@ function fireAdsConversionOnce() {
     if (typeof window.gtag === "function") {
       window.gtag("event", "sign_up", { method: "oauth_callback" });
     }
+    logEvent("login_success", { method: "oauth_callback" });
     trackXEvent("CompleteRegistration", { method: "oauth_callback" });
   } catch {
     /* never block */

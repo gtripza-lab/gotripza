@@ -121,6 +121,18 @@ function genId(): string {
   return Math.random().toString(36).slice(2, 10);
 }
 
+function logRyaConsultantStartedOnce(payload: Record<string, unknown>): void {
+  if (typeof window === "undefined") return;
+  try {
+    const key = "gotripza_rya_consultant_started";
+    if (window.sessionStorage.getItem(key)) return;
+    window.sessionStorage.setItem(key, "1");
+    logEvent("rya_consultant_started", payload);
+  } catch {
+    logEvent("rya_consultant_started", payload);
+  }
+}
+
 function friendlyError(raw: string, locale: string): string {
   const r = raw.toLowerCase();
   if (r.includes("rate") || r.includes("429") || r.includes("resource_exhausted"))
@@ -312,6 +324,13 @@ export function ChatProvider({
 
     setMessages((prev) => showUserBubble ? [...prev, userMsg, thinkingMsg] : [...prev, thinkingMsg]);
     setIsThinking(true);
+    logRyaConsultantStartedOnce({
+      query: cleanText,
+      locale,
+      bookingStage: travelContextRef.current.booking_stage ?? null,
+      destination: travelContextRef.current.destination ?? null,
+      source: "rya_consultant",
+    });
     logEvent("chat_message_sent", {
       query: cleanText,
       locale,

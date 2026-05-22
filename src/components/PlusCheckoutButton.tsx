@@ -28,9 +28,16 @@ export function PlusCheckoutButton({
   async function checkout() {
     setLoading(true);
     setMessage("");
+    logEvent("companion_try_clicked", { locale, source: "plus_page", interval });
     try {
       const res = await fetch("/api/companion/trial", { method: "POST" });
       if (res.status === 401) {
+        logEvent("companion_signup_started", {
+          locale,
+          source: "plus_page",
+          interval,
+          reason: "auth_required",
+        });
         setMessage(isAr ? "سجّل دخولك أولاً حتى نفعّل Rya Companion ونحفظها في حسابك." : "Sign in first so Rya Companion can be activated and saved to your account.");
         setAuthOpen(true);
         return;

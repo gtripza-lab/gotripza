@@ -69,7 +69,7 @@ export default async function TravelCompanionPage(props: { params: Promise<{ loc
             {isAr ? "رفيقة السفر الذكية" : "AI Travel Companion"}
           </p>
           <h1 className="font-display text-4xl font-bold leading-tight sm:text-6xl">
-            {isAr ? "ريا ليست شات سفر. ريا تسافر معك." : "Rya is not a travel chat. Rya travels with you."}
+            {isAr ? "ريا مستشارة السفر التي ترافقك قبل الرحلة وأثناءها." : "Rya is not a travel chat. Rya travels with you."}
           </h1>
           <p className="mt-6 max-w-3xl text-lg leading-8 text-white/60">
             {isAr

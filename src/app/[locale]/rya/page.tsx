@@ -259,7 +259,7 @@ export default async function RyaAdsLandingPage(
                   href={`/${locale}/search`}
                   className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.05] px-6 py-3.5 text-sm font-semibold text-white/80 transition hover:bg-white/[0.09] sm:w-auto"
                 >
-                  {isAr ? "افتح الشات أولاً" : "Open chat first"}
+                  {isAr ? "افتح ريا أولاً" : "Open chat first"}
                   <ArrowRight className={`h-4 w-4 ${isAr ? "rotate-180" : ""}`} />
                 </Link>
               </div>

@@ -8,6 +8,7 @@ import { useState } from "react";
 import { AuthModal } from "@/components/AuthModal";
 import type { Locale } from "@/i18n/config";
 import { fireGoogleAdsConversion } from "@/lib/analytics/google";
+import { logEvent } from "@/lib/events";
 import { cn } from "@/lib/utils";
 
 function fireGA4Event(eventName: string) {
@@ -48,6 +49,11 @@ export function RyaAdsAuthTrigger({ locale, variant }: Props) {
 
   function handleClick() {
     fireGA4Event("rya_cta_click");
+    logEvent("companion_try_clicked", {
+      source: "rya_landing",
+      variant,
+      locale,
+    });
     fireGoogleAdsConversion("rya_cta_click", {
       value: 2.0,
       currency: "USD",

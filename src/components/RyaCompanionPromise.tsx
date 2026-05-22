@@ -66,7 +66,7 @@ export function RyaCompanionPromise({ locale }: { locale: Locale }) {
               {isAr ? "ريا هي المنتج" : "Rya First"}
             </p>
             <h2 className="font-display text-3xl font-bold text-white sm:text-4xl">
-              {isAr ? "رفيقة سفر تفهم الرحلة، لا مجرد شات" : "A travel companion, not just a chat box"}
+              {isAr ? "مستشارة سفر تفهم الرحلة وترافقك في قراراتها" : "A travel companion, not just a chat box"}
             </h2>
             <p className="mt-3 max-w-3xl text-sm leading-7 text-white/55">
               {isAr

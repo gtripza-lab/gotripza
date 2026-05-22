@@ -11,6 +11,11 @@ export type EventName =
   | "chat_results_ready"
   | "chat_followup_revealed"
   | "companion_image_analyzed"
+  | "rya_consultant_started"
+  | "companion_try_clicked"
+  | "companion_signup_started"
+  | "login_success"
+  | "travel_service_interest"
   | "companion_trial_started"
   | "pwa_install_cta_clicked"
   | "pwa_install_cta_shown"
@@ -56,13 +61,25 @@ function toAnalyticsPayload(payload: EventPayload): EventPayload {
 }
 
 function toXEventName(name: EventName): string | null {
-  if (name === "signup_complete" || name === "signin_complete" || name === "companion_trial_started") {
+  if (
+    name === "signup_complete" ||
+    name === "signin_complete" ||
+    name === "login_success" ||
+    name === "companion_trial_started"
+  ) {
     return "CompleteRegistration";
   }
 
-  if (name === "auth_initiated") return "Lead";
+  if (name === "auth_initiated" || name === "companion_try_clicked" || name === "companion_signup_started") {
+    return "Lead";
+  }
 
-  if (name === "search_submitted" || name === "chat_message_sent" || name === "trip_plan_generated") {
+  if (
+    name === "search_submitted" ||
+    name === "chat_message_sent" ||
+    name === "rya_consultant_started" ||
+    name === "trip_plan_generated"
+  ) {
     return "Search";
   }
 
@@ -70,6 +87,7 @@ function toXEventName(name: EventName): string | null {
     name === "book_clicked" ||
     name === "affiliate_upsell_clicked" ||
     name === "traveler_service_clicked" ||
+    name === "travel_service_interest" ||
     name === "pwa_install_cta_clicked" ||
     name === "pwa_app_installed"
   ) {

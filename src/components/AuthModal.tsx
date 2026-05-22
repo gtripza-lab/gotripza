@@ -6,6 +6,7 @@ import { X, Mail, CheckCircle, Loader2, LogIn } from "lucide-react";
 import { createSupabaseBrowser } from "@/lib/supabase/browser";
 import { getGoogleAdsConversionTarget } from "@/lib/analytics/google";
 import { trackXEvent } from "@/lib/analytics/x";
+import { logEvent } from "@/lib/events";
 import type { Locale } from "@/i18n/config";
 
 type Step = "idle" | "loading" | "oauth" | "sent" | "error";
@@ -50,6 +51,7 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
   const callbackUrl = `${appUrl}/auth/callback?next=${encodeURIComponent(nextPath ?? `/${locale}/search`)}`;
   const cooldownSeconds = Math.max(0, Math.ceil((cooldownUntil - now) / 1000));
   const isEmailCoolingDown = cooldownSeconds > 0;
+  const isCompanionFlow = Boolean(nextPath?.includes("activate=companion") || title?.toLowerCase().includes("companion"));
 
   const friendlyError = useMemo(() => {
     const lower = errMsg.toLowerCase();
@@ -81,6 +83,22 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
     return () => window.clearInterval(timer);
   }, [cooldownUntil, open]);
 
+  useEffect(() => {
+    if (!open) return;
+    logEvent("auth_initiated", {
+      source: isCompanionFlow ? "companion_auth_modal" : "auth_modal",
+      nextPath: nextPath ?? null,
+      locale,
+    });
+    if (isCompanionFlow) {
+      logEvent("companion_signup_started", {
+        source: "auth_modal_open",
+        nextPath: nextPath ?? null,
+        locale,
+      });
+    }
+  }, [isCompanionFlow, locale, nextPath, open]);
+
   function startEmailCooldown(seconds = 60) {
     const until = Date.now() + seconds * 1000;
     setCooldownUntil(until);
@@ -100,6 +118,18 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
 
     setStep("loading");
     setErrMsg("");
+    logEvent("auth_initiated", {
+      method: "magic_link",
+      source: isCompanionFlow ? "companion_auth_submit" : "auth_submit",
+      locale,
+    });
+    if (isCompanionFlow) {
+      logEvent("companion_signup_started", {
+        method: "magic_link",
+        source: "auth_submit",
+        locale,
+      });
+    }
 
     try {
       const supabase = createSupabaseBrowser();
@@ -131,6 +161,18 @@ export function AuthModal({ open, onClose, locale, nextPath, title, description 
   async function handleGoogleSignIn() {
     setStep("oauth");
     setErrMsg("");
+    logEvent("auth_initiated", {
+      method: "google",
+      source: isCompanionFlow ? "companion_google_auth" : "google_auth",
+      locale,
+    });
+    if (isCompanionFlow) {
+      logEvent("companion_signup_started", {
+        method: "google",
+        source: "google_auth",
+        locale,
+      });
+    }
     try {
       const supabase = createSupabaseBrowser();
       const { error } = await supabase.auth.signInWithOAuth({

@@ -88,6 +88,12 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
 
   async function handleInstall() {
     logEvent("pwa_install_cta_clicked", { locale, platform: isIOS() ? "ios_manual" : "install_prompt" });
+    logEvent("travel_service_interest", {
+      service: "mobile_install",
+      source: "rya_install_prompt",
+      locale,
+      platform: isIOS() ? "ios_manual" : "install_prompt",
+    });
     const state = await startTrial();
     if (!state) return;
     if (installEvent) {
