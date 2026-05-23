@@ -165,22 +165,10 @@ export function proxy(req: NextRequest) {
     return attachSecurityHeaders(redirectToCleanLocaleHome(req, locale), nonce);
   }
 
-  // ── Main domain locale redirect ────────────────────────────────────────────
-  // The root route is served by app/route.ts so external partner verifiers
-  // such as Agoda can read domain-level meta tags without following redirects.
   if (pathname === "/") {
-    return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
-  }
-
-  // Partner verification files must stay at the exact root-level URL. Some
-  // partner crawlers do not follow locale redirects for ownership checks.
-  // Match: /agoda-verification.html, /agoda-<hash>.html, /agd-<hash>.html
-  if (
-    pathname === "/agoda-verification.html" ||
-    /^\/agoda-[a-zA-Z0-9_-]+\.html$/.test(pathname) ||
-    /^\/agd-[a-zA-Z0-9_-]+\.html$/.test(pathname)
-  ) {
-    return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
+    const url = req.nextUrl.clone();
+    url.pathname = `/${locale}`;
+    return attachSecurityHeaders(NextResponse.redirect(url), nonce);
   }
 
   const hasLocale = locales.some(
