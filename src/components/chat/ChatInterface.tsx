@@ -143,6 +143,43 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   const isAr = locale === "ar";
   const suggestions = isAr ? SUGGESTIONS_AR : SUGGESTIONS_EN;
   const showSuggestions = messages.length <= 1 && !isThinking;
+  const modePrompts = useMemo(() => ([
+    {
+      icon: Plane,
+      label: isAr ? "ريا المخططة" : "Planner Rya",
+      prompt: isAr
+        ? "ادخلي وضع ريا المخططة: اسأليني سؤالاً واحداً فقط عن رحلتي، ثم ابنِ ملف رحلة كامل خطوة خطوة."
+        : "Switch to Planner Rya: ask me one smart question, then build a complete trip file step by step.",
+    },
+    {
+      icon: Landmark,
+      label: isAr ? "ريا في المطار" : "Airport Rya",
+      prompt: isAr
+        ? "ادخلي وضع ريا في المطار: ساعديني في البوابة، الشنط، التأخير، أو الترانزيت بخطوات قصيرة."
+        : "Switch to Airport Rya: help me with gates, bags, delays, or transit in short steps.",
+    },
+    {
+      icon: MapPin,
+      label: isAr ? "ريا في المدينة" : "City Rya",
+      prompt: isAr
+        ? "ادخلي وضع ريا في المدينة: ساعديني في الأحياء، المطاعم، التنقل، الأمان، وأفضل الأماكن."
+        : "Switch to City Rya: help with neighborhoods, food, transport, safety, and the best places.",
+    },
+    {
+      icon: Siren,
+      label: isAr ? "ريا الطوارئ" : "Emergency Rya",
+      prompt: isAr
+        ? "ادخلي وضع ريا الطوارئ: أعطيني خطوات هادئة وسريعة لمشكلة سفر طارئة."
+        : "Switch to Emergency Rya: give calm, immediate steps for a travel emergency.",
+    },
+    {
+      icon: WalletCards,
+      label: isAr ? "ريا الاقتصادية" : "Budget Rya",
+      prompt: isAr
+        ? "ادخلي وضع ريا الاقتصادية: ساعديني أخفض تكلفة الرحلة بدون ما تخرب التجربة."
+        : "Switch to Budget Rya: help me lower trip cost without ruining the experience.",
+    },
+  ]), [isAr]);
 
   // Keep the route isolated like a native chat screen. We intentionally do not
   // resize the whole app to visualViewport.height; iOS PWA can report a tiny
@@ -370,7 +407,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
               {isAr ? "ابدأ المحادثة:" : "Start a conversation:"}
             </p>
             <div className="flex max-w-full gap-2 overflow-x-auto pb-1 scroll-hide">
-              {suggestions.map((s) => (
+              {suggestions.slice(0, 2).map((s) => (
                 <button
                   key={s.label}
                   type="button"
@@ -520,6 +557,24 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
                 {isListening ? <MicOff className="h-4 w-4 text-rose-400" /> : <Mic className="h-4 w-4" />}
                 {isAr ? "إملاء صوتي" : "Voice input"}
               </button>
+              {modePrompts.map((mode) => {
+                const Icon = mode.icon;
+                return (
+                  <button
+                    key={mode.label}
+                    type="button"
+                    onClick={() => {
+                      setToolsOpen(false);
+                      logEvent("ria_mode_selected", { label: mode.label, locale });
+                      void sendMessage(mode.prompt);
+                    }}
+                    className="flex h-10 items-center justify-center gap-2 rounded-2xl border border-white/[0.10] bg-white/[0.06] px-2 text-xs font-medium text-white/65"
+                  >
+                    <Icon className="h-4 w-4 text-violet-200/80" />
+                    <span className="truncate">{mode.label}</span>
+                  </button>
+                );
+              })}
             </motion.div>
           )}
         </AnimatePresence>
@@ -598,6 +653,7 @@ function TripNowPanel({
 
   const stageLabel = labelTripLifecycle(stage, locale);
   const summary = lifecycleSummary(stage, locale);
+  const tripFileItems = getTripFileItems(context, locale);
 
   return (
     <div className="shrink-0 border-b border-white/[0.05] bg-[#080f1d]/78 px-3 py-2.5">
@@ -625,8 +681,25 @@ function TripNowPanel({
           )}
         </div>
 
+        {tripFileItems.length > 0 && (
+          <div className="mt-3 rounded-xl border border-white/[0.06] bg-black/20 p-3">
+            <div className="mb-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/30">
+              <ClipboardCheck className="h-3 w-3 text-brand-mint/80" />
+              {isAr ? "ملف رحلتي" : "Trip file"}
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {tripFileItems.map((item) => (
+                <div key={item.label} className="rounded-lg border border-white/[0.05] bg-white/[0.025] px-2.5 py-2">
+                  <p className="text-[9px] text-white/28">{item.label}</p>
+                  <p className="mt-0.5 truncate text-[11px] font-medium text-white/65">{item.value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="mt-3 flex gap-2 overflow-x-auto pb-0.5 scroll-hide">
-          {actions.slice(0, 4).map((action) => {
+          {actions.slice(0, 3).map((action) => {
             const Icon = lifecycleIcon(action);
             return (
               <button
@@ -644,6 +717,37 @@ function TripNowPanel({
       </div>
     </div>
   );
+}
+
+function getTripFileItems(context: TravelContext, locale: import("@/i18n/config").Locale) {
+  const isAr = locale === "ar";
+  const traveler = context.traveler_type
+    ? (isAr ? travelerLabelAr(context.traveler_type) : travelerLabelEn(context.traveler_type))
+    : null;
+  const services = (context.service_interests ?? []).slice(0, 4).map((service) => serviceLabel(service, isAr)).join(isAr ? "، " : ", ");
+  const concerns = (context.concerns ?? []).slice(0, 2).join(isAr ? "، " : ", ");
+  return [
+    context.destination && { label: isAr ? "الوجهة" : "Destination", value: context.destination },
+    context.departure_date && { label: isAr ? "التاريخ" : "Date", value: context.departure_date },
+    context.budget_usd && { label: isAr ? "الميزانية" : "Budget", value: `$${context.budget_usd}` },
+    traveler && { label: isAr ? "نوع الرحلة" : "Traveler", value: traveler },
+    services && { label: isAr ? "الخدمات المهمة" : "Useful services", value: services },
+    concerns && { label: isAr ? "ملاحظات ريا" : "Rya notes", value: concerns },
+  ].filter(Boolean) as { label: string; value: string }[];
+}
+
+function serviceLabel(value: string, isAr: boolean) {
+  if (value === "insurance") return isAr ? "التأمين" : "Insurance";
+  if (value === "esim") return isAr ? "الشريحة" : "eSIM";
+  if (value === "activities") return isAr ? "الجولات" : "Activities";
+  if (value === "cars") return isAr ? "السيارة" : "Cars";
+  if (value === "trains") return isAr ? "القطارات" : "Trains";
+  if (value === "airport_help") return isAr ? "المطار" : "Airport";
+  if (value === "translation") return isAr ? "الترجمة" : "Translation";
+  if (value === "emergency") return isAr ? "الطوارئ" : "Emergency";
+  if (value === "food") return isAr ? "الأكل" : "Food";
+  if (value === "compensation") return isAr ? "التعويض" : "Compensation";
+  return value;
 }
 
 function lifecycleIcon(action: LifecycleAction) {
@@ -811,25 +915,27 @@ function MessageBubble({
               type="button"
               onClick={() => submitFeedback("up")}
               aria-label={locale === "ar" ? "رد مفيد" : "Helpful response"}
-              className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+              className={`flex h-7 items-center justify-center gap-1 rounded-full px-2 text-[10px] transition ${
                 feedback === "up"
                   ? "bg-emerald-500/20 text-emerald-300"
                   : "text-white/25 hover:bg-white/[0.06] hover:text-white/60"
               }`}
             >
               <ThumbsUp className="h-3.5 w-3.5" />
+              <span>{locale === "ar" ? "مفيد" : "Helpful"}</span>
             </button>
             <button
               type="button"
               onClick={() => submitFeedback("down")}
               aria-label={locale === "ar" ? "رد غير مفيد" : "Unhelpful response"}
-              className={`flex h-7 w-7 items-center justify-center rounded-full transition ${
+              className={`flex h-7 items-center justify-center gap-1 rounded-full px-2 text-[10px] transition ${
                 feedback === "down"
                   ? "bg-rose-500/20 text-rose-300"
                   : "text-white/25 hover:bg-white/[0.06] hover:text-white/60"
               }`}
             >
               <ThumbsDown className="h-3.5 w-3.5" />
+              <span>{locale === "ar" ? "يحتاج تحسين" : "Needs work"}</span>
             </button>
           </div>
         )}
@@ -966,7 +1072,7 @@ function QuickActionBar({
               onAction(action.prompt);
             }}
             className={`h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/[0.10] bg-white/[0.04] px-3 text-[11px] font-medium text-white/50 transition hover:border-violet-400/30 hover:bg-violet-500/[0.12] hover:text-white/85 disabled:cursor-not-allowed disabled:opacity-40 ${
-              index > 2 ? "hidden sm:inline-flex" : "inline-flex"
+              index > 1 ? "hidden sm:inline-flex" : "inline-flex"
             }`}
           >
             <Icon className="h-3.5 w-3.5" />
@@ -1031,7 +1137,7 @@ function AdviceServiceNudges({
       locale,
       subid: "ria_advice",
     },
-    6,
+    2,
     mergedContext,
   ).filter((rec) => rec.partner.category !== "hotels" && rec.partner.category !== "flights");
 
@@ -1048,11 +1154,11 @@ function AdviceServiceNudges({
       </div>
       <p className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2 text-[10px] leading-5 text-white/32">
         {isAr
-          ? "ريا تعرض هذه الخيارات لأن سياق الرحلة قد يحتاجها. روابط الشركاء قد تدعم GoTripza بدون زيادة على السعر."
-          : "Rya shows these because they may fit this trip moment. Partner links may support GoTripza at no extra cost."}
+          ? "ريا لا تعرض روابط عشوائية؛ تظهر خدمة أو خدمتين فقط عندما يكون لها سبب واضح في سياق رحلتك. روابط الشركاء قد تدعم GoTripza بدون زيادة على السعر."
+          : "Rya does not show random links; she only surfaces one or two services when there is a clear reason in your trip context. Partner links may support GoTripza at no extra cost."}
       </p>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-        {recs.slice(0, 3).map((rec) => (
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {recs.slice(0, 2).map((rec) => (
           <UpsellCard
             key={rec.partner.id}
             rec={rec}
@@ -1096,6 +1202,8 @@ function ChatSearchResults({
   const fmt = (n: number) => formatPrice(n, currency, locale);
   const showFlights = data.wants.includes("flights");
   const showHotels = data.wants.includes("hotels");
+  const liveHotelsEnabled = process.env.NEXT_PUBLIC_ENABLE_LIVE_HOTELS === "true";
+  const hotelOffers = liveHotelsEnabled ? data.hotels : [];
 
   const nights = computeNights(data.intent.departure_date, data.intent.return_date) ?? 4;
 
@@ -1165,7 +1273,7 @@ function ChatSearchResults({
       {/* Followup between sections */}
       {missingSide === "hotels" && !showHotels && (
         <FollowupChip
-          label={isAr ? "🏨 هل تريد رؤية الفنادق أيضاً؟" : "🏨 Want to see hotels too?"}
+          label={isAr ? "🏨 هل تريد أفضل مناطق السكن؟" : "🏨 Want the best stay areas?"}
           yesLabel={isAr ? "نعم" : "Yes"}
           noLabel={isAr ? "لا" : "No"}
           onYes={() => revealSide(messageId, "hotels")}
@@ -1178,29 +1286,29 @@ function ChatSearchResults({
         <div>
           <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-white/40">
             <HotelIcon className="h-3 w-3 text-emerald-400" />
-            {isAr ? "الفنادق" : "Hotels"}
-            {data.hotels.length > 0 && (
+            {liveHotelsEnabled ? (isAr ? "الفنادق" : "Hotels") : (isAr ? "مناطق السكن" : "Stay areas")}
+            {hotelOffers.length > 0 && (
               <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] text-emerald-300">
-                {data.hotels.length}
+                {hotelOffers.length}
               </span>
             )}
           </p>
-          {data.hotels.length === 0 ? (
+          {hotelOffers.length === 0 ? (
             <SearchCTACard
               isAr={isAr}
               icon={<HotelIcon className="h-4 w-4" />}
-              title={isAr ? "أسعار الفنادق المباشرة قريباً" : "Live hotel prices coming soon"}
+              title={isAr ? "عروض الفنادق قريباً" : "Live hotel offers coming soon"}
               note={
                 isAr
-                  ? "مزود الفنادق لم يفعّل الربط بعد. اسأل ريا عن أفضل مناطق السكن ونصائح اختيار الفندق."
-                  : "Hotel inventory is not connected yet. Ask Rya for the best stay areas and hotel-picking advice."
+                  ? "مزود الفنادق لم يكتمل ربطه بعد، لذلك لن تعرض ريا أسعاراً كأنها حية. يمكنها الآن اقتراح أفضل الأحياء، مستوى الأسعار المتوقع، ونصائح اختيار الفندق."
+                  : "The hotel provider is not fully connected yet, so Rya will not present prices as live inventory. She can still suggest neighborhoods, expected price ranges, and hotel-picking advice."
               }
               btnLabel={isAr ? "قريباً" : "Soon"}
               accent="mint"
               live={false}
             />
           ) : (
-            <HotelCards hotels={data.hotels} nights={nights} fmt={fmt} locale={locale} destination={data.intent.destination ?? ""} currency={currency} searchUrl={data.hotelSearchUrl} dict={dict} />
+            <HotelCards hotels={hotelOffers} nights={nights} fmt={fmt} locale={locale} destination={data.intent.destination ?? ""} currency={currency} searchUrl={data.hotelSearchUrl} dict={dict} />
           )}
         </div>
       )}
@@ -1622,7 +1730,7 @@ function SmartChatPartners({
     subid: "ai_chat",
   };
 
-  const recs = getPartnerRecommendations(intent, urlParams, 4, context);
+  const recs = getPartnerRecommendations(intent, urlParams, 2, context);
   if (!recs.length) return null;
 
   // Split into priority groups: essentials (eSIM + insurance) vs extras
@@ -1633,6 +1741,12 @@ function SmartChatPartners({
     r.partner.category !== "esim" && r.partner.category !== "insurance" &&
     r.partner.category !== "hotels" // hotels already shown above
   );
+  const selected = [
+    ...essentials.slice(0, 1),
+    ...extras.slice(0, essentials.length ? 1 : 2),
+  ].slice(0, 2);
+
+  if (!selected.length) return null;
 
   return (
     <motion.div
@@ -1650,33 +1764,16 @@ function SmartChatPartners({
         <div className="h-px flex-1 bg-white/[0.07]" />
       </div>
 
-      {/* Essential add-ons: eSIM + Insurance */}
-      {essentials.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
-            {isAr ? "قبل السفر" : "Before you go"}
-          </p>
-          <div className="grid grid-cols-2 gap-2">
-            {essentials.slice(0, 2).map((rec) => (
-              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination ?? undefined} />
-            ))}
-          </div>
+      <div className="space-y-1.5">
+        <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
+          {isAr ? "لسبب واضح في رحلتك" : "Because it fits this trip"}
+        </p>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {selected.map((rec) => (
+            <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination ?? undefined} />
+          ))}
         </div>
-      )}
-
-      {/* Extras: activities, car rental, trains, cheap flights */}
-      {extras.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">
-            {isAr ? "حسب رحلتك" : "For this trip"}
-          </p>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {extras.slice(0, 2).map((rec) => (
-              <UpsellCard key={rec.partner.id} rec={rec} isAr={isAr} destination={intent.destination ?? undefined} />
-            ))}
-          </div>
-        </div>
-      )}
+      </div>
     </motion.div>
   );
 }

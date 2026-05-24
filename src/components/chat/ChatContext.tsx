@@ -63,6 +63,72 @@ function mergeContext(current: TravelContext, intent: TripIntent): TravelContext
   };
 }
 
+function uniqueList<T>(items: (T | null | undefined)[]): T[] {
+  return Array.from(new Set(items.filter(Boolean) as T[]));
+}
+
+function enrichContextFromUserText(context: TravelContext, text: string): TravelContext {
+  const t = text.toLowerCase();
+  const traveler: TravelContext["traveler_type"] =
+    /عائلة|اطفال|أطفال|family|kids|children/.test(t) ? "family" :
+    /زوج|زوجتي|زوجي|عروس|شهر عسل|honeymoon|couple/.test(t) ? "couple" :
+    /لوحدي|منفرد|solo|alone/.test(t) ? "solo" :
+    /عمل|business|conference/.test(t) ? "business" :
+    /اصحاب|أصحاب|friends/.test(t) ? "friends" :
+    context.traveler_type;
+
+  const hotelPreferences = uniqueList([
+    ...(context.hotel_preferences ?? []),
+    /فخم|فخامة|luxury|premium|5 star|five star/.test(t) ? "luxury" : null,
+    /اقتصادي|رخيص|ميزانية|budget|cheap|affordable/.test(t) ? "budget" : null,
+    /قريب|وسط|سنتر|central|near/.test(t) ? "central" : null,
+    /هادئ|quiet|calm/.test(t) ? "quiet" : null,
+    /عائلة|اطفال|أطفال|family|kids/.test(t) ? "family" : null,
+    /طبيعة|nature|mountain|beach|شاطئ|جبل/.test(t) ? "nature" : null,
+    /مطاعم|restaurants|food|اكل|أكل/.test(t) ? "food" : null,
+  ]);
+
+  const serviceInterests = uniqueList([
+    ...(context.service_interests ?? []),
+    /تأمين|insurance|medical|coverage/.test(t) ? "insurance" : null,
+    /esim|e-sim|شريحة|انترنت|إنترنت|roaming|data/.test(t) ? "esim" : null,
+    /جولة|جولات|نشاط|أنشطة|فعاليات|activities|tours|tickets/.test(t) ? "activities" : null,
+    /سيارة|تأجير|car rental|rent a car/.test(t) ? "cars" : null,
+    /قطار|train|rail/.test(t) ? "trains" : null,
+    /مطار|ترانزيت|بوابة|شنطة|airport|gate|baggage|luggage/.test(t) ? "airport_help" : null,
+    /ترجمة|لغة|translate|translation|language/.test(t) ? "translation" : null,
+    /مطعم|مطاعم|حلال|اكل|أكل|food|halal/.test(t) ? "food" : null,
+    /طوارئ|جواز|مرض|سرقة|emergency|passport|sick|stolen/.test(t) ? "emergency" : null,
+  ]) as TravelContext["service_interests"];
+
+  const concerns = uniqueList([
+    ...(context.concerns ?? []),
+    /أمان|امان|خطر|safe|safety|danger/.test(t) ? "safety" : null,
+    /احتيال|نصب|scam|fraud/.test(t) ? "scams" : null,
+    /فيزا|تأشيرة|visa/.test(t) ? "visa" : null,
+    /غالي|تكلفة|ميزانية|cost|expensive|budget/.test(t) ? "cost" : null,
+    /طقس|weather|rain|حر|برد/.test(t) ? "weather" : null,
+    /لغة|انجليزي|إنجليزي|language|english|arabic/.test(t) ? "language" : null,
+    /تنقل|مواصلات|metro|taxi|transfer|transport/.test(t) ? "transport" : null,
+  ]);
+
+  const bookingStage: TravelContext["booking_stage"] =
+    /طوارئ|مشكلة|ضايع|سرقة|emergency|lost|stolen/.test(t) ? "in_trip" :
+    /حجزت|وصلت|أنا في|انا في|بالمطار|in airport|arrived|booked/.test(t) ? "in_trip" :
+    /احجز|ابحث|سعر|اسعار|أسعار|book|search|price|deal/.test(t) ? "ready_to_book" :
+    /خطط|خطة|برنامج|جدول|ميزانية|plan|itinerary|budget/.test(t) ? "planning" :
+    context.booking_stage;
+
+  return {
+    ...context,
+    traveler_type: traveler ?? null,
+    hotel_preferences: hotelPreferences,
+    service_interests: serviceInterests,
+    booking_stage: bookingStage ?? null,
+    concerns,
+  };
+}
+
 type CompanionMemory = {
   summary: string | null;
   knownFacts: string[];
@@ -198,8 +264,8 @@ export function ChatProvider({
     role: "assistant",
     mode: "advice",
     text: locale === "ar"
-      ? "مرحباً! 👋 أنا ريا، مستشارتك الذكية في GoTripza.\n\nأخبرني عن رحلتك — إلى أين تفكر تسافر؟ أو اسألني أي سؤال عن السفر وأنا هنا أساعدك 🌍"
-      : "Hi there! 👋 I'm Rya, your travel companion at GoTripza.\n\nTell me about your trip — where are you thinking of going? Or ask me anything about travel and I'll guide you 🌍",
+      ? "مرحباً، أنا ريا مستشارة سفرك الذكية 👋\n\nأقدر أمشي معك خطوة خطوة: الوجهة، الموعد، من معك، الميزانية، وش يهمك في الرحلة. اكتب أي شيء في بالك، وأنا أبني لك ملف رحلة واضح داخل المحادثة."
+      : "Hi, I’m Rya, your smart travel companion 👋\n\nI can guide you step by step: destination, dates, who’s traveling, budget, and what matters most. Tell me anything you know, and I’ll turn it into a clear trip file inside the conversation.",
     timestamp: 0,
   }), [locale]);
 
@@ -402,7 +468,10 @@ export function ChatProvider({
       // Accumulate context. Prefer server's authoritative merged context
       // (Phase 3 orchestrator); fall back to client-side merge for older
       // server builds that don't echo `context` yet.
-      const nextContext = parsedJson.context ?? mergeContext(travelContextRef.current, intent);
+      const nextContext = enrichContextFromUserText(
+        parsedJson.context ?? mergeContext(travelContextRef.current, intent),
+        cleanText,
+      );
       const nextStage = deriveTripLifecycle(nextContext);
       if (nextStage !== travelContextRef.current.booking_stage) {
         logEvent("ria_trip_phase_detected", {
@@ -412,11 +481,7 @@ export function ChatProvider({
           locale: aiLocale,
         });
       }
-      if (parsedJson.context) {
-        setTravelContext(parsedJson.context);
-      } else {
-        setTravelContext((prev) => mergeContext(prev, intent));
-      }
+      setTravelContext(nextContext);
 
       // 4 — ONLY call search API when mode === "search"
       if (mode !== "search") {

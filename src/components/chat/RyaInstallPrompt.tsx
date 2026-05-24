@@ -40,8 +40,14 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
   const [authOpen, setAuthOpen] = useState(false);
   const [notice, setNotice] = useState("");
   const standalone = useMemo(() => isStandalone(), []);
+  const dismissKey = "gotripza_rya_install_prompt_dismissed_v1";
 
   useEffect(() => {
+    try {
+      if (window.localStorage.getItem(dismissKey) === "1") setDismissed(true);
+    } catch {
+      // localStorage can be unavailable in private browsing.
+    }
     void fetch("/api/companion/trial")
       .then((res) => res.json())
       .then((json: TrialState) => setTrial(json))
@@ -58,6 +64,7 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
     };
     const onInstalled = () => {
       logEvent("pwa_app_installed", { locale });
+      try { window.localStorage.setItem(dismissKey, "1"); } catch {}
       setDismissed(true);
     };
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
@@ -143,7 +150,10 @@ export function RyaInstallPrompt({ locale }: { locale: Locale }) {
           </div>
           <button
             type="button"
-            onClick={() => setDismissed(true)}
+            onClick={() => {
+              try { window.localStorage.setItem(dismissKey, "1"); } catch {}
+              setDismissed(true);
+            }}
             className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/35 hover:bg-white/[0.08]"
             aria-label={isAr ? "إغلاق" : "Close"}
           >

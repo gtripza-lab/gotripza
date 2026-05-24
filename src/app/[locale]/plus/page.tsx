@@ -62,6 +62,52 @@ const FEATURES_EN = [
   "Calm service suggestions only when useful, without random link spam",
 ];
 
+const RELIEF_AR = [
+  {
+    icon: PlaneLanding,
+    title: "لا تضيع في المطار",
+    desc: "اسأل ريا عن البوابة، الترانزيت، وقت الوصول، الشنط، أو التأخير وتحصل على خطوة واحدة واضحة.",
+  },
+  {
+    icon: MapPinned,
+    title: "لا تحتار في الأحياء",
+    desc: "ريا تشرح لك أين تسكن حسب عائلة، شهر عسل، ميزانية، قرب المواصلات، أو الأمان.",
+  },
+  {
+    icon: BadgeDollarSign,
+    title: "لا تدفع أكثر من اللازم",
+    desc: "قبل التأمين، الشريحة، التنقل، أو الجولات، ريا تشرح لماذا تحتاجها ومتى لا تحتاجها.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "اسأل قبل أي قرار",
+    desc: "مطعم، منطقة، نشاط، تاكسي، موقف غريب، أو صورة غير مفهومة؛ ريا ترافقك بهدوء.",
+  },
+];
+
+const RELIEF_EN = [
+  {
+    icon: PlaneLanding,
+    title: "Do not get lost at the airport",
+    desc: "Ask Rya about gates, transit, arrival timing, bags, or delays and get one clear next step.",
+  },
+  {
+    icon: MapPinned,
+    title: "Know where to stay",
+    desc: "Rya explains the right areas for families, honeymooners, budget travelers, transport, or safety.",
+  },
+  {
+    icon: BadgeDollarSign,
+    title: "Avoid paying more than you should",
+    desc: "Before insurance, eSIMs, transport, or tours, Rya explains why you need it and when you do not.",
+  },
+  {
+    icon: HeartHandshake,
+    title: "Ask before every travel decision",
+    desc: "A restaurant, area, activity, taxi, strange situation, or confusing image; Rya stays calm with you.",
+  },
+];
+
 const SERVICES = [
   {
     icon: PlaneLanding,
@@ -142,6 +188,7 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
   const dict = await getDictionary(locale);
   const isAr = locale === "ar";
   const features = isAr ? FEATURES_AR : FEATURES_EN;
+  const relief = isAr ? RELIEF_AR : RELIEF_EN;
 
   return (
     <>
@@ -171,6 +218,21 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                 ? "قيمة Rya Companion ليست في الدردشة، بل في أنها تعرف سياق رحلتك وتساعدك في المطار، الترجمة، الصور، الميزانية، الأمان، والطعام عندما تحتاجها فعلاً."
                 : "Rya Companion is not just chat. It remembers your trip context and helps with airports, translation, images, budgeting, safety, and food exactly when you need it."}
             </p>
+          </div>
+
+          <div className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {relief.map((item) => {
+              const Icon = item.icon;
+              return (
+                <div key={item.title} className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4">
+                  <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-2xl bg-brand-primary/[0.12] text-brand-primary">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <h2 className="text-sm font-semibold text-white">{item.title}</h2>
+                  <p className="mt-2 text-xs leading-6 text-white/45">{item.desc}</p>
+                </div>
+              );
+            })}
           </div>
 
           <div className="mt-10 grid gap-5 md:grid-cols-2">

@@ -3,6 +3,7 @@ import {
   getCostStats,
   getDashboardStats,
   getRiaFeedbackStats,
+  getRyaOperationalInsights,
   getSupportRequests,
   getTripPlanAdminStats,
 } from "@/lib/admin/data";
@@ -45,12 +46,13 @@ function modeBadge(mode: string | null) {
 }
 
 export default async function DashboardPage() {
-  const [stats, support, trips, costs, feedback] = await Promise.all([
+  const [stats, support, trips, costs, feedback, insights] = await Promise.all([
     getDashboardStats(),
     getSupportRequests(),
     getTripPlanAdminStats(),
     getCostStats(),
     getRiaFeedbackStats(),
+    getRyaOperationalInsights(),
   ]);
 
   if (!stats) {
@@ -118,6 +120,38 @@ export default async function DashboardPage() {
         <MetricCard label="خطط محفوظة" value={trips.total.toLocaleString()} color="blue" />
         <MetricCard label="رضا ريا" value={feedback.total ? helpfulRate : "—"} sub={`${feedback.total.toLocaleString()} تقييم`} color={feedback.unhelpful > feedback.helpful ? "yellow" : "green"} />
         <MetricCard label="تكلفة اليوم" value={costs ? `$${costs.costToday.toFixed(3)}` : "—"} color="default" />
+      </div>
+
+      <div className="grid gap-4 xl:grid-cols-4">
+        <InsightCard
+          title="أكثر الوجهات طلباً"
+          empty="لا توجد وجهات كافية بعد."
+          rows={insights.topDestinations.map((item) => ({ label: item.destination, value: item.count }))}
+        />
+        <InsightCard
+          title="الخدمات المطلوبة"
+          empty="لا توجد خدمات مسجلة بعد."
+          rows={insights.topServices.map((item) => ({ label: serviceLabelAr(item.service), value: item.count }))}
+        />
+        <InsightCard
+          title="تحويلات Rya Companion"
+          empty="لا توجد أحداث تثبيت أو تسجيل بعد."
+          rows={[
+            { label: "تسجيل دخول", value: insights.signInFunnel.logins },
+            { label: "تفعيل التجربة", value: insights.signInFunnel.companionTrials },
+            { label: "تثبيت على الجوال", value: insights.signInFunnel.installs },
+            { label: "فتح كتطبيق", value: insights.signInFunnel.standaloneOpens },
+          ]}
+        />
+        <InsightCard
+          title="إشارات ضعف ريا"
+          empty="لا توجد إشارات ضعف واضحة."
+          rows={[
+            { label: "ردود تحتاج تحسين", value: feedback.unhelpful },
+            { label: "ملخصات فاشلة/غامضة", value: insights.unansweredSignals },
+            ...insights.weakResponses.slice(0, 2).map((item) => ({ label: item.excerpt, value: item.count })),
+          ]}
+        />
       </div>
 
       {/* Area Chart */}
@@ -213,4 +247,51 @@ export default async function DashboardPage() {
       </div>
     </div>
   );
+}
+
+function InsightCard({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: { label: string; value: number }[];
+  empty: string;
+}) {
+  const cleanRows = rows.filter((row) => row.value > 0);
+  return (
+    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+      <h2 className="text-sm font-semibold text-white/85">{title}</h2>
+      {cleanRows.length === 0 ? (
+        <p className="mt-4 text-xs text-white/35">{empty}</p>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {cleanRows.slice(0, 6).map((row) => (
+            <div key={row.label} className="flex items-center justify-between gap-3">
+              <span className="line-clamp-1 text-xs text-white/48">{row.label}</span>
+              <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-xs font-semibold text-white/70">
+                {row.value.toLocaleString("ar-SA")}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function serviceLabelAr(service: string) {
+  const labels: Record<string, string> = {
+    insurance: "التأمين",
+    esim: "الشريحة eSIM",
+    activities: "الجولات والأنشطة",
+    cars: "تأجير السيارات",
+    trains: "القطارات",
+    compensation: "تعويض التأخير",
+    airport_help: "مساعدة المطار",
+    translation: "الترجمة",
+    emergency: "الطوارئ",
+    food: "الأكل والمطاعم",
+  };
+  return labels[service] ?? service;
 }

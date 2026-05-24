@@ -339,6 +339,113 @@ export async function getRiaFeedbackStats(): Promise<RiaFeedbackStats> {
   }
 }
 
+export type RyaOperationalInsights = {
+  topDestinations: { destination: string; count: number }[];
+  topServices: { service: string; count: number }[];
+  travelStyles: { style: string; count: number }[];
+  signInFunnel: {
+    logins: number;
+    companionTrials: number;
+    installs: number;
+    standaloneOpens: number;
+  };
+  weakResponses: { excerpt: string; count: number; destination: string | null; mode: string }[];
+  unansweredSignals: number;
+};
+
+function addCount(map: Map<string, number>, key?: string | null) {
+  const clean = key?.trim();
+  if (!clean) return;
+  map.set(clean, (map.get(clean) ?? 0) + 1);
+}
+
+function topFromMap(map: Map<string, number>, keyName: "destination" | "service" | "style", limit = 8) {
+  return Array.from(map.entries())
+    .map(([key, count]) => ({ [keyName]: key, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit) as (
+      | { destination: string; count: number }
+      | { service: string; count: number }
+      | { style: string; count: number }
+    )[];
+}
+
+export async function getRyaOperationalInsights(): Promise<RyaOperationalInsights> {
+  try {
+    const db = createSupabaseService() as AnyTable;
+    const d30 = daysAgo(30);
+    const [convRes, eventsRes, feedback] = await Promise.all([
+      db.from("conversations")
+        .select("context,last_intent,summary,started_at")
+        .gte("started_at", d30)
+        .order("started_at", { ascending: false })
+        .limit(700),
+      db.from("events")
+        .select("name,payload,created_at")
+        .gte("created_at", d30)
+        .order("created_at", { ascending: false })
+        .limit(1200),
+      getRiaFeedbackStats(),
+    ]);
+
+    const destinationMap = new Map<string, number>();
+    const serviceMap = new Map<string, number>();
+    const styleMap = new Map<string, number>();
+    let unansweredSignals = 0;
+
+    for (const row of (convRes.data ?? []) as {
+      context?: Partial<TravelContext> | null;
+      last_intent?: Partial<TripIntent> | null;
+      summary?: string | null;
+    }[]) {
+      addCount(destinationMap, row.context?.destination ?? row.last_intent?.destination ?? null);
+      for (const service of row.context?.service_interests ?? []) addCount(serviceMap, service);
+      addCount(styleMap, row.context?.traveler_type ?? null);
+      addCount(styleMap, row.context?.trip_type ?? null);
+      const summary = row.summary?.toLowerCase() ?? "";
+      if (/لم افهم|لم أفهم|تعذر|fallback|failed|error|cannot|unable/.test(summary)) unansweredSignals++;
+    }
+
+    let logins = 0;
+    let companionTrials = 0;
+    let installs = 0;
+    let standaloneOpens = 0;
+    for (const row of (eventsRes.data ?? []) as { name: string; payload: Record<string, unknown> | null }[]) {
+      if (/login|sign_in|auth/i.test(row.name)) logins++;
+      if (row.name === "companion_trial_started") companionTrials++;
+      if (row.name === "pwa_app_installed") installs++;
+      if (row.name === "pwa_standalone_opened") standaloneOpens++;
+      const payloadDestination = typeof row.payload?.destination === "string" ? row.payload.destination : null;
+      const payloadService = typeof row.payload?.service === "string"
+        ? row.payload.service
+        : typeof row.payload?.type === "string"
+          ? row.payload.type
+          : null;
+      addCount(destinationMap, payloadDestination);
+      addCount(serviceMap, payloadService);
+    }
+
+    return {
+      topDestinations: topFromMap(destinationMap, "destination") as { destination: string; count: number }[],
+      topServices: topFromMap(serviceMap, "service") as { service: string; count: number }[],
+      travelStyles: topFromMap(styleMap, "style", 6) as { style: string; count: number }[],
+      signInFunnel: { logins, companionTrials, installs, standaloneOpens },
+      weakResponses: feedback.topUnhelpful,
+      unansweredSignals,
+    };
+  } catch (err) {
+    console.error("[admin/data] getRyaOperationalInsights:", err);
+    return {
+      topDestinations: [],
+      topServices: [],
+      travelStyles: [],
+      signInFunnel: { logins: 0, companionTrials: 0, installs: 0, standaloneOpens: 0 },
+      weakResponses: [],
+      unansweredSignals: 0,
+    };
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // CONVERSATIONS
 // ─────────────────────────────────────────────────────────────────────────────

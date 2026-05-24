@@ -24,6 +24,7 @@ export type EventName =
   | "pwa_standalone_opened"
   | "ria_quick_action_clicked"
   | "ria_lifecycle_action_clicked"
+  | "ria_mode_selected"
   | "ria_trip_phase_detected"
   | "ria_companion_hub_viewed"
   | "traveler_service_clicked"

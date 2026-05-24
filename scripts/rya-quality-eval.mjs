@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import { mkdir, writeFile } from "node:fs/promises";
+
 const BASE_URL = process.env.RYA_EVAL_BASE_URL ?? "http://localhost:3000";
 const MIN_AVG = Number(process.env.RYA_EVAL_MIN_AVG ?? 70);
 const REQUIRE_LIVE_AI = process.env.RYA_EVAL_REQUIRE_LIVE_AI === "true";
@@ -170,6 +172,25 @@ async function run() {
     avgScore: summary.avgScore,
     weak: summary.weak,
   }, null, 2));
+
+  await mkdir("reports", { recursive: true });
+  await writeFile(
+    "reports/rya-quality-last.json",
+    JSON.stringify({
+      ...summary,
+      weakResults: results
+        .filter((row) => row.score < 70)
+        .map((row) => ({
+          city: row.city,
+          query: row.query,
+          score: row.score,
+          status: row.status,
+          mode: row.mode,
+          excerpt: String(row.message || row.error || "").slice(0, 500),
+        })),
+    }, null, 2),
+  );
+  console.log("Saved reports/rya-quality-last.json for admin review.");
 
   if (avg < MIN_AVG) {
     console.error(`Rya quality gate failed: average ${avg} < ${MIN_AVG}`);
