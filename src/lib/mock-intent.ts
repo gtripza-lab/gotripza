@@ -58,13 +58,33 @@ const CITY_TO_IATA: Record<string, string> = {
   "دلهي": "DEL", "الهند": "DEL",
   "كولومبو": "CMB", "سريلانكا": "CMB",
   "هونغ كونغ": "HKG",
+  "شنغهاي": "PVG", "شانغهاي": "PVG",
+  "بكين": "PEK",
+  "مانيلا": "MNL", "الفلبين": "MNL",
+  "جاكرتا": "CGK", "إندونيسيا": "CGK", "اندونيسيا": "CGK",
+  "بوكيت": "HKT",
+  "كرابي": "KBV",
+  "فيتنام": "HAN", "هانوي": "HAN", "هوشي منه": "SGN",
+  "سيدني": "SYD", "أستراليا": "SYD", "استراليا": "SYD",
+  "ملبورن": "MEL",
   // ── Africa ────────────────────────────────────────────────
   "مراكش": "RAK",
   "الدار البيضاء": "CMN", "المغرب": "CMN",
+  "طنجة": "TNG",
+  "كيب تاون": "CPT", "جنوب أفريقيا": "CPT", "جنوب افريقيا": "CPT",
+  "زنجبار": "ZNZ",
+  "نيروبي": "NBO",
   // ── Americas ──────────────────────────────────────────────
   "نيويورك": "JFK",
   "لوس أنجلوس": "LAX", "لوس انجلوس": "LAX",
   "ميامي": "MIA",
+  "أورلاندو": "MCO", "اورلاندو": "MCO",
+  "لاس فيغاس": "LAS", "لاس فيجاس": "LAS",
+  "سان فرانسيسكو": "SFO",
+  "تورنتو": "YYZ", "كندا": "YYZ",
+  "فانكوفر": "YVR",
+  "المكسيك": "MEX", "مكسيكو": "MEX",
+  "ريو": "GIG", "ريو دي جانيرو": "GIG",
   // ── English (lowercase) ────────────────────────────────────
   jeddah: "JED", mecca: "JED",
   riyadh: "RUH",
@@ -89,18 +109,55 @@ const CITY_TO_IATA: Record<string, string> = {
   barcelona: "BCN",
   tokyo: "NRT",
   bangkok: "BKK",
+  phuket: "HKT",
+  krabi: "KBV",
   bali: "DPS",
   "kuala lumpur": "KUL",
   singapore: "SIN",
+  hanoi: "HAN",
+  vietnam: "HAN",
+  "ho chi minh": "SGN",
+  jakarta: "CGK",
+  manila: "MNL",
+  shanghai: "PVG",
+  beijing: "PEK",
+  sydney: "SYD",
+  melbourne: "MEL",
   maldives: "MLE",
   "new york": "JFK",
   "los angeles": "LAX",
   miami: "MIA",
+  orlando: "MCO",
+  "las vegas": "LAS",
+  "san francisco": "SFO",
+  toronto: "YYZ",
+  vancouver: "YVR",
+  "mexico city": "MEX",
+  "rio de janeiro": "GIG",
   santorini: "JTR",
   antalya: "AYT",
   tbilisi: "TBS",
   baku: "GYD",
   marrakech: "RAK",
+  "cape town": "CPT",
+  zanzibar: "ZNZ",
+  nairobi: "NBO",
+  tangier: "TNG",
+  lisbon: "LIS",
+  prague: "PRG",
+  vienna: "VIE",
+  zurich: "ZRH",
+  milan: "MXP",
+  munich: "MUC",
+  berlin: "BER",
+  amsterdam: "AMS",
+  oslo: "OSL",
+  copenhagen: "CPH",
+  stockholm: "ARN",
+  helsinki: "HEL",
+  reykjavik: "KEF",
+  tirana: "TIA",
+  sarajevo: "SJJ",
 };
 
 const AR_MONTHS: Record<string, number> = {
@@ -337,6 +394,16 @@ function findExplicitDayForMonth(query: string, monthName: string | undefined): 
   const q = normalizeDigits(query).toLowerCase();
   const m = escapeRegExp(monthName.toLowerCase());
   const durationUnit = String.raw`(?:أيام|ايام|يوم|ليال|ليالي|ليلة|days?|nights?)`;
+
+  // Corrections such as "5 يونيو وليس 15 يونيو" should keep the first day.
+  // Without this, the generic "latest date wins" rule may accidentally choose
+  // the rejected date.
+  const correctionRange = q.match(new RegExp(`(\\d{1,2})\\s*${m}\\s*(?:،|,|و)?\\s*(?:ليس|مو|not)\\s*(\\d{1,2})\\s*(?:${m})?`, "i"));
+  if (correctionRange) {
+    const preferred = Number(correctionRange[1]);
+    if (preferred >= 1 && preferred <= 31) return preferred;
+  }
+
   const candidates: Array<{ day: number; index: number; correction: boolean; negated: boolean }> = [];
   const pushCandidate = (day: number, index: number) => {
     if (day < 1 || day > 31) return;
@@ -344,7 +411,7 @@ function findExplicitDayForMonth(query: string, monthName: string | undefined): 
     const correction = /(?:^|[\s،,.])(أقصد|اقصد|اعني|أعني|mean|meant)\s*$/i.test(before);
     const negated =
       /(?:لا|مو|not)\s+(?:أقصد|اقصد|اعني|أعني|mean|meant)\s*$/i.test(before) ||
-      /(?:لا|مو|not)\s+$/i.test(before) ||
+      /(?:لا|مو|ليس|not)\s+$/i.test(before) ||
       /(?:لا|مو)\s+(?:تغير|تغيّر|تحول|تحوّل|تبدل|تبدّل|تجعله|تخليه)[\s\S]*$/i.test(before) ||
       /(?:do not|don't|dont|not)\s+(?:change|set|turn|make)[\s\S]*$/i.test(before);
     candidates.push({ day, index, correction, negated });
@@ -371,12 +438,100 @@ function findExplicitDayForMonth(query: string, monthName: string | undefined): 
   return chosen.day;
 }
 
+function findExplicitDateRangeForMonth(
+  query: string,
+  monthName: string | undefined,
+): { startDay: number; endDay: number } | null {
+  if (!monthName) return null;
+  const q = normalizeDigits(query).toLowerCase();
+  const m = escapeRegExp(monthName.toLowerCase());
+  const connector = String.raw`(?:إلى|الى|لغاية|حتى|to|through|-)`;
+  const day = String.raw`(\d{1,2})`;
+  const validRange = (startDay: number, endDay: number) => {
+    if (startDay < 1 || startDay > 31 || endDay < 1 || endDay > 31) return null;
+    if (endDay < startDay) return null;
+    return { startDay, endDay };
+  };
+
+  const patterns = [
+    // "5 يونيو إلى 15 يونيو" / "5 June to 15 June"
+    new RegExp(`${day}\\s*${m}\\s*${connector}\\s*${day}\\s*${m}`, "i"),
+    // "من 5 إلى 15 يونيو"
+    new RegExp(`(?:من\\s*)?${day}\\s*${connector}\\s*${day}\\s*${m}`, "i"),
+    // "يونيو 5 إلى يونيو 15" / "June 5 to June 15"
+    new RegExp(`${m}\\s*${day}\\s*${connector}\\s*(?:${m}\\s*)?${day}`, "i"),
+  ];
+
+  for (const pattern of patterns) {
+    const match = q.match(pattern);
+    if (!match) continue;
+    const startDay = Number(match[1]);
+    const endDay = Number(match[2]);
+    const range = validRange(startDay, endDay);
+    if (range) return range;
+  }
+
+  return null;
+}
+
 function findTripDurationDays(query: string): number | null {
   const q = normalizeDigits(query);
   const match = q.match(/(?:لمدة|مدة|for)?\s*(\d{1,2})\s*(ليال|ليالي|ليلة|أيام|ايام|يوم|days?|nights?)/i);
   if (!match) return null;
   const days = Number(match[1]);
   return days >= 1 && days <= 45 ? days : null;
+}
+
+function parseBudgetUsd(query: string): number | null {
+  const q = normalizeDigits(query).replace(/,/g, "");
+  const amount = String.raw`(\d{2,7}(?:\.\d+)?)`;
+  const currencyPatterns: Array<{ re: RegExp; rate: number }> = [
+    { re: new RegExp(`${amount}\\s*(?:ريال|ر\\.س|sar|saudi riyals?)`, "i"), rate: 1 / 3.75 },
+    { re: new RegExp(`${amount}\\s*(?:درهم|aed)`, "i"), rate: 0.272 },
+    { re: new RegExp(`${amount}\\s*(?:دولار|\\$|usd|dollars?)`, "i"), rate: 1 },
+    { re: new RegExp(`${amount}\\s*(?:يورو|€|eur|euros?)`, "i"), rate: 1.08 },
+    { re: new RegExp(`${amount}\\s*(?:باوند|جنيه استرليني|£|gbp)`, "i"), rate: 1.27 },
+  ];
+
+  for (const { re, rate } of currencyPatterns) {
+    const match = q.match(re);
+    if (!match) continue;
+    const value = Number(match[1]);
+    if (!Number.isFinite(value) || value <= 0) continue;
+    return Math.round(value * rate);
+  }
+
+  return null;
+}
+
+function parseTravelerCount(query: string, family: boolean): number {
+  const q = normalizeDigits(query);
+  if (/(?:لوحدي|وحدي|منفرد|solo|alone)/i.test(q)) return 1;
+
+  const explicitCount = q.match(/(\d+)\s*(?:شخص|أشخاص|اشخاص|بالغ|بالغين|نفر|افراد|أفراد|persons?|adults?|people|travelers?|passengers?)/i);
+  if (explicitCount) return Math.min(9, Math.max(1, Number(explicitCount[1])));
+
+  const childrenMatch = q.match(/(\d+)\s*(?:طفل|أطفال|اطفال|kids?|children)/i);
+  const dualChildren = /(?:طفلين|طفلان|two\s+kids|two\s+children)/i.test(q);
+  const singleChild = /(?:طفل|رضيع|baby|infant)/i.test(q);
+  const children = childrenMatch
+    ? Math.min(6, Math.max(0, Number(childrenMatch[1])))
+    : dualChildren
+      ? 2
+      : singleChild
+        ? 1
+        : 0;
+  const withPartner = /(زوجتي|زوجي|زوجة|زوج|wife|husband|spouse|partner)/i.test(q);
+  if (withPartner && children) return Math.min(9, 2 + children);
+  if (withPartner) return 2;
+  if (children) return Math.min(9, 1 + children);
+  if (family) return 4;
+
+  for (const [word, num] of Object.entries(AR_NUMBERS)) {
+    if (q.includes(word)) return num;
+  }
+
+  return 2;
 }
 
 function pad(n: number) {
@@ -397,6 +552,16 @@ function relativePhraseDates(query: string): { departure_date: string; return_da
   const q = normalizeDigits(query).toLowerCase();
   const today = new Date();
   const duration = findTripDurationDays(q) ?? 5;
+
+  if (/(?:بعد\s+بكرة|بعد\s+غد|day\s+after\s+tomorrow)/i.test(q)) {
+    const start = addDays(today, 2);
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, duration)) };
+  }
+
+  if (/(?:بكرة|غداً|غدا|tomorrow)/i.test(q)) {
+    const start = addDays(today, 1);
+    return { departure_date: formatDate(start), return_date: formatDate(addDays(start, duration)) };
+  }
 
   if (/نهاية\s+الشهر\s+القادم|end\s+of\s+next\s+month/i.test(q)) {
     const start = new Date(today.getFullYear(), today.getMonth() + 2, 0);
@@ -500,7 +665,7 @@ export function heuristicParse(query: string): TripIntent {
     fromTo.destination ??
     findCity(query, ["إلى", "الى", "لـ", "ل ", "to", "in", "for"]) ??
     findAnyCity(query, origin) ??  // exclude origin to avoid returning same city
-    "";
+    null;
 
   const relativeDates = relativePhraseDates(query);
   const month = findMonth(query);
@@ -510,11 +675,13 @@ export function heuristicParse(query: string): TripIntent {
     departure_date = relativeDates.departure_date;
     return_date = relativeDates.return_date;
   } else if (month) {
-    const explicitDay = findExplicitDayForMonth(query, month.name);
+    const explicitRange = findExplicitDateRangeForMonth(query, month.name);
+    const explicitDay = explicitRange?.startDay ?? findExplicitDayForMonth(query, month.name);
     const startDay = explicitDay ?? 15;
-    const durationDays = findTripDurationDays(query) ?? 5;
     departure_date = `${month.y}-${pad(month.m)}-${pad(startDay)}`;
-    const ret = new Date(month.y, month.m - 1, startDay + durationDays);
+    const ret = explicitRange
+      ? new Date(month.y, month.m - 1, explicitRange.endDay)
+      : new Date(month.y, month.m - 1, startDay + (findTripDurationDays(query) ?? 5));
     return_date = `${ret.getFullYear()}-${pad(ret.getMonth() + 1)}-${pad(ret.getDate())}`;
   }
 
@@ -522,10 +689,10 @@ export function heuristicParse(query: string): TripIntent {
   const moderate = /(متوسطة|متوسط|moderate|mid-?range)/i.test(query);
   const luxury = /(فاخرة|فاخر|luxury|premium)/i.test(query);
   const honeymoon = /(شهر عسل|honeymoon)/i.test(query);
-  const family = /(عائل|family)/i.test(query);
+  const family = /(عائل|أطفال|اطفال|طفل|family|kids|children)/i.test(query);
   const adventure = /(مغامرة|adventure)/i.test(query);
   const weekend = /(نهاية الأسبوع|weekend)/i.test(query);
-  const business = /(عمل|business)/i.test(query);
+  const business = /(?:^|[\s،,.؟?])(عمل|دوام|مؤتمر)(?=$|[\s،,.؟?])|business|conference/i.test(query);
 
   const trip_type: TripIntent["trip_type"] = honeymoon
     ? "honeymoon"
@@ -539,16 +706,8 @@ export function heuristicParse(query: string): TripIntent {
             ? "business"
             : "leisure";
 
-  // C4: Parse adult/passenger count — digit first, then Arabic number words
-  let adults = 2;
-  const digitMatch = query.match(/(\d+)\s*(?:شخص|أشخاص|اشخاص|بالغ|بالغين|نفر|افراد|أفراد|persons?|adults?|people|travelers?|passengers?)/i);
-  if (digitMatch) {
-    adults = Math.min(9, Math.max(1, parseInt(digitMatch[1], 10)));
-  } else {
-    for (const [word, num] of Object.entries(AR_NUMBERS)) {
-      if (query.includes(word)) { adults = num; break; }
-    }
-  }
+  const adults = parseTravelerCount(query, family);
+  const explicitBudget = parseBudgetUsd(query);
 
   return {
     origin: origin === destination ? null : origin,
@@ -556,7 +715,7 @@ export function heuristicParse(query: string): TripIntent {
     departure_date,
     return_date,
     adults,
-    budget_usd: cheap ? 800 : moderate ? 1500 : luxury ? 4000 : null,
+    budget_usd: explicitBudget ?? (cheap ? 800 : moderate ? 1500 : luxury ? 4000 : null),
     trip_type,
     cabin_class: null,
     notes: cheap ? "cheap" : moderate ? "moderate" : luxury ? "luxury" : null,

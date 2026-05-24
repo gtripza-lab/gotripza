@@ -69,11 +69,15 @@ function uniqueList<T>(items: (T | null | undefined)[]): T[] {
 
 function enrichContextFromUserText(context: TravelContext, text: string): TravelContext {
   const t = text.toLowerCase();
+  const hasFamily = /عائلة|عائلي|اطفال|أطفال|طفل|family|kids|children/.test(t);
+  const hasCouple = /زوج|زوجتي|زوجي|زوجة|عروس|couple|wife|husband|spouse|partner/.test(t);
+  const hasHoneymoon = /شهر عسل|honeymoon|romantic|رومانسي|رومانسية/.test(t);
+  const hasBusiness = /(?:^|[\s،,.؟?])(عمل|دوام|مؤتمر)(?=$|[\s،,.؟?])|business|conference/.test(t);
   const traveler: TravelContext["traveler_type"] =
-    /عائلة|اطفال|أطفال|family|kids|children/.test(t) ? "family" :
-    /زوج|زوجتي|زوجي|عروس|شهر عسل|honeymoon|couple/.test(t) ? "couple" :
+    hasFamily ? "family" :
+    hasHoneymoon || hasCouple ? "couple" :
     /لوحدي|منفرد|solo|alone/.test(t) ? "solo" :
-    /عمل|business|conference/.test(t) ? "business" :
+    hasBusiness ? "business" :
     /اصحاب|أصحاب|friends/.test(t) ? "friends" :
     context.traveler_type;
 
@@ -99,6 +103,8 @@ function enrichContextFromUserText(context: TravelContext, text: string): Travel
     /ترجمة|لغة|translate|translation|language/.test(t) ? "translation" : null,
     /مطعم|مطاعم|حلال|اكل|أكل|food|halal/.test(t) ? "food" : null,
     /طوارئ|جواز|مرض|سرقة|emergency|passport|sick|stolen/.test(t) ? "emergency" : null,
+    hasFamily ? "family" : null,
+    hasHoneymoon ? "honeymoon" : null,
   ]) as TravelContext["service_interests"];
 
   const concerns = uniqueList([

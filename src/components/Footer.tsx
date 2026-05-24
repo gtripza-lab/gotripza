@@ -4,13 +4,14 @@ import { Logo } from "./Logo";
 import { PaymentMethods } from "./PaymentMethods";
 import type { Dictionary } from "@/i18n/get-dictionary";
 import type { Locale } from "@/i18n/config";
+import { buildAviasalesUrl } from "@/lib/partners";
 
 export async function Footer({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const legalBase = `/${locale}`;
 
   // Each service icon links to its natural destination
   const serviceLinks = [
-    { Icon: Plane,       href: `/${locale}/search#flights`,  label: dict.nav.flights  },
+    { Icon: Plane,       href: buildAviasalesUrl({ locale, subid: "footer_flights" }),  label: dict.nav.flights, external: true },
     { Icon: BedDouble,   href: `/${locale}/search#hotels`,   label: dict.nav.hotels   },
     { Icon: Car,         href: `/${locale}/services`, label: locale === "ar" ? "خدمات السفر" : "Travel Services" },
     { Icon: Ticket,      href: `/${locale}/destinations`,    label: locale === "ar" ? "الوجهات" : "Destinations" },
@@ -31,17 +32,32 @@ export async function Footer({ dict, locale }: { dict: Dictionary; locale: Local
             </span>
           </div>
           <div className="flex items-center gap-2 text-white/70">
-            {serviceLinks.map(({ Icon, href, label }) => (
+            {serviceLinks.map(({ Icon, href, label, external }) => {
+              const className = "inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-primary/40 hover:bg-white/10 hover:text-white";
+              return external ? (
+                <a
+                  key={href}
+                  href={href}
+                  title={label}
+                  aria-label={label}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={className}
+                >
+                  <Icon className="h-4 w-4" strokeWidth={1.5} />
+                </a>
+              ) : (
               <Link
                 key={href}
                 href={href}
                 title={label}
                 aria-label={label}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 transition hover:border-brand-primary/40 hover:bg-white/10 hover:text-white"
+                className={className}
               >
                 <Icon className="h-4 w-4" strokeWidth={1.5} />
               </Link>
-            ))}
+              );
+            })}
           </div>
         </div>
 

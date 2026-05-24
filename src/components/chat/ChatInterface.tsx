@@ -136,51 +136,14 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
   const [isImageReading, setIsImageReading] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const isAr = locale === "ar";
   const suggestions = isAr ? SUGGESTIONS_AR : SUGGESTIONS_EN;
-  const showSuggestions = messages.length <= 1 && !isThinking;
-  const modePrompts = useMemo(() => ([
-    {
-      icon: Plane,
-      label: isAr ? "ريا المخططة" : "Planner Rya",
-      prompt: isAr
-        ? "ادخلي وضع ريا المخططة: اسأليني سؤالاً واحداً فقط عن رحلتي، ثم ابنِ ملف رحلة كامل خطوة خطوة."
-        : "Switch to Planner Rya: ask me one smart question, then build a complete trip file step by step.",
-    },
-    {
-      icon: Landmark,
-      label: isAr ? "ريا في المطار" : "Airport Rya",
-      prompt: isAr
-        ? "ادخلي وضع ريا في المطار: ساعديني في البوابة، الشنط، التأخير، أو الترانزيت بخطوات قصيرة."
-        : "Switch to Airport Rya: help me with gates, bags, delays, or transit in short steps.",
-    },
-    {
-      icon: MapPin,
-      label: isAr ? "ريا في المدينة" : "City Rya",
-      prompt: isAr
-        ? "ادخلي وضع ريا في المدينة: ساعديني في الأحياء، المطاعم، التنقل، الأمان، وأفضل الأماكن."
-        : "Switch to City Rya: help with neighborhoods, food, transport, safety, and the best places.",
-    },
-    {
-      icon: Siren,
-      label: isAr ? "ريا الطوارئ" : "Emergency Rya",
-      prompt: isAr
-        ? "ادخلي وضع ريا الطوارئ: أعطيني خطوات هادئة وسريعة لمشكلة سفر طارئة."
-        : "Switch to Emergency Rya: give calm, immediate steps for a travel emergency.",
-    },
-    {
-      icon: WalletCards,
-      label: isAr ? "ريا الاقتصادية" : "Budget Rya",
-      prompt: isAr
-        ? "ادخلي وضع ريا الاقتصادية: ساعديني أخفض تكلفة الرحلة بدون ما تخرب التجربة."
-        : "Switch to Budget Rya: help me lower trip cost without ruining the experience.",
-    },
-  ]), [isAr]);
-
+  const showSuggestions = messages.length <= 1 && !isThinking && !inputFocused;
   // Keep the route isolated like a native chat screen. We intentionally do not
   // resize the whole app to visualViewport.height; iOS PWA can report a tiny
   // visual viewport while the keyboard is open, which lifts the composer to the
@@ -198,8 +161,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
     };
   }, []);
 
-  function scrollChatToBottom(behavior: ScrollBehavior = "auto") {
-    bottomRef.current?.scrollIntoView({ behavior, block: "end" });
+  function scrollChatToBottom(behavior: ScrollBehavior = "auto", block: ScrollLogicalPosition = "end") {
+    bottomRef.current?.scrollIntoView({ behavior, block });
   }
 
   // Auto-scroll to bottom on new messages. Use instant scrolling on mobile so
@@ -352,32 +315,38 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       <RayaAgentModal locale={locale} open={agentOpen} onClose={() => setAgentOpen(false)} />
 
-      <CompanionMemoryStrip
-        locale={locale}
-        context={travelContext}
-        facts={companionMemory.knownFacts}
-      />
+      <div className={inputFocused ? "hidden sm:block" : ""}>
+        <CompanionMemoryStrip
+          locale={locale}
+          context={travelContext}
+          facts={companionMemory.knownFacts}
+        />
+      </div>
 
-      <RyaInstallPrompt locale={locale} />
+      {messages.length <= 1 && !inputFocused && <RyaInstallPrompt locale={locale} />}
 
-      <TripNowPanel
-        locale={locale}
-        context={travelContext}
-        onPrompt={(prompt, label) => {
-          logEvent("ria_lifecycle_action_clicked", {
-            source: "trip_now_panel",
-            label,
-            stage: travelContext.booking_stage ?? null,
-            destination: travelContext.destination ?? null,
-            locale,
-          });
-          void sendMessage(prompt);
-        }}
-      />
+      <div className={inputFocused ? "hidden sm:block" : ""}>
+        <TripNowPanel
+          locale={locale}
+          context={travelContext}
+          onPrompt={(prompt, label) => {
+            logEvent("ria_lifecycle_action_clicked", {
+              source: "trip_now_panel",
+              label,
+              stage: travelContext.booking_stage ?? null,
+              destination: travelContext.destination ?? null,
+              locale,
+            });
+            void sendMessage(prompt);
+          }}
+        />
+      </div>
 
       {/* ── Messages ─────────────────────────────────────────────── */}
       <div
-        className="chat-viewport-lock flex-1 min-h-0 min-w-0 overflow-y-auto px-2.5 py-4 space-y-4 scroll-pb-28 sm:px-4 sm:py-5 sm:space-y-5"
+        className={`chat-viewport-lock rya-message-scroll flex-1 min-h-0 min-w-0 overflow-y-auto px-2.5 sm:px-4 sm:py-5 sm:space-y-5 ${
+          inputFocused ? "space-y-3 py-3 scroll-pb-24" : "space-y-4 py-4 scroll-pb-28"
+        }`}
         style={{ WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain", overscrollBehaviorX: "none" }}
       >
         <AnimatePresence initial={false}>
@@ -428,8 +397,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
 
       {/* ── Input Row ────────────────────────────────────────────── */}
       <div
-        className="chat-viewport-lock relative z-30 shrink-0 border-t border-white/[0.06] px-2 pt-2 sm:px-4 sm:pt-3 backdrop-blur-xl"
-        style={{ background: "linear-gradient(180deg, rgba(6,17,30,0.72), rgba(6,17,30,0.96))", paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
+        className="chat-viewport-lock rya-composer-safe relative z-30 shrink-0 border-t border-white/[0.06] px-2 pt-2 sm:px-4 sm:pt-3 backdrop-blur-xl"
+        style={{ background: "linear-gradient(180deg, rgba(6,17,30,0.72), rgba(6,17,30,0.96))" }}
       >
         <div className="mx-auto flex w-full max-w-3xl items-end gap-1.5 rounded-[1.35rem] border border-white/[0.12] bg-white/[0.07] p-1.5 shadow-2xl shadow-black/25 ring-1 ring-black/10 transition focus-within:border-violet-400/45 focus-within:bg-white/[0.09] focus-within:ring-violet-400/[0.18] sm:gap-2 sm:rounded-[1.6rem] sm:p-2">
           <input
@@ -467,9 +436,16 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
             onFocus={() => {
+              setInputFocused(true);
+              if (typeof window !== "undefined" && window.innerWidth < 768) {
+                window.setTimeout(() => scrollChatToBottom("auto", "nearest"), 80);
+              }
               if (typeof window !== "undefined" && window.innerWidth >= 768) {
                 window.setTimeout(() => scrollChatToBottom("auto"), 260);
               }
+            }}
+            onBlur={() => {
+              window.setTimeout(() => setInputFocused(false), 120);
             }}
             enterKeyHint="send"
             inputMode="text"
@@ -484,12 +460,12 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             }
             rows={1}
             className="min-h-[36px] min-w-0 flex-1 resize-none border-0 bg-transparent px-1 py-2 text-base leading-5 text-white/92 placeholder:text-white/32 focus:outline-none sm:min-h-[40px] sm:px-2 sm:py-2.5 sm:text-sm"
-            style={{ maxHeight: "120px" }}
+            style={{ maxHeight: inputFocused ? "84px" : "120px" }}
             disabled={false}
             onInput={(e) => {
               const t = e.currentTarget;
               t.style.height = "auto";
-              t.style.height = `${Math.min(t.scrollHeight, 120)}px`;
+              t.style.height = `${Math.min(t.scrollHeight, inputFocused ? 84 : 120)}px`;
             }}
             onClick={() => {
               if (typeof window !== "undefined" && window.innerWidth >= 768) {
@@ -557,24 +533,18 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
                 {isListening ? <MicOff className="h-4 w-4 text-rose-400" /> : <Mic className="h-4 w-4" />}
                 {isAr ? "إملاء صوتي" : "Voice input"}
               </button>
-              {modePrompts.map((mode) => {
-                const Icon = mode.icon;
-                return (
-                  <button
-                    key={mode.label}
-                    type="button"
-                    onClick={() => {
-                      setToolsOpen(false);
-                      logEvent("ria_mode_selected", { label: mode.label, locale });
-                      void sendMessage(mode.prompt);
-                    }}
-                    className="flex h-10 items-center justify-center gap-2 rounded-2xl border border-white/[0.10] bg-white/[0.06] px-2 text-xs font-medium text-white/65"
-                  >
-                    <Icon className="h-4 w-4 text-violet-200/80" />
-                    <span className="truncate">{mode.label}</span>
-                  </button>
-                );
-              })}
+              <button
+                type="button"
+                onClick={() => {
+                  setToolsOpen(false);
+                  setAgentOpen(true);
+                  logEvent("ria_mode_selected", { source: "mobile_compact_modes", locale });
+                }}
+                className="col-span-2 flex h-10 items-center justify-center gap-2 rounded-2xl border border-violet-300/15 bg-violet-400/[0.08] px-3 text-xs font-semibold text-violet-100/75"
+              >
+                <Bot className="h-4 w-4" />
+                {isAr ? "اختيار وضع ريا المناسب" : "Choose the right Rya mode"}
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -724,30 +694,14 @@ function getTripFileItems(context: TravelContext, locale: import("@/i18n/config"
   const traveler = context.traveler_type
     ? (isAr ? travelerLabelAr(context.traveler_type) : travelerLabelEn(context.traveler_type))
     : null;
-  const services = (context.service_interests ?? []).slice(0, 4).map((service) => serviceLabel(service, isAr)).join(isAr ? "، " : ", ");
   const concerns = (context.concerns ?? []).slice(0, 2).join(isAr ? "، " : ", ");
   return [
     context.destination && { label: isAr ? "الوجهة" : "Destination", value: context.destination },
     context.departure_date && { label: isAr ? "التاريخ" : "Date", value: context.departure_date },
     context.budget_usd && { label: isAr ? "الميزانية" : "Budget", value: `$${context.budget_usd}` },
     traveler && { label: isAr ? "نوع الرحلة" : "Traveler", value: traveler },
-    services && { label: isAr ? "الخدمات المهمة" : "Useful services", value: services },
     concerns && { label: isAr ? "ملاحظات ريا" : "Rya notes", value: concerns },
   ].filter(Boolean) as { label: string; value: string }[];
-}
-
-function serviceLabel(value: string, isAr: boolean) {
-  if (value === "insurance") return isAr ? "التأمين" : "Insurance";
-  if (value === "esim") return isAr ? "الشريحة" : "eSIM";
-  if (value === "activities") return isAr ? "الجولات" : "Activities";
-  if (value === "cars") return isAr ? "السيارة" : "Cars";
-  if (value === "trains") return isAr ? "القطارات" : "Trains";
-  if (value === "airport_help") return isAr ? "المطار" : "Airport";
-  if (value === "translation") return isAr ? "الترجمة" : "Translation";
-  if (value === "emergency") return isAr ? "الطوارئ" : "Emergency";
-  if (value === "food") return isAr ? "الأكل" : "Food";
-  if (value === "compensation") return isAr ? "التعويض" : "Compensation";
-  return value;
 }
 
 function lifecycleIcon(action: LifecycleAction) {
@@ -1016,28 +970,6 @@ function QuickActionBar({
         : `Give me practical safety and travel scam alerts for ${destinationLabel} without exaggeration, with short next steps.`,
     },
     {
-      icon: ShieldCheck,
-      label: isAr ? "تأمين" : "Insurance",
-      prompt: destination
-        ? isAr
-          ? `هل أحتاج تأمين سفر إلى ${destination}؟ اشرح لي متى يفيد وما الذي أراجعه قبل الشراء.`
-          : `Do I need travel insurance for ${destination}? Explain when it helps and what to check before buying.`
-        : isAr
-          ? "هل أحتاج تأمين سفر؟ اشرح لي متى يفيد وما الذي أراجعه قبل الشراء."
-          : "Do I need travel insurance? Explain when it helps and what to check before buying.",
-    },
-    {
-      icon: Zap,
-      label: isAr ? "شريحة eSIM" : "eSIM",
-      prompt: destination
-        ? isAr
-          ? `هل أحتاج شريحة eSIM في ${destination}؟ اقترح لي أفضل طريقة أجهز الإنترنت قبل الوصول.`
-          : `Do I need an eSIM for ${destination}? Suggest the best way to prepare mobile data before arrival.`
-        : isAr
-          ? "هل أحتاج شريحة eSIM للسفر؟ اقترح لي أفضل طريقة أجهز الإنترنت قبل الوصول."
-          : "Do I need a travel eSIM? Suggest the best way to prepare mobile data before arrival.",
-    },
-    {
       icon: hasHotelGap ? HotelIcon : Sparkles,
       label: hasHotelGap
         ? isAr ? "مناطق السكن" : "Stay areas"
@@ -1100,18 +1032,25 @@ function AdviceServiceNudges({
   const isAr = locale === "ar";
   const stage = deriveTripLifecycle(context);
   const postBooking = isPostBookingLifecycle(stage);
-  const inferredServices = postBooking ? [] : inferServicesFromText(message.text);
+  const inferredServices = inferServicesFromText(message.text);
   const mergedContext = {
     ...context,
-    service_interests: Array.from(new Set([
-      ...(context.service_interests ?? []),
-      ...inferredServices,
-    ])) as import("@/lib/ai/schemas/intent").TravelContext["service_interests"],
+    service_interests: context.service_interests ?? [],
   };
 
+  const serviceCount = mergedContext.service_interests?.length ?? 0;
+  const finalStage =
+    mergedContext.booking_stage === "ready_to_book" ||
+    mergedContext.booking_stage === "booked" ||
+    mergedContext.booking_stage === "pre_trip" ||
+    mergedContext.booking_stage === "in_trip" ||
+    mergedContext.booking_stage === "post_trip";
+  const isDirectServiceAnswer =
+    serviceCount > 0 &&
+    inferredServices.some((service) => mergedContext.service_interests?.includes(service));
   const shouldShow =
-    (mergedContext.service_interests?.length ?? 0) > 0 ||
-    (!postBooking && Boolean(mergedContext.destination && (mergedContext.booking_stage === "planning" || mergedContext.booking_stage === "ready_to_book")));
+    serviceCount > 0 &&
+    (isDirectServiceAnswer || (finalStage && Boolean(mergedContext.destination)) || postBooking);
   if (!shouldShow) return null;
 
   const intent = {
@@ -1148,14 +1087,14 @@ function AdviceServiceNudges({
       <div className="flex items-center gap-1.5">
         <div className="h-px flex-1 bg-white/[0.06]" />
         <span className="text-[10px] font-semibold uppercase tracking-widest text-white/28">
-          {isAr ? "خدمات مفيدة عند الحاجة" : "Useful when needed"}
+          {isAr ? "خيارات عملية إذا احتجتها" : "Practical options if needed"}
         </span>
         <div className="h-px flex-1 bg-white/[0.06]" />
       </div>
       <p className="rounded-xl border border-white/[0.06] bg-white/[0.025] px-3 py-2 text-[10px] leading-5 text-white/32">
         {isAr
-          ? "ريا لا تعرض روابط عشوائية؛ تظهر خدمة أو خدمتين فقط عندما يكون لها سبب واضح في سياق رحلتك. روابط الشركاء قد تدعم GoTripza بدون زيادة على السعر."
-          : "Rya does not show random links; she only surfaces one or two services when there is a clear reason in your trip context. Partner links may support GoTripza at no extra cost."}
+          ? "ريا مستشارة سفر أولاً. لا تظهر هذه الخيارات إلا إذا طلبت خدمة بعينها أو أصبحت خطوة عملية واضحة في نهاية التخطيط."
+          : "Rya is a travel advisor first. These options only appear when you ask for a specific service or it becomes a clear next step."}
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {recs.slice(0, 2).map((rec) => (

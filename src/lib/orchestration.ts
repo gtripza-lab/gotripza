@@ -94,6 +94,21 @@ export function getPartnerRecommendations(
   const isReady = context?.booking_stage === "ready_to_book";
   const postBooking = isPostBookingLifecycle(context?.booking_stage ?? null);
 
+  function allowsPartner(id: PartnerId): boolean {
+    const category = PARTNERS[id].category;
+
+    // Core booking options are allowed only when the surrounding logic decides
+    // the traveler is ready. Companion services must be explicitly requested.
+    if (category === "flights" || category === "hotels") return true;
+    if (category === "insurance") return services.has("insurance");
+    if (category === "esim") return services.has("esim");
+    if (category === "activities") return services.has("activities");
+    if (category === "car_rental") return services.has("cars");
+    if (category === "trains") return services.has("trains");
+    if (category === "compensation") return services.has("compensation");
+    return false;
+  }
+
   // Helper: add rec if partner is configured
   function add(
     id: PartnerId,
@@ -101,6 +116,7 @@ export function getPartnerRecommendations(
     reason_en: string,
     reason_ar: string,
   ) {
+    if (!allowsPartner(id)) return;
     const url = buildPartnerUrl(id, urlParams);
     if (!url) return; // partner not configured — skip silently
     // Don't add duplicates

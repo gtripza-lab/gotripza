@@ -146,6 +146,24 @@
     touch-action: pan-y;
   }
 
+  .rya-chat-shell {
+    block-size: 100vh;
+    block-size: 100dvh;
+    min-block-size: 100vh;
+    min-block-size: 100dvh;
+    max-block-size: 100vh;
+    max-block-size: 100dvh;
+  }
+
+  .rya-message-scroll {
+    scroll-padding-block-end: 7rem;
+    scrollbar-gutter: stable;
+  }
+
+  .rya-composer-safe {
+    padding-block-end: max(8px, env(safe-area-inset-bottom), env(keyboard-inset-height, 0px));
+  }
+
   @supports (-webkit-touch-callout: none) {
     .chat-viewport-lock textarea {
       font-size: 16px;

@@ -377,7 +377,10 @@ function buildHistoryContext(query: string, history: ChatTurn[]): string {
   // Only include USER messages — assistant messages often contain generic
   // words like "مدينة" (city) that falsely match city names in the parser.
   const allTexts = [
-    ...history.filter((t) => t.role === "user").map((t) => t.text),
+    ...history
+      .filter((t) => t.role === "user")
+      .map((t) => t.text ?? ("content" in t ? String(t.content ?? "") : ""))
+      .filter(Boolean),
     query,
   ];
   return allTexts.join(" \n ");
@@ -1169,7 +1172,27 @@ export async function POST(req: NextRequest) {
     // often asked for facts already present in the message. Use a richer local
     // travel fallback first; keep the legacy fallback only as a hard safety net.
     try {
-      const intel = buildSmartFallbackIntelligence(query, history, context ?? {
+      const parsedConversation = heuristicParse(buildHistoryContext(query, history));
+      const previousConversation = heuristicParse(buildHistoryContext("", history));
+      const parsedCurrent = heuristicParse(query);
+      const currentText = query.toLowerCase();
+      const currentHasDestination = !!parsedCurrent.destination;
+      const isNewExplicitDestination = currentHasDestination
+        && !!(context?.destination ?? previousConversation.destination)
+        && parsedCurrent.destination !== (context?.destination ?? previousConversation.destination);
+      const currentHasDate = !!parsedCurrent.departure_date || /(بكرة|غداً|غدا|بعد\s+العيد|نهاية\s+الشهر|يناير|فبراير|مارس|أبريل|ابريل|مايو|يونيو|يوليو|أغسطس|اغسطس|سبتمبر|أكتوبر|اكتوبر|نوفمبر|ديسمبر|january|february|march|april|may|june|july|august|september|october|november|december)/i.test(currentText);
+      const currentHasReturnDate = /(إلى|الى|حتى|لغاية|to|through|-)|\d{1,2}\s*(?:أيام|ايام|يوم|ليال|ليالي|ليلة|days?|nights?)/i.test(currentText);
+      const currentHasBudget = parsedCurrent.budget_usd !== null || /(ميزانية|ريال|درهم|دولار|يورو|budget|sar|aed|usd|eur|\$)/i.test(currentText);
+      const currentHasTraveler = /(?:لوحدي|وحدي|منفرد|مع\s+أمي|مع\s+امي|مع\s+أبوي|مع\s+ابوي|والدتي|والدي|زوج|زوجتي|زوجي|زوجة|طفلين|طفلان|أطفال|اطفال|عائل|family|kids|children|solo|alone|wife|husband|spouse|partner|\d+\s*(?:شخص|أشخاص|اشخاص|طفل|أطفال|اطفال|traveler|people|adult|passenger))/i.test(currentText);
+      const scopedConversation = isNewExplicitDestination ? parsedCurrent : parsedConversation;
+      const carryPreviousTrip = !isNewExplicitDestination;
+      const inferredTravelerType: TravelContext["traveler_type"] =
+        /(?:عائل|طفل|أطفال|اطفال|مع\s+أمي|مع\s+امي|مع\s+أبوي|مع\s+ابوي|والدتي|والدي|family|kids|children)/i.test(currentText) ? "family" :
+        /(?:لوحدي|وحدي|منفرد|solo|alone)/i.test(currentText) ? "solo" :
+        /(?:زوج|زوجتي|زوجي|زوجة|couple|wife|husband|spouse|partner)/i.test(currentText) ? "couple" :
+        /(?:^|[\s،,.؟?])(عمل|دوام|مؤتمر)(?=$|[\s،,.؟?])|business|conference/i.test(currentText) ? "business" :
+        carryPreviousTrip ? (context?.traveler_type ?? null) : null;
+      const baseFallbackContext: TravelContext = {
         destination: null,
         origin: null,
         departure_date: null,
@@ -1183,12 +1206,39 @@ export async function POST(req: NextRequest) {
         service_interests: [],
         booking_stage: detectLifecycleFromText(query),
         concerns: [],
-      }, providerNotice);
+      };
+      const fallbackContext: TravelContext = {
+        ...baseFallbackContext,
+        ...(context ?? {}),
+        destination: parsedCurrent.destination ?? (carryPreviousTrip ? (context?.destination ?? scopedConversation.destination) : null) ?? null,
+        origin: parsedCurrent.origin ?? (carryPreviousTrip ? (context?.origin ?? scopedConversation.origin) : null) ?? null,
+        departure_date: currentHasDate
+          ? parsedCurrent.departure_date
+          : (carryPreviousTrip ? (context?.departure_date ?? scopedConversation.departure_date ?? null) : null),
+        return_date: currentHasDate && currentHasReturnDate
+          ? parsedCurrent.return_date
+          : (carryPreviousTrip ? (context?.return_date ?? previousConversation.return_date ?? scopedConversation.return_date ?? null) : null),
+        adults: currentHasTraveler && (parsedCurrent.adults !== 2 || isNewExplicitDestination)
+          ? parsedCurrent.adults
+          : (carryPreviousTrip
+              ? (context?.adults ?? (scopedConversation.adults !== 2 ? scopedConversation.adults : 2))
+              : 2),
+        budget_usd: currentHasBudget
+          ? parsedCurrent.budget_usd
+          : (carryPreviousTrip ? (context?.budget_usd ?? scopedConversation.budget_usd ?? null) : null),
+        trip_type: currentHasTraveler || isNewExplicitDestination
+          ? parsedCurrent.trip_type
+          : (carryPreviousTrip ? (context?.trip_type ?? scopedConversation.trip_type ?? null) : null),
+        cabin_class: parsedCurrent.cabin_class ?? (carryPreviousTrip ? (context?.cabin_class ?? scopedConversation.cabin_class ?? null) : null),
+        traveler_type: inferredTravelerType,
+        booking_stage: mergeLifecycleStage(context?.booking_stage ?? null, detectLifecycleFromText(query)),
+      };
+      const intel = buildSmartFallbackIntelligence(query, history, fallbackContext, providerNotice);
 
       return NextResponse.json({
         intent: intel.intent,
         context: {
-          ...(context ?? {}),
+          ...fallbackContext,
           destination: intel.intent.destination,
           origin: intel.intent.origin,
           departure_date: intel.intent.departure_date,

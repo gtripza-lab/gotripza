@@ -10,6 +10,7 @@ import type { Locale } from "@/i18n/config";
 import { LocaleSwitcher } from "./LocaleSwitcher";
 import { cn } from "@/lib/utils";
 import { AuthModal } from "./AuthModal";
+import { buildAviasalesUrl } from "@/lib/partners";
 
 const navCopy: Partial<Record<Locale, {
   planner: string;
@@ -48,8 +49,10 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
   const isAr = locale === "ar";
   const copy = navCopy[locale] ?? navCopy.en!;
 
-  const items = [
-    { label: dict.nav.flights,  href: `/${locale}/search#flights`  },
+  const flightUrl = buildAviasalesUrl({ locale, subid: "nav_flights" });
+
+  const items: Array<{ label: string; href: string; external?: boolean }> = [
+    { label: dict.nav.flights, href: flightUrl, external: true },
     { label: dict.nav.hotels,   href: `/${locale}/search#hotels`   },
     { label: copy.planner, href: `/${locale}/plan` },
     { label: copy.destinations, href: `/${locale}/destinations` },
@@ -100,6 +103,8 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
               <a
                 key={it.href}
                 href={it.href}
+                target={it.external ? "_blank" : undefined}
+                rel={it.external ? "noopener noreferrer" : undefined}
                 className={cn(
                   "rounded-full px-4 py-1.5 text-sm transition",
                   overDark
@@ -186,6 +191,8 @@ export function Navbar({ dict, locale }: { dict: Dictionary; locale: Locale }) {
                   <a
                     key={it.href}
                     href={it.href}
+                    target={it.external ? "_blank" : undefined}
+                    rel={it.external ? "noopener noreferrer" : undefined}
                     onClick={() => setDrawerOpen(false)}
                     className="rounded-xl px-4 py-3 text-sm text-white/70 hover:bg-white/[0.06] hover:text-white transition"
                   >

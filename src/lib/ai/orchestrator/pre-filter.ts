@@ -143,6 +143,10 @@ function mergeIntoContext(
 
 function inferCompanionContext(query: string, transcript: string): Partial<TravelContext> {
   const all = transcript.toLowerCase();
+  const hasFamily = /عائلة|عائلي|أطفال|اطفال|طفل|kids|children|family/i.test(all);
+  const hasHoneymoon = /شهر عسل|honeymoon|romantic|رومانسي|رومانسية/i.test(all);
+  const hasCouple = /زوج|زوجتي|زوجي|زوجة|couple|wife|husband|spouse|partner/i.test(all);
+  const hasBusiness = /(?:^|[\s،,.؟?])(عمل|دوام|مؤتمر)(?=$|[\s،,.؟?])|business|conference/i.test(all);
   const service_interests: NonNullable<TravelContext["service_interests"]> = [];
   const hotel_preferences: string[] = [];
   const concerns: string[] = [];
@@ -161,11 +165,11 @@ function inferCompanionContext(query: string, transcript: string): Partial<Trave
   if (/شنطة|الشنطة|ماذا أحضر|ماذا احضر|packing|pack|luggage|bag/i.test(all)) service_interests.push("packing");
   if (/تنقل|مواصلات|تاكسي|مترو|باص|transfer|transport|taxi|metro|bus|uber/i.test(all)) service_interests.push("transport");
 
-  if (/عائلة|أطفال|اطفال|kids|children|family/i.test(all)) {
+  if (hasFamily) {
     service_interests.push("family");
     concerns.push("family-friendly");
   }
-  if (/زوج|زوجتي|زوجي|شهر عسل|honeymoon|couple|romantic/i.test(all)) {
+  if (hasHoneymoon) {
     service_interests.push("honeymoon");
     concerns.push("romantic");
   }
@@ -185,15 +189,15 @@ function inferCompanionContext(query: string, transcript: string): Partial<Trave
   if (/قريب من|near|قريب|وسط|center|downtown/i.test(all)) hotel_preferences.push("central");
   if (/مترو|metro|subway|underground|train station|محطة/i.test(all)) hotel_preferences.push("near-transit");
   if (/بحر|شاطئ|beach|sea view|اطلالة/i.test(all)) hotel_preferences.push("beach");
-  if (/عائلة|أطفال|اطفال|kids|children|family/i.test(all)) hotel_preferences.push("family-friendly");
+  if (hasFamily) hotel_preferences.push("family-friendly");
   if (/هادئ|quiet|calm/i.test(all)) hotel_preferences.push("quiet");
   if (/فخم|luxury|5 نجوم|five star/i.test(all)) hotel_preferences.push("luxury");
   if (/اقتصادي|budget|cheap|رخيص/i.test(all)) hotel_preferences.push("budget");
 
   const traveler_type: TravelContext["traveler_type"] =
-    /business|عمل|دوام|مؤتمر/i.test(all) ? "business" :
-    /عائلة|أطفال|اطفال|kids|children|family/i.test(all) ? "family" :
-    /شهر عسل|زوج|زوجتي|زوجي|honeymoon|couple|romantic/i.test(all) ? "couple" :
+    hasFamily ? "family" :
+    hasBusiness ? "business" :
+    (hasHoneymoon || hasCouple) ? "couple" :
     /اصدقاء|أصدقاء|friends/i.test(all) ? "friends" :
     /لوحدي|solo|alone|وحدي/i.test(all) ? "solo" :
     null;

@@ -71,12 +71,14 @@ function appendNote(
 
 function travelerSignals(text: string, context?: TravelContext): string[] {
   const signals: string[] = [];
-  if (/أطفال|kids|children|طفل/i.test(text)) signals.push("kids");
-  if (/عائلة|family/i.test(text) || context?.traveler_type === "family") signals.push("family");
-  if (/زوج|زوجة|couple|partner|honeymoon|شهر عسل/i.test(text) || context?.traveler_type === "couple") signals.push("partner");
+  const hasKids = /أطفال|اطفال|kids|children|طفل/i.test(text);
+  const hasFamily = /عائلة|عائلي|family/i.test(text) || context?.traveler_type === "family";
+  if (hasKids) signals.push("kids");
+  if (hasFamily || hasKids) signals.push("family");
+  if (!hasKids && (/زوج|زوجة|couple|partner|honeymoon|شهر عسل/i.test(text) || context?.traveler_type === "couple")) signals.push("partner");
   if (/أصدقاء|friends/i.test(text) || context?.traveler_type === "friends") signals.push("friends");
   if (/لوحدي|solo|alone/i.test(text) || context?.traveler_type === "solo") signals.push("solo");
-  if (/عمل|business|conference|مؤتمر/i.test(text) || context?.traveler_type === "business") signals.push("business");
+  if (/(?:^|[\s،,.؟?])(عمل|دوام|مؤتمر)(?=$|[\s،,.؟?])|business|conference/i.test(text) || context?.traveler_type === "business") signals.push("business");
   return uniq(signals);
 }
 

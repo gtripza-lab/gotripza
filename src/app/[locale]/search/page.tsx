@@ -52,7 +52,7 @@ export default async function SearchPage(
 
   return (
     // Outer wrapper fills the mobile viewport and never grows wider than it.
-    <div className="chat-viewport-lock fixed inset-0 flex h-[100svh] min-h-[100svh] max-h-[100svh] w-[100dvw] max-w-[100dvw] flex-col bg-[#06111e]">
+    <div className="chat-viewport-lock rya-chat-shell fixed inset-0 flex w-[100dvw] max-w-[100dvw] flex-col bg-[#06111e]">
       <Navbar dict={dict} locale={locale as Locale} />
       {/*
         flex-1 + min-h-0 → fills remaining height after Navbar (works on all devices).
