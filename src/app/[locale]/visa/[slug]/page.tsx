@@ -39,10 +39,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
   const title = isAr
     ? `متطلبات تأشيرة ${intentName} ${year} — الوثائق وطريقة التقديم`
-    : `${dest.nameEn} Visa Requirements ${year} — Documents & How to Apply`;
+    : `${dest.nameEn} Visa Requirements ${year}: Quick Answer, Documents & Fees`;
   const description = isAr
     ? `دليل عملي لتأشيرة ${intentName}: هل تحتاج فيزا؟ التأشيرة الإلكترونية، الوثائق المطلوبة، مدة المعالجة، ونصائح ريا قبل السفر.`
-    : `Practical ${dest.nameEn} visa guide: who needs a visa, e-Visa options, required documents, processing time, and Rya's travel tips.`;
+    : `Check ${dest.nameEn} visa requirements for ${year}: quick answer, e-Visa options, documents, fees, processing time, and how Rya helps before you travel.`;
 
   return {
     title,
@@ -315,8 +315,8 @@ export default async function VisaPage(props: Props) {
             <span className="text-4xl">{dest.flag}</span>
             <h1 className="font-display text-2xl font-bold md:text-3xl">
               {isAr
-                ? `تأشيرة ${name} — دليل 2025 الشامل`
-                : `${dest.nameEn} Visa Requirements — 2025 Guide`}
+                ? `تأشيرة ${name} — دليل 2026 الشامل`
+                : `${dest.nameEn} Visa Requirements — 2026 Guide`}
             </h1>
           </div>
 

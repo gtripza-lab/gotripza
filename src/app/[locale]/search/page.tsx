@@ -32,6 +32,14 @@ export async function generateMetadata(
         "x-default": "https://gotripza.com/en/search",
       },
     },
+    robots: {
+      index: false,
+      follow: true,
+      googleBot: {
+        index: false,
+        follow: true,
+      },
+    },
   };
 }
 

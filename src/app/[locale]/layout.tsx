@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import Script from "next/script";
 import "../globals.css";
-import { isLocale, localeMeta, locales, type Locale } from "@/i18n/config";
+import { isIndexableLocale, isLocale, localeMeta, locales, type Locale } from "@/i18n/config";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/JsonLd";
 import { BottomNav } from "@/components/BottomNav";
 import { TravelpayoutsProvider } from "@/components/TravelpayoutsProvider";
@@ -46,6 +46,7 @@ export async function generateMetadata(
 ): Promise<Metadata> {
   const params = await props.params;
   const isAr = params.locale === "ar";
+  const shouldIndex = isIndexableLocale(params.locale);
 
   const title = isAr
     ? "Rya by GoTripza — رفيقة السفر الذكية"
@@ -132,11 +133,11 @@ export async function generateMetadata(
       images: ["/og-image.png"],
     },
     robots: {
-      index: true,
-      follow: true,
+      index: shouldIndex,
+      follow: shouldIndex,
       googleBot: {
-        index: true,
-        follow: true,
+        index: shouldIndex,
+        follow: shouldIndex,
         "max-image-preview": "large",
         "max-snippet": -1,
       },

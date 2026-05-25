@@ -273,13 +273,35 @@ export function guideFamilyTitle(family: SeoGuideFamily) {
 
 export function guideTitle(family: SeoGuideFamily, destination: Destination, locale: Locale) {
   const localized = localizedFamilyTitle(locale, family);
-  if (locale === "ar") return `${destination.nameAr}: ${FAMILY_TITLES[family]}`;
+  if (locale === "ar") {
+    if (family === "travel-insurance") return `تأمين السفر إلى ${destination.nameAr}: متى تحتاجه وما الذي يغطيه`;
+    if (family === "esim") return `أفضل شريحة eSIM في ${destination.nameAr}: الإنترنت والخرائط أثناء السفر`;
+    if (family === "transportation") return `التنقل في ${destination.nameAr}: المطار، الأحياء، والمواصلات`;
+    if (family === "travel-safety") return `الأمان في ${destination.nameAr}: نصائح مهمة قبل وأثناء الرحلة`;
+    return `${destination.nameAr}: ${FAMILY_TITLES[family]}`;
+  }
+  if (family === "travel-insurance") return `${destination.nameEn} Travel Insurance: What It Covers and When You Need It`;
+  if (family === "esim") return `Best eSIM for ${destination.nameEn}: Data, Maps and Travel Setup`;
+  if (family === "transportation") return `${destination.nameEn} Transportation Guide: Airport, Areas and Getting Around`;
+  if (family === "travel-safety") return `${destination.nameEn} Travel Safety Guide: Practical Tips Before You Go`;
   return `${destination.nameEn} ${localized} Guide`;
 }
 
 export function guideDescription(family: SeoGuideFamily, destination: Destination, locale: Locale) {
   if (locale === "ar") {
+    if (family === "travel-insurance") {
+      return `دليل عملي لتأمين السفر إلى ${destination.nameAr}: الحالات التي تحتاجه فيها، ما الذي يغطيه، وما الذي تسأل عنه ريا قبل الشراء.`;
+    }
+    if (family === "esim") {
+      return `دليل شريحة eSIM في ${destination.nameAr}: حجم البيانات المناسب، التفعيل، الخرائط، والترجمة أثناء السفر.`;
+    }
     return `دليل عملي عن ${destination.nameAr}: مناطق مناسبة، ميزانية، توقيت، أمان، وربط ذكي مع ريا حسب سياق رحلتك.`;
+  }
+  if (family === "travel-insurance") {
+    return `${destination.nameEn} travel insurance guide: when it matters, what to check, common exclusions, and how Rya helps you decide calmly before the trip.`;
+  }
+  if (family === "esim") {
+    return `Best eSIM setup for ${destination.nameEn}: data size, activation timing, maps, translation, and how Rya helps you stay connected.`;
   }
   const localized = localizedFamilyTitle(locale, family);
   return `${destination.nameEn} ${localized}: practical planning guidance covering ${FAMILY_INTENT[family]}, with Rya-ready answers for AI search.`;

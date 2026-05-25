@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, MapPin, ShieldCheck, Sparkles, Wallet } from "lucide-react";
-import { isLocale, locales, type Locale } from "@/i18n/config";
+import { indexableLocales, isLocale, type Locale } from "@/i18n/config";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { SeoBreadcrumb } from "@/components/seo/InternalLinks";
 import { getDestination } from "@/lib/seo-destinations";
@@ -26,7 +26,7 @@ type Props = {
 
 function alternates(seoFamily: string, destination: string) {
   return Object.fromEntries([
-    ...locales.map((locale) => [
+    ...indexableLocales.map((locale) => [
       locale,
       `${BASE}/${locale}/${seoFamily}/${destination}`,
     ]),

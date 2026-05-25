@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRight, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
-import { isLocale, type Locale } from "@/i18n/config";
+import { indexableLocales, isLocale, type Locale } from "@/i18n/config";
 import { BreadcrumbJsonLd, FaqJsonLd } from "@/components/JsonLd";
 import { SeoBreadcrumb } from "@/components/seo/InternalLinks";
 import {
@@ -21,8 +21,7 @@ type Props = { params: Promise<{ locale: string; slug: string }> };
 
 export async function generateStaticParams() {
   return getSeoIntentPages().flatMap((page) => [
-    { locale: "ar", slug: page.slug },
-    { locale: "en", slug: page.slug },
+    ...indexableLocales.map((locale) => ({ locale, slug: page.slug })),
   ]);
 }
 

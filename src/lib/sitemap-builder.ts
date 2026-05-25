@@ -15,7 +15,7 @@ import {
   getGuideStaticParams,
 } from "@/lib/global-travel-guides";
 import { getSeoPublishPolicy } from "@/lib/seo-publish-policy";
-import { locales } from "@/i18n/config";
+import { indexableLocales } from "@/i18n/config";
 
 export const BASE_URL = "https://gotripza.com";
 
@@ -41,7 +41,6 @@ export type SitemapSection = (typeof SITEMAP_SECTIONS)[number];
 
 const staticRoutes = [
   { path: "", priority: 1.0, changeFrequency: "daily" as const },
-  { path: "/search", priority: 1.0, changeFrequency: "daily" as const },
   { path: "/plan", priority: 0.95, changeFrequency: "weekly" as const },
   { path: "/plus", priority: 0.8, changeFrequency: "monthly" as const },
   { path: "/ai-travel-assistant", priority: 0.95, changeFrequency: "monthly" as const },
@@ -72,11 +71,11 @@ function makeEntry(
   path: string,
   priority: number,
   changeFrequency: MetadataRoute.Sitemap[number]["changeFrequency"],
-  localeOverride?: (typeof locales)[number],
+  localeOverride?: (typeof indexableLocales)[number],
   includeAlternates = true,
 ): MetadataRoute.Sitemap[number][] {
   const entries: MetadataRoute.Sitemap = [];
-  const langs = localeOverride ? [localeOverride] : locales;
+  const langs = localeOverride ? [localeOverride] : indexableLocales;
   for (const locale of langs) {
     entries.push({
       url: `${BASE_URL}/${locale}${path}`,
@@ -87,7 +86,7 @@ function makeEntry(
         ? {
             alternates: {
               languages: {
-                ...Object.fromEntries(locales.map((lang) => [lang, `${BASE_URL}/${lang}${path}`])),
+                ...Object.fromEntries(indexableLocales.map((lang) => [lang, `${BASE_URL}/${lang}${path}`])),
                 "x-default": `${BASE_URL}/en${path}`,
               },
             },
@@ -138,38 +137,78 @@ export function buildSitemapSection(section: SitemapSection): MetadataRoute.Site
   if (section === "trip-cost") {
     const policy = publishPolicy();
     const tripCostSubjects = new Set<string>();
-    const tripCostParams = getTripCostStaticParams(60);
+    const tripCostParams = getTripCostStaticParams(60).filter((item) =>
+      (indexableLocales as readonly string[]).includes(item.locale),
+    );
     const allowedTripCostSubjects = new Set(
       [...new Set(tripCostParams.map((entry) => entry.destination))].slice(0, policy.tripCostSubjectLimit),
     );
     for (const page of tripCostParams.filter((item) => allowedTripCostSubjects.has(item.destination))) {
       if (!tripCostSubjects.has(page.destination)) {
         tripCostSubjects.add(page.destination);
-        entries.push(...makeEntry(`/trip-cost/${page.destination}`, 0.88, "weekly", page.locale, false));
+        entries.push(
+          ...makeEntry(
+            `/trip-cost/${page.destination}`,
+            0.88,
+            "weekly",
+            page.locale as (typeof indexableLocales)[number],
+            false,
+          ),
+        );
       }
-      entries.push(...makeEntry(`/trip-cost/${page.destination}/${page.origin}`, 0.9, "monthly", page.locale, false));
+      entries.push(
+        ...makeEntry(
+          `/trip-cost/${page.destination}/${page.origin}`,
+          0.9,
+          "monthly",
+          page.locale as (typeof indexableLocales)[number],
+          false,
+        ),
+      );
     }
   }
 
   if (section === "guides") {
     const policy = publishPolicy();
     const guideFamilyHubs = new Set<string>();
-    const guideParams = getGuideStaticParams();
+    const guideParams = getGuideStaticParams().filter((item) =>
+      (indexableLocales as readonly string[]).includes(item.locale),
+    );
     const allowedGuideDestinations = new Set(
       [...new Set(guideParams.map((entry) => entry.destination))].slice(0, policy.guideDestinationLimit),
     );
     for (const page of guideParams.filter((item) => allowedGuideDestinations.has(item.destination))) {
       if (!guideFamilyHubs.has(page.seoFamily)) {
         guideFamilyHubs.add(page.seoFamily);
-        entries.push(...makeEntry(`/${page.seoFamily}`, 0.84, "weekly", page.locale, false));
+        entries.push(
+          ...makeEntry(
+            `/${page.seoFamily}`,
+            0.84,
+            "weekly",
+            page.locale as (typeof indexableLocales)[number],
+            false,
+          ),
+        );
       }
-      entries.push(...makeEntry(`/${page.seoFamily}/${page.destination}`, 0.82, "monthly", page.locale, false));
+      entries.push(
+        ...makeEntry(
+          `/${page.seoFamily}/${page.destination}`,
+          0.82,
+          "monthly",
+          page.locale as (typeof indexableLocales)[number],
+          false,
+        ),
+      );
     }
   }
 
   if (section === "airports") {
     const policy = publishPolicy();
-    for (const page of getAirportStaticParams().slice(0, policy.airportLimit * locales.length)) {
+    for (const page of getAirportStaticParams()
+      .filter((item): item is { locale: (typeof indexableLocales)[number]; code: string } =>
+        (indexableLocales as readonly string[]).includes(item.locale),
+      )
+      .slice(0, policy.airportLimit * indexableLocales.length)) {
       entries.push(...makeEntry(`/airports/${page.code}`, 0.84, "monthly", page.locale, false));
     }
   }
@@ -218,7 +257,7 @@ export function buildSitemapSection(section: SitemapSection): MetadataRoute.Site
   }
 
   if (section === "blog") {
-    for (const locale of locales) {
+    for (const locale of indexableLocales) {
       const slugs = getPostSlugs(locale);
       for (const slug of slugs) {
         entries.push({

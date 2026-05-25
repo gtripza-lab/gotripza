@@ -25,6 +25,16 @@ export const locales = [
 export type Locale = (typeof locales)[number];
 export const defaultLocale: Locale = "ar";
 
+// Only locales with fully reviewed, index-quality content should be sent to
+// search engines. Other locales can remain usable for UX experiments, but they
+// should not create duplicate index pressure until their content is localized.
+export const indexableLocales = ["ar", "en"] as const satisfies readonly Locale[];
+export type IndexableLocale = (typeof indexableLocales)[number];
+
+export function isIndexableLocale(value: string): value is IndexableLocale {
+  return (indexableLocales as readonly string[]).includes(value);
+}
+
 export const localeMeta: Record<Locale, { dir: "ltr" | "rtl"; label: string }> = {
   ar: { dir: "rtl", label: "العربية" },
   en: { dir: "ltr", label: "English" },
