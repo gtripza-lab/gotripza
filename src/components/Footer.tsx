@@ -84,6 +84,9 @@ export async function Footer({ dict, locale }: { dict: Dictionary; locale: Local
               <Link href={`${legalBase}/contact`} className="hover:text-white/70">
                 {dict.footer.contact}
               </Link>
+              <Link href={`${legalBase}/partners`} className="hover:text-white/70">
+                {locale === "ar" ? "شركاء ريا" : "Rya Partners"}
+              </Link>
               <Link href={`${legalBase}/disclosure`} className="hover:text-white/70">
                 {dict.footer.affiliateDisclosure}
               </Link>

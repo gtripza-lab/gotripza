@@ -4,28 +4,16 @@ import { createHash, randomUUID } from "node:crypto";
 import type { NextRequest, NextResponse } from "next/server";
 import { createSupabaseService } from "@/lib/supabase/service";
 import type { CurrentUser } from "@/lib/auth/session";
+import { PARTNER_COOKIE_MAX_AGE_SECONDS, PARTNER_PRODUCTS } from "@/lib/partner-config";
+
+export { PARTNER_PRODUCTS } from "@/lib/partner-config";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyTable = any;
 
 export const PARTNER_COOKIE = "rya_partner_ref";
 export const PARTNER_VISITOR_COOKIE = "rya_partner_vid";
-export const PARTNER_COOKIE_MAX_AGE = 60 * 60 * 24 * 60;
-
-export const PARTNER_PRODUCTS = {
-  rya_companion: {
-    key: "rya_companion",
-    name: "Rya Companion",
-    priceUsd: 19.99,
-    commissionRate: 0.25,
-  },
-  plan_my_trip: {
-    key: "plan_my_trip",
-    name: "Plan My Trip",
-    priceUsd: 9.99,
-    commissionRate: 0.4,
-  },
-} as const;
+export const PARTNER_COOKIE_MAX_AGE = PARTNER_COOKIE_MAX_AGE_SECONDS;
 
 export type PartnerProductKey = keyof typeof PARTNER_PRODUCTS;
 

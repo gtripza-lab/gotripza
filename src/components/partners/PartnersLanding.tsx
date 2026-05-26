@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowUpRight, BadgeDollarSign, BarChart3, CheckCircle2, Copy, Crown, ShieldCheck, Sparkles, Users } from "lucide-react";
 import { PartnerApplicationForm } from "@/components/partners/PartnerApplicationForm";
+import { PARTNER_PRODUCTS, calculatePartnerCommission, formatPartnerCommission, formatPartnerUsd } from "@/lib/partner-config";
 
 const ar = {
   badge: "Rya Partners",
@@ -38,6 +39,11 @@ export function PartnersLanding({ locale = "ar" }: { locale?: string }) {
   const isAr = locale === "ar";
   const t = isAr ? ar : en;
   const dir = isAr ? "rtl" : "ltr";
+  const companion = PARTNER_PRODUCTS.rya_companion;
+  const plan = PARTNER_PRODUCTS.plan_my_trip;
+  const companionCommission = calculatePartnerCommission(companion.priceUsd, companion.commissionRate);
+  const planCommission = calculatePartnerCommission(plan.priceUsd, plan.commissionRate);
+  const monthlyExampleCommission = companionCommission * 50 + planCommission * 80;
 
   const features = isAr
     ? [
@@ -56,13 +62,19 @@ export function PartnersLanding({ locale = "ar" }: { locale?: string }) {
   const faqs = isAr
     ? [
         ["متى يبدأ الرابط بالعمل؟", "بعد مراجعة الطلب والموافقة عليه من لوحة الإدارة، يتم تفعيل رابطك وكودك تلقائياً."],
-        ["كم العمولة؟", "Rya Companion سعرها 19.99$ وعمولتها 25%. خدمة Plan My Trip سعرها 9.99$ وعمولتها 40%."],
+        [
+          "كم العمولة؟",
+          `${companion.arabicName} سعرها ${formatPartnerUsd(companion.priceUsd)} وعمولتها ${formatPartnerCommission(companion.commissionRate)}. خدمة ${plan.arabicName} سعرها ${formatPartnerUsd(plan.priceUsd)} وعمولتها ${formatPartnerCommission(plan.commissionRate)}.`,
+        ],
         ["هل أحتاج موقعاً؟", "لا. يمكنك استخدام TikTok أو Instagram أو X أو YouTube أو أي مجتمع سفر لديك."],
         ["كيف يتم الدفع؟", "تظهر العمولات أولاً كرصيد معلق، ثم تعتمد وتدفع حسب دورة الدفع التي يحددها GoTripza."],
       ]
     : [
         ["When does my link work?", "After manual approval in the admin dashboard, your referral link and code become active."],
-        ["What are the commissions?", "Rya Companion is $19.99 with 25% commission. Plan My Trip is $9.99 with 40% commission."],
+        [
+          "What are the commissions?",
+          `${companion.name} is ${formatPartnerUsd(companion.priceUsd)} with ${formatPartnerCommission(companion.commissionRate)} commission. ${plan.name} is ${formatPartnerUsd(plan.priceUsd)} with ${formatPartnerCommission(plan.commissionRate)} commission.`,
+        ],
         ["Do I need a website?", "No. You can use TikTok, Instagram, X, YouTube, or any travel community."],
         ["How do payouts work?", "Commissions start as pending, then get approved and paid through GoTripza's payout cycle."],
       ];
@@ -108,7 +120,7 @@ export function PartnersLanding({ locale = "ar" }: { locale?: string }) {
                   [isAr ? "النقرات" : "Clicks", "12,480"],
                   [isAr ? "التسجيلات" : "Signups", "864"],
                   [isAr ? "التحويلات" : "Conversions", "96"],
-                  [isAr ? "عمولة متوقعة" : "Commission", "$421"],
+                  [isAr ? "عمولة متوقعة" : "Commission", formatPartnerUsd(monthlyExampleCommission)],
                 ].map(([label, value]) => (
                   <div key={label} className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
                     <p className="text-xs text-white/35">{label}</p>
@@ -148,8 +160,8 @@ export function PartnersLanding({ locale = "ar" }: { locale?: string }) {
           <h2 className="mt-5 text-2xl font-black">{t.sections.examples}</h2>
           <p className="mt-3 text-sm leading-7 text-white/50">
             {isAr
-              ? "إذا باع شريك 50 اشتراك Rya Companion و80 خطة رحلة، يمكن أن تتجاوز عمولته 320$ من محتوى واحد ناجح."
-              : "If a partner sells 50 Rya Companion activations and 80 trip plans, commission can pass $320 from one strong content cycle."}
+              ? `إذا باع شريك 50 اشتراك ${companion.arabicName} و80 خطة رحلة، يمكن أن تصل عمولته إلى ${formatPartnerUsd(monthlyExampleCommission)} من محتوى واحد ناجح.`
+              : `If a partner sells 50 ${companion.name} activations and 80 trip plans, commission can reach ${formatPartnerUsd(monthlyExampleCommission)} from one strong content cycle.`}
           </p>
         </div>
         <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-6 md:col-span-2">

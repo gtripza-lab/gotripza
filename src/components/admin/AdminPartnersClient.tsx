@@ -2,7 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ShieldAlert } from "lucide-react";
+import { Check, ExternalLink, Link2, ShieldAlert } from "lucide-react";
+import {
+  PARTNER_PROGRAM_SETTINGS,
+  calculatePartnerCommission,
+  formatPartnerCommission,
+  formatPartnerUsd,
+} from "@/lib/partner-config";
 
 type PartnerRow = {
   id: string;
@@ -63,6 +69,10 @@ export function AdminPartnersClient({ overview }: { overview: unknown }) {
       ]),
     ) as Record<string, { status: string; companion: number; plan: number }>,
   );
+  const settings = PARTNER_PROGRAM_SETTINGS;
+  const defaultCommissionLabel = settings.products
+    .map((product) => `${product.name} ${formatPartnerCommission(product.commissionRate)}`)
+    .join(" و ");
 
   const partnerNameById = useMemo(
     () => new Map(partners.map((partner) => [partner.id, partner.full_name])),
@@ -104,12 +114,82 @@ export function AdminPartnersClient({ overview }: { overview: unknown }) {
         </div>
       )}
 
+      <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#00d4b3]">
+                {settings.programName}
+              </p>
+              <h2 className="mt-2 text-xl font-semibold text-white">إعدادات برنامج الشركاء</h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-white/45">
+                هذه هي القواعد التجارية التي يعتمد عليها النظام عند احتساب العمولات وتتبع روابط الشركاء.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-[#00d4b3]/20 bg-[#00d4b3]/10 px-4 py-3 text-sm font-semibold text-[#adfff2]">
+              الموافقة: يدوية
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-2">
+            {settings.products.map((product) => (
+              <div key={product.key} className="rounded-2xl border border-white/[0.07] bg-black/20 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h3 className="font-semibold text-white">{product.arabicName}</h3>
+                    <p className="mt-1 text-xs text-white/40">{product.name}</p>
+                  </div>
+                  <a
+                    href={product.checkoutUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full border border-white/10 px-3 py-1.5 text-xs text-white/65 transition hover:border-white/25 hover:text-white"
+                  >
+                    Gumroad
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                <p className="mt-3 min-h-10 text-sm leading-6 text-white/45">{product.description}</p>
+                <div className="mt-4 grid grid-cols-3 gap-2 text-center">
+                  <MiniStat label="السعر" value={formatPartnerUsd(product.priceUsd)} />
+                  <MiniStat label="عمولة الشريك" value={formatPartnerCommission(product.commissionRate)} />
+                  <MiniStat
+                    label="قيمة العمولة"
+                    value={formatPartnerUsd(calculatePartnerCommission(product.priceUsd, product.commissionRate))}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+          <h2 className="text-sm font-semibold text-white/75">قواعد التشغيل</h2>
+          <div className="mt-4 space-y-3">
+            <SettingRow label="مدة حفظ الإحالة" value={`${settings.cookieDays} يوم`} />
+            <SettingRow label="الحد الأدنى للدفع" value={formatPartnerUsd(settings.minimumPayoutUsd)} />
+            <SettingRow label="حالة الطلب الجديدة" value="قيد المراجعة" />
+            <SettingRow label="طرق الدفع" value={settings.payoutMethods.join(" / ")} />
+          </div>
+          <div className="mt-5 rounded-2xl border border-blue-400/15 bg-blue-400/10 p-4">
+            <div className="flex items-center gap-2 text-sm font-semibold text-blue-100">
+              <Link2 className="h-4 w-4" />
+              اختبار سريع
+            </div>
+            <p className="mt-2 text-xs leading-6 text-blue-100/55">
+              بعد تطبيق migration في Supabase، جرّب رابط مثل <span className="font-mono">/r/demo</span> وتأكد أنه يحفظ
+              الإحالة ثم يرسل المستخدم إلى صفحة Rya Companion.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.03]">
           <div className="border-b border-white/[0.06] px-5 py-4">
             <h2 className="text-sm font-semibold text-white/75">إدارة الشركاء</h2>
             <p className="mt-1 text-xs text-white/35">
-              الموافقة، الإيقاف، وتعديل نسب العمولات. الافتراضي الحالي: Rya Companion 25% و Plan My Trip 40%.
+              الموافقة، الإيقاف، وتعديل نسب العمولات. الافتراضي الحالي: {defaultCommissionLabel}.
             </p>
           </div>
           <div className="overflow-x-auto">
@@ -244,6 +324,24 @@ function PercentInput({ value, onChange }: { value: number; onChange: (value: nu
       />
       %
     </label>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-white/[0.06] bg-white/[0.03] px-2 py-3">
+      <div className="text-[10px] text-white/35">{label}</div>
+      <div className="mt-1 text-sm font-semibold text-white/85">{value}</div>
+    </div>
+  );
+}
+
+function SettingRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-xl border border-white/[0.06] bg-black/20 px-4 py-3 text-sm">
+      <span className="text-white/45">{label}</span>
+      <span className="text-left font-semibold text-white/80">{value}</span>
+    </div>
   );
 }
 
