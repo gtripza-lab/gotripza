@@ -10,13 +10,50 @@ export function PartnerApplicationForm({ locale = "ar" }: { locale?: string }) {
   const [state, setState] = useState<FormState>("idle");
   const [message, setMessage] = useState("");
 
+  function normaliseLinks(raw: string): string[] {
+    return raw
+      .split(/\n|,/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((s) => (s.startsWith("http://") || s.startsWith("https://") ? s : `https://${s}`));
+  }
+
+  function friendlyValidationError(issues: Record<string, string[]>): string {
+    if (issues.socialLinks?.length) {
+      return isAr
+        ? "روابط حساباتك يجب أن تكون روابط كاملة (مثال: https://instagram.com/yourhandle)."
+        : "Social links must be full URLs (e.g. https://instagram.com/yourhandle).";
+    }
+    if (issues.whyJoin?.length) {
+      return isAr
+        ? "الإجابة على سؤال «لماذا تريد الانضمام؟» قصيرة جداً (20 حرفاً على الأقل)."
+        : "Your answer to 'Why join?' is too short (at least 20 characters).";
+    }
+    const firstField = Object.keys(issues)[0];
+    if (firstField) {
+      return isAr
+        ? `يوجد خطأ في حقل "${firstField}". تحقق من البيانات وأعد المحاولة.`
+        : `There's an error in the "${firstField}" field. Please review and try again.`;
+    }
+    return isAr
+      ? "تعذر إرسال الطلب. تحقق من البيانات وأعد المحاولة."
+      : "Could not submit. Please review your data and try again.";
+  }
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const links = String(form.get("socialLinks") ?? "")
-      .split(/\n|,/)
-      .map((item) => item.trim())
-      .filter(Boolean);
+    const links = normaliseLinks(String(form.get("socialLinks") ?? ""));
+
+    if (links.length === 0) {
+      setState("error");
+      setMessage(
+        isAr
+          ? "أضف رابطاً واحداً على الأقل لحسابك على وسائل التواصل الاجتماعي."
+          : "Add at least one social media link.",
+      );
+      return;
+    }
 
     setState("loading");
     setMessage("");
@@ -36,7 +73,15 @@ export function PartnerApplicationForm({ locale = "ar" }: { locale?: string }) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data?.detail || data?.error || "request_failed");
+      if (!res.ok) {
+        if (data?.error === "validation" && data?.issues?.fieldErrors) {
+          setState("error");
+          setMessage(friendlyValidationError(data.issues.fieldErrors));
+        } else {
+          throw new Error(data?.detail || data?.error || "request_failed");
+        }
+        return;
+      }
       setState("success");
       setMessage(
         data.existing
@@ -52,8 +97,8 @@ export function PartnerApplicationForm({ locale = "ar" }: { locale?: string }) {
       setState("error");
       setMessage(
         isAr
-          ? "تعذر إرسال الطلب. تأكد من الروابط والبيانات ثم حاول مرة أخرى."
-          : "Could not submit the application. Check your links and try again.",
+          ? "تعذر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وأعد المحاولة."
+          : "Could not reach the server. Check your connection and try again.",
       );
       console.warn("[partners/apply]", (err as Error).message);
     }
@@ -99,8 +144,13 @@ export function PartnerApplicationForm({ locale = "ar" }: { locale?: string }) {
             required
             rows={3}
             className={inputClass}
-            placeholder={isAr ? "ضع كل رابط في سطر منفصل" : "One link per line"}
+            placeholder={isAr ? "https://instagram.com/yourhandle\nhttps://tiktok.com/@yourhandle" : "https://instagram.com/yourhandle\nhttps://tiktok.com/@yourhandle"}
           />
+          <p className="text-[11px] text-white/35 leading-relaxed">
+            {isAr
+              ? "رابط كامل لكل حساب — مثال: https://instagram.com/yourhandle (سطر لكل رابط)"
+              : "Full URL per account — e.g. https://instagram.com/yourhandle (one per line)"}
+          </p>
         </label>
         <label className="space-y-2 md:col-span-2">
           <span className="text-xs font-semibold text-white/55">{isAr ? "لماذا تريد الانضمام؟" : "Why do you want to join?"}</span>
