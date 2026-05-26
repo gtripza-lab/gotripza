@@ -22,9 +22,12 @@ export async function Footer({ dict, locale }: { dict: Dictionary; locale: Local
   return (
     <footer className="relative mt-12">
       <div className="relative overflow-hidden rounded-t-3xl border-t border-white/5 bg-ink-950">
-        <div className="absolute inset-0 -z-0 bg-[radial-gradient(ellipse_at_top,rgba(90,108,255,0.18),transparent_60%)]" />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,rgba(90,108,255,0.18),transparent_60%)]"
+        />
 
-        <div className="relative mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 py-8 md:flex-row md:justify-between">
+        <div className="relative z-10 mx-auto flex max-w-7xl flex-col items-center gap-6 px-6 py-8 md:flex-row md:justify-between">
           <div className="flex items-center gap-5">
             <Logo />
             <span className="hidden font-display text-lg text-white/80 md:inline">
@@ -61,11 +64,11 @@ export async function Footer({ dict, locale }: { dict: Dictionary; locale: Local
           </div>
         </div>
 
-        <div className="relative mx-auto max-w-7xl border-t border-white/5 px-6 py-6">
+        <div className="relative z-10 mx-auto max-w-7xl border-t border-white/5 px-6 py-6">
           <PaymentMethods dict={dict} variant="row" />
         </div>
 
-        <div className="relative mx-auto max-w-7xl border-t border-white/5 px-6 py-5">
+        <div className="relative z-10 mx-auto max-w-7xl border-t border-white/5 px-6 py-5">
           <p className="text-center text-[11px] leading-relaxed text-white/50">
             <span className="font-semibold text-white/70">
               {dict.footer.affiliateTitle}:
@@ -74,7 +77,7 @@ export async function Footer({ dict, locale }: { dict: Dictionary; locale: Local
           </p>
         </div>
 
-        <div className="border-t border-white/5">
+        <div className="relative z-10 border-t border-white/5">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 py-4 text-xs text-white/40 sm:flex-row">
             <span>© {new Date().getFullYear()} GoTripza · {dict.footer.rights}</span>
             <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5">
