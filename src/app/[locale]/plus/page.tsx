@@ -256,18 +256,18 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
               </div>
               <div className="mt-6">
                 <div className="flex flex-wrap items-end gap-3">
-                  <span className="text-4xl font-bold text-white">$39</span>
+                  <span className="text-4xl font-bold text-white">$19.99</span>
                   <span className="pb-1 text-sm font-medium text-white/35">
                     {isAr ? "لكل رحلة" : "per trip"}
                   </span>
                   <span className="rounded-full border border-brand-mint/20 bg-brand-mint/10 px-3 py-1 text-xs font-semibold text-brand-mint">
-                    {isAr ? "مجاني لفترة محدودة" : "Free for a limited time"}
+                    {isAr ? "دفع آمن عبر Gumroad" : "Secure checkout via Gumroad"}
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-white/40">
                   {isAr
-                    ? "قيمة Rya Companion هي 39$ لكل رحلة، ومتاحة الآن مجاناً لفترة محدودة. سجّل دخولك مرة واحدة لتبقى تجربتك محفوظة على جوالك طوال الرحلة."
-                    : "Rya Companion is valued at $39 per trip and is free for a limited time. Sign in once so your companion stays saved on mobile throughout the trip."}
+                    ? "Rya Companion بسعر 19.99$ لكل رحلة. بعد الشراء استخدم نفس البريد لتفعيلها داخل GoTripza وحفظ سياق رحلتك على الجوال."
+                    : "Rya Companion is $19.99 per trip. After purchase, use the same email to activate it inside GoTripza and keep your trip context on mobile."}
                 </p>
               </div>
               <ul className="mt-6 space-y-3">
@@ -348,12 +348,12 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                   {isAr ? "متاحة الآن للمسافرين الأوائل" : "Available now for early travelers"}
                 </p>
                 <h2 className="mt-2 text-2xl font-bold text-white">
-                  {isAr ? "قيمة $39 لكل رحلة، متاحة مجاناً لفترة محدودة." : "$39 per trip value, free for a limited time."}
+                  {isAr ? "Rya Companion بسعر $19.99 لكل رحلة." : "Rya Companion is $19.99 per trip."}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-white/48">
                   {isAr
-                    ? "ابدأ التجربة الآن، ثبّت ريا على جوالك، ودعها ترافقك في المطار، المطعم، الشارع، الفندق، واللحظات التي تحتاج فيها قراراً سريعاً وواضحاً."
-                    : "Start now, install Rya on your phone, and let it help at the airport, restaurant, street, hotel, and every moment where you need a clear next step."}
+                    ? "اشترِ الخدمة عبر Gumroad، ثبّت ريا على جوالك، ودعها ترافقك في المطار، المطعم، الشارع، الفندق، واللحظات التي تحتاج فيها قراراً سريعاً وواضحاً."
+                    : "Buy through Gumroad, install Rya on your phone, and let it help at the airport, restaurant, street, hotel, and every moment where you need a clear next step."}
                 </p>
               </div>
               <PlusCheckoutButton locale={locale} interval="monthly" />

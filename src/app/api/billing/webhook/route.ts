@@ -15,6 +15,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { getStripe, STRIPE_CONFIGURED } from "@/lib/billing/stripe";
 import { createSupabaseService } from "@/lib/supabase/service";
+import { recordPartnerConversion } from "@/lib/partner-program";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyTable = any;
@@ -77,6 +78,21 @@ export async function POST(req: NextRequest) {
           },
           { onConflict: "user_id" },
         );
+        if (sess.metadata?.partner_id) {
+          await recordPartnerConversion({
+            partnerId: sess.metadata.partner_id,
+            clickId: sess.metadata.partner_click_id || null,
+            userId,
+            email: sess.customer_email ?? null,
+            productType: "rya_companion",
+            orderId: sess.id,
+            metadata: {
+              stripe_customer_id: sess.customer,
+              stripe_subscription_id: subId,
+              price_id: priceId,
+            },
+          });
+        }
         break;
       }
 

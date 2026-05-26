@@ -19,6 +19,8 @@ const ALLOWED_EVENTS = new Set([
   "rya_consultant_started",
   "companion_try_clicked",
   "companion_signup_started",
+  "companion_checkout_clicked",
+  "plan_my_trip_checkout_clicked",
   "login_success",
   "travel_service_interest",
   "companion_trial_started",
@@ -42,6 +44,9 @@ const ALLOWED_EVENTS = new Set([
   "auth_initiated",
   "signup_complete",
   "signin_complete",
+  "partner_referral_copied",
+  "partner_application_submitted",
+  "partner_dashboard_viewed",
 ]);
 
 export async function POST(req: NextRequest) {

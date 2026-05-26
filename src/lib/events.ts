@@ -14,6 +14,8 @@ export type EventName =
   | "rya_consultant_started"
   | "companion_try_clicked"
   | "companion_signup_started"
+  | "companion_checkout_clicked"
+  | "plan_my_trip_checkout_clicked"
   | "login_success"
   | "travel_service_interest"
   | "companion_trial_started"
@@ -89,6 +91,8 @@ function toXEventName(name: EventName): string | null {
     name === "affiliate_upsell_clicked" ||
     name === "traveler_service_clicked" ||
     name === "travel_service_interest" ||
+    name === "companion_checkout_clicked" ||
+    name === "plan_my_trip_checkout_clicked" ||
     name === "pwa_install_cta_clicked" ||
     name === "pwa_app_installed"
   ) {

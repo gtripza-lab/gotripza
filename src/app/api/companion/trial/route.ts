@@ -3,6 +3,7 @@ import { getCurrentUser } from "@/lib/auth/session";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { getTrialState, RYA_TRIAL_COOKIE, RYA_TRIAL_DAYS } from "@/lib/companion/trial";
 import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
+import { recordPartnerSignup } from "@/lib/partner-program";
 
 export const runtime = "nodejs";
 
@@ -79,5 +80,6 @@ export async function POST(req: NextRequest) {
   // or re-activated Rya Companion from mobile, even if a trial cookie already
   // existed before login.
   void logTrialEvent(req, "companion_trial_started", startedAt, sid);
+  void recordPartnerSignup(req, user, "companion_trial");
   return res;
 }

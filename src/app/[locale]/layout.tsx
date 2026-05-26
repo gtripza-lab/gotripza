@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import { Inter, Plus_Jakarta_Sans, Cairo } from "next/font/google";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
@@ -10,6 +11,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { TravelpayoutsProvider } from "@/components/TravelpayoutsProvider";
 import { CookieConsent } from "@/components/CookieConsent";
 import { AnalyticsInit } from "@/components/AnalyticsInit";
+import { ReferralTracker } from "@/components/partners/ReferralTracker";
 import { GA_MEASUREMENT_ID, GOOGLE_ADS_ID } from "@/lib/analytics/google";
 import { X_PIXEL_ID } from "@/lib/analytics/x";
 
@@ -220,6 +222,9 @@ export default async function LocaleLayout(
         <WebsiteJsonLd />
         {/* Re-fires Travelpayouts tracking on every client-side navigation */}
         <TravelpayoutsProvider />
+        <Suspense fallback={null}>
+          <ReferralTracker />
+        </Suspense>
         {children}
         <BottomNav locale={locale as Locale} />
         <CookieConsent locale={locale as Locale} />

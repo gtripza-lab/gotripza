@@ -13,6 +13,7 @@ import { getStripe, STRIPE_CONFIGURED, RIA_PLUS_PRICES } from "@/lib/billing/str
 import { hasGoTripzaAffiliateBookingSignal } from "@/lib/billing/entitlements";
 import { getCurrentUser } from "@/lib/auth/session";
 import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
+import { getReferralMetadataForStripe } from "@/lib/partner-program";
 
 export const runtime = "nodejs";
 
@@ -61,18 +62,25 @@ export async function POST(req: NextRequest) {
 
   try {
     const stripe = getStripe();
+    const metadata: Record<string, string> = {
+      user_id: user.id,
+      plan: "companion",
+      interval,
+      discounted: String(hasDiscount),
+    };
+    Object.assign(metadata, getReferralMetadataForStripe(req));
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        metadata: { user_id: user.id, plan: "companion", interval, discounted: String(hasDiscount) },
+        metadata,
       },
       customer_email: user.email ?? undefined,
       client_reference_id: user.id,
       success_url: `${origin}/${locale}/plus?companion=success`,
       cancel_url: `${origin}/${locale}/plus?companion=cancel`,
-      metadata: { user_id: user.id, plan: "companion", interval, discounted: String(hasDiscount) },
+      metadata,
       allow_promotion_codes: true,
     });
     return NextResponse.json({ url: session.url });

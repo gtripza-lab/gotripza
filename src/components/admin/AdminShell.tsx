@@ -22,6 +22,7 @@ import {
   X,
   ChevronRight,
   AlertCircle,
+  Handshake,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -30,6 +31,7 @@ const NAV_ITEMS = [
   { href: "/admin/conversations", label: "المحادثات",           icon: MessageSquare },
   { href: "/admin/search",        label: "البحث والنقرات",      icon: Search },
   { href: "/admin/users",         label: "المستخدمون",          icon: Users },
+  { href: "/admin/partners",      label: "شركاء ريا",           icon: Handshake },
   { href: "/admin/trips",         label: "خطط الرحلات",         icon: Map },
   { href: "/admin/costs",         label: "مركز التكلفة",        icon: DollarSign },
   { href: "/admin/analytics",     label: "التحليلات",           icon: BarChart2 },

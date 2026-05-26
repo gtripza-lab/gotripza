@@ -6,6 +6,7 @@ import {
   Car,
   CloudSun,
   Coffee,
+  ExternalLink,
   RefreshCw,
   Scissors,
   Download,
@@ -23,6 +24,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { Locale } from "@/i18n/config";
+import { CHECKOUT_LINKS } from "@/lib/checkout-links";
 import { logEvent } from "@/lib/events";
 import type { PlannerTripType, TripPlan, TripPlanDay } from "@/lib/trip-planner";
 
@@ -472,6 +474,30 @@ export function TripPlanner({ locale }: { locale: Locale }) {
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
             {isAr ? "ولّد الخطة" : "Generate plan"}
           </button>
+          <a
+            href={CHECKOUT_LINKS.planMyTrip}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() =>
+              logEvent("plan_my_trip_checkout_clicked", {
+                locale,
+                source: "trip_planner_form",
+                provider: "gumroad",
+                price: 9.99,
+                destination: form.destination,
+                origin: form.origin,
+              })
+            }
+            className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-brand-mint/25 bg-brand-mint/[0.08] px-3 text-center text-xs font-semibold text-brand-mint transition hover:bg-brand-mint/[0.14]"
+          >
+            <ExternalLink className="h-3.5 w-3.5" />
+            {isAr ? "اطلب خطة سفر مخصصة بـ $9.99" : "Get a custom trip plan for $9.99"}
+          </a>
+          <p className="text-center text-[11px] leading-5 text-white/35">
+            {isAr
+              ? "للمسافر الذي يريد خطة أعمق ومراجعة مخصصة بعد الخطة الذكية."
+              : "For travelers who want a deeper custom review after the smart plan."}
+          </p>
         </div>
       </section>
 

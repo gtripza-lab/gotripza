@@ -60,7 +60,7 @@ function makeCsp(nonce: string) {
     "frame-ancestors 'self'",
     `script-src 'self' 'nonce-${nonce}'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://www.google-analytics.com https://googleads.g.doubleclick.net https://www.googleadservices.com https://static.ads-twitter.com https://tp.media https://*.travelpayouts.com https://*.jetradar.com https://*.aviasales.com https://emrld.ltd https://*.emrld.ltd`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://images.unsplash.com https://*.tp.media https://*.travelpayouts.com https://photo.hotellook.com https://*.hotellook.com https://emrld.ltd https://*.emrld.ltd https://www.google-analytics.com https://www.googletagmanager.com https://googleads.g.doubleclick.net https://www.googleadservices.com https://www.google.com https://analytics.twitter.com https://t.co",
+    "img-src 'self' data: blob: https://images.unsplash.com https://api.qrserver.com https://*.tp.media https://*.travelpayouts.com https://photo.hotellook.com https://*.hotellook.com https://emrld.ltd https://*.emrld.ltd https://www.google-analytics.com https://www.googletagmanager.com https://googleads.g.doubleclick.net https://www.googleadservices.com https://www.google.com https://analytics.twitter.com https://t.co",
     "frame-src 'self' https://search.gotripza.com https://*.tp.media https://*.travelpayouts.com https://*.jetradar.com https://hotellook.com https://*.hotellook.com https://www.aviasales.com https://www.googletagmanager.com https://td.doubleclick.net",
     "connect-src 'self' https://www.google-analytics.com https://analytics.google.com https://region1.google-analytics.com https://www.googletagmanager.com https://googleads.g.doubleclick.net https://www.googleadservices.com https://stats.g.doubleclick.net https://analytics.twitter.com https://t.co https://*.travelpayouts.com https://tp.media https://api.travelpayouts.com https://hotellook.com https://engine.hotellook.com https://*.supabase.co https://api.openai.com https://emrld.ltd https://*.emrld.ltd",
     "font-src 'self' data:",
@@ -183,6 +183,14 @@ export function proxy(req: NextRequest) {
     return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
   }
   if (pathname.startsWith("/admin")) {
+    return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
+  }
+  if (
+    pathname === "/partners" ||
+    pathname === "/partner" ||
+    pathname.startsWith("/partner/") ||
+    pathname.startsWith("/r/")
+  ) {
     return attachSecurityHeaders(NextResponse.next({ request: { headers: requestHeaders } }), nonce);
   }
 

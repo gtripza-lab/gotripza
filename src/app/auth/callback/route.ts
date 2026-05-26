@@ -13,6 +13,7 @@ import {
   upsertProfile,
   ensureLaunchFreeSubscription,
 } from "@/lib/ai/memory/store";
+import { recordPartnerSignup } from "@/lib/partner-program";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,11 @@ export async function GET(req: NextRequest) {
         null,
     }),
     ensureLaunchFreeSubscription(user.id),
+    recordPartnerSignup(
+      req,
+      { id: user.id, email: user.email ?? null },
+      isNewUser ? "auth_signup" : "auth_login",
+    ),
   ]).catch((e) => console.warn("[auth/callback] provision warn:", e));
 
   // For new signups, pass a flag so the client can fire the Ads conversion event
