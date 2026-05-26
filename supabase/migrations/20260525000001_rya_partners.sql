@@ -364,11 +364,37 @@ using (
   )
 );
 
+-- RLS policies for tables missing them
+drop policy if exists referral_visits_select_own on public.referral_visits;
+create policy referral_visits_select_own
+on public.referral_visits for select
+to authenticated
+using (
+  exists (
+    select 1 from public.partners p
+    where p.id = referral_visits.partner_id
+      and (p.user_id = auth.uid() or lower(p.email) = lower(coalesce(auth.jwt() ->> 'email', '')))
+  )
+);
+
+drop policy if exists partner_content_signals_select_own on public.partner_content_signals;
+create policy partner_content_signals_select_own
+on public.partner_content_signals for select
+to authenticated
+using (
+  partner_id is null
+  or exists (
+    select 1 from public.partners p
+    where p.id = partner_content_signals.partner_id
+      and (p.user_id = auth.uid() or lower(p.email) = lower(coalesce(auth.jwt() ->> 'email', '')))
+  )
+);
+
 grant usage on schema public to anon, authenticated;
 grant select on public.partner_assets to authenticated;
 grant select on public.partners, public.referral_codes, public.partner_clicks, public.partner_signups,
   public.partner_conversions, public.commissions, public.payouts, public.partner_notifications,
-  public.partner_fraud_flags to authenticated;
+  public.partner_fraud_flags, public.referral_visits, public.partner_content_signals to authenticated;
 
 insert into public.partner_assets (title, asset_type, locale, content)
 values
