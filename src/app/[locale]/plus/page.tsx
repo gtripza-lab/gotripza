@@ -18,6 +18,7 @@ import {
 import { Footer } from "@/components/Footer";
 import { Navbar } from "@/components/Navbar";
 import { PlusCheckoutButton } from "@/components/PlusCheckoutButton";
+import { CompanionActivateSection } from "@/components/CompanionActivateSection";
 import { isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
 
@@ -258,7 +259,7 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                 <div className="flex flex-wrap items-end gap-3">
                   <span className="text-4xl font-bold text-white">$19.99</span>
                   <span className="pb-1 text-sm font-medium text-white/35">
-                    {isAr ? "لكل رحلة" : "per trip"}
+                    {isAr ? "· ٦٠ يوماً" : "· 60 days"}
                   </span>
                   <span className="rounded-full border border-brand-mint/20 bg-brand-mint/10 px-3 py-1 text-xs font-semibold text-brand-mint">
                     {isAr ? "دفع آمن عبر Gumroad" : "Secure checkout via Gumroad"}
@@ -266,8 +267,8 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                 </div>
                 <p className="mt-2 text-sm text-white/40">
                   {isAr
-                    ? "Rya Companion بسعر 19.99$ لكل رحلة. بعد الشراء استخدم نفس البريد لتفعيلها داخل GoTripza وحفظ سياق رحلتك على الجوال."
-                    : "Rya Companion is $19.99 per trip. After purchase, use the same email to activate it inside GoTripza and keep your trip context on mobile."}
+                    ? "ادفع مرة واحدة واحصل على وصول كامل لريا لمدة 60 يوماً. بعد الشراء فعّل وصولك بالبريد أدناه."
+                    : "Pay once and get full Rya access for 60 days. After purchase, activate below with your email."}
                 </p>
               </div>
               <ul className="mt-6 space-y-3">
@@ -341,24 +342,7 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
             </div>
           </div>
 
-          <div className="mt-12 rounded-3xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-brand-primary/[0.08] p-6 sm:p-8">
-            <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr] md:items-center">
-              <div>
-                <p className="text-sm font-semibold text-brand-mint">
-                  {isAr ? "متاحة الآن للمسافرين الأوائل" : "Available now for early travelers"}
-                </p>
-                <h2 className="mt-2 text-2xl font-bold text-white">
-                  {isAr ? "Rya Companion بسعر $19.99 لكل رحلة." : "Rya Companion is $19.99 per trip."}
-                </h2>
-                <p className="mt-3 text-sm leading-7 text-white/48">
-                  {isAr
-                    ? "اشترِ الخدمة عبر Gumroad، ثبّت ريا على جوالك، ودعها ترافقك في المطار، المطعم، الشارع، الفندق، واللحظات التي تحتاج فيها قراراً سريعاً وواضحاً."
-                    : "Buy through Gumroad, install Rya on your phone, and let it help at the airport, restaurant, street, hotel, and every moment where you need a clear next step."}
-                </p>
-              </div>
-              <PlusCheckoutButton locale={locale} interval="monthly" />
-            </div>
-          </div>
+          <CompanionActivateSection locale={locale} />
         </section>
       </main>
       <Footer dict={dict} locale={locale} />

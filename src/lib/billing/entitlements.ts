@@ -36,6 +36,7 @@ export type Entitlement = {
 
 export async function getEntitlement(
   userId: string | null | undefined,
+  userEmail?: string | null,
 ): Promise<Entitlement> {
   if (!userId) {
     return { isPremium: false, plan: null, reason: "anonymous" };
@@ -48,6 +49,28 @@ export async function getEntitlement(
     return { isPremium: true, plan: "launch_free", reason: "launch_default" };
   }
 
+  // Gumroad-based 60-day companion access (checked by email)
+  if (userEmail) {
+    try {
+      const db = createSupabaseService();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: unlock } = await (db as any)
+        .from("companion_unlocks")
+        .select("expires_at")
+        .eq("email", userEmail.toLowerCase())
+        .gt("expires_at", new Date().toISOString())
+        .order("expires_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (unlock) {
+        return { isPremium: true, plan: "companion_60d", reason: "subscription_active" };
+      }
+    } catch {
+      // fail open — don't block premium users if DB is unreachable
+    }
+  }
+
+  // Stripe-based subscription check
   const sub = await getSubscription(userId);
   if (!sub) {
     return { isPremium: false, plan: null, reason: "no_subscription" };
@@ -61,8 +84,11 @@ export async function getEntitlement(
   };
 }
 
-export async function ensurePremium(userId: string | null | undefined) {
-  const ent = await getEntitlement(userId);
+export async function ensurePremium(
+  userId: string | null | undefined,
+  userEmail?: string | null,
+) {
+  const ent = await getEntitlement(userId, userEmail);
   if (!ent.isPremium) {
     throw new Error(`payment_required: ${ent.reason}`);
   }

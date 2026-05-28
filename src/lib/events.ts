@@ -41,7 +41,9 @@ export type EventName =
   | "signup_complete"
   | "signin_complete"
   | "plan_paywall_purchase_clicked"
-  | "trip_plan_unlocked";
+  | "trip_plan_unlocked"
+  | "companion_purchase_clicked"
+  | "companion_unlocked";
 
 export type EventPayload = Record<string, unknown>;
 
