@@ -39,7 +39,9 @@ export type EventName =
   | "trip_plan_day_lightened"
   | "auth_initiated"
   | "signup_complete"
-  | "signin_complete";
+  | "signin_complete"
+  | "plan_paywall_purchase_clicked"
+  | "trip_plan_unlocked";
 
 export type EventPayload = Record<string, unknown>;
 
