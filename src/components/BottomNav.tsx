@@ -62,7 +62,10 @@ export function BottomNav({ locale }: { locale: Locale }) {
   if (isSearchPage || isAdsLandingPage) return null;
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-30 flex w-[100dvw] max-w-[100dvw] overflow-hidden border-t border-white/5 bg-[#0d0d12]/90 backdrop-blur-xl md:hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-30 flex w-[100dvw] max-w-[100dvw] overflow-hidden border-t border-white/5 bg-[#0d0d12]/90 backdrop-blur-xl md:hidden"
+      style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+    >
       {items.map(({ href, icon: Icon, label }) => {
         const active = pathname === href || (href !== `/${locale}` && pathname.startsWith(href));
         return (

@@ -194,7 +194,11 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
   return (
     <>
       <Navbar dict={dict} locale={locale} />
-      <main className="min-h-screen bg-ink-950 px-4 pb-24 pt-10" dir={isAr ? "rtl" : "ltr"}>
+      <main
+        className="min-h-screen bg-ink-950 px-4 pt-10"
+        style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}
+        dir={isAr ? "rtl" : "ltr"}
+      >
         <section className="mx-auto max-w-5xl">
           <div className="text-center">
             <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-3xl bg-white/[0.04] ring-1 ring-white/10">

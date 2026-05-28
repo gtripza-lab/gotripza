@@ -180,6 +180,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
+  // Required for env(safe-area-inset-*) to work on iPhone X+ in PWA/standalone mode
+  viewportFit: "cover",
 };
 
 export function generateStaticParams() {

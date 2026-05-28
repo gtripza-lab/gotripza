@@ -134,7 +134,7 @@ export function CompanionActivateSection({ locale }: { locale: Locale }) {
           </div>
           <button
             onClick={handleBuy}
-            className="flex h-12 min-w-48 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-primary to-violet-600 px-6 text-sm font-semibold text-white transition hover:scale-[1.02] active:scale-[0.98]"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-primary to-violet-600 px-6 text-sm font-semibold text-white transition hover:scale-[1.02] active:scale-[0.98] md:w-auto md:min-w-48"
           >
             <Sparkles className="h-4 w-4" />
             {isAr ? "اشترِ الآن بـ $19.99" : "Buy now for $19.99"}
@@ -192,7 +192,7 @@ export function CompanionActivateSection({ locale }: { locale: Locale }) {
             {!sessionEmail ? (
               <button
                 onClick={() => setShowAuth(true)}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl border border-white/15 px-5 text-sm font-semibold text-white/70 transition hover:border-white/30 hover:text-white"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-5 text-sm font-semibold text-white/70 transition hover:border-white/30 hover:text-white sm:w-auto"
               >
                 <LogIn className="h-4 w-4" />
                 {isAr ? "سجّل دخولك أولاً" : "Sign in first"}
@@ -201,7 +201,7 @@ export function CompanionActivateSection({ locale }: { locale: Locale }) {
               <button
                 onClick={handleActivate}
                 disabled={state.status === "loading"}
-                className="flex h-11 items-center justify-center gap-2 rounded-xl bg-brand-primary px-6 text-sm font-semibold text-white transition hover:bg-brand-primary/90 disabled:opacity-60"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand-primary px-6 text-sm font-semibold text-white transition hover:bg-brand-primary/90 disabled:opacity-60 sm:w-auto"
               >
                 {state.status === "loading" ? (
                   <Loader2 className="h-4 w-4 animate-spin" />

@@ -21,7 +21,11 @@ export default async function AccountPage(props: { params: Promise<{ locale: str
   return (
     <>
       <Navbar dict={dict} locale={locale} />
-      <main className="min-h-screen bg-ink-950 px-4 pb-24 pt-10" dir={isAr ? "rtl" : "ltr"}>
+      <main
+        className="min-h-screen bg-ink-950 px-4 pt-10"
+        style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}
+        dir={isAr ? "rtl" : "ltr"}
+      >
         <section className="mx-auto max-w-6xl">
           <div className="mb-8">
             <p className="text-sm text-brand-primary">

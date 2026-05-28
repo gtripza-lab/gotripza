@@ -67,7 +67,11 @@ export default async function PlanPage(
   return (
     <>
       <Navbar dict={dict} locale={locale} />
-      <main className="min-h-screen bg-ink-950 pb-24" dir={isAr ? "rtl" : "ltr"}>
+      <main
+        className="min-h-screen bg-ink-950"
+        style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom, 0px))" }}
+        dir={isAr ? "rtl" : "ltr"}
+      >
 
         {/* ── Hero ─────────────────────────────────────────────────────────── */}
         <section className="mx-auto max-w-4xl px-4 pb-8 pt-16 text-center">
