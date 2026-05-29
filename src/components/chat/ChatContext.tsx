@@ -478,8 +478,8 @@ export function ChatProvider({
       // Handle free limit reached — show paywall message, don't throw
       if (parsedJson.error === "free_limit_reached") {
         const paywallMsg = locale === "ar"
-          ? "وصلت للحد اليومي المجاني (10 رسائل). تستطيع الاستمرار غداً مجاناً، أو فعّل Rya Companion للمحادثات غير المحدودة. 🔓"
-          : "You've reached the free daily limit (10 messages). You can continue tomorrow for free, or activate Rya Companion for unlimited conversations. 🔓";
+          ? "ريا كانت معك اليوم في كل خطوة 🌍 — الرحلة المجانية تتجدد غداً. أو اجعل ريا رفيقتك الشخصية اليوم، بلا حدود ولا توقف."
+          : "Rya has been with you every step today 🌍 — your free journey resets tomorrow. Or make Rya your personal companion today, unlimited and always there.";
         setMessages((prev) =>
           prev.map((m) =>
             m.id === thinkingId

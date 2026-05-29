@@ -53,19 +53,19 @@ interface PaywallModalProps {
 }
 
 const COMPANION_FEATURES_AR = [
-  "محادثات غير محدودة مع ريا",
-  "ذاكرة شخصية — ريا تتذكر رحلاتك",
-  "قراءة الصور (منيو، تذاكر، لافتات)",
-  "تحليل عميق وخطط مخصصة",
-  "لا إعلانات · لا توقف",
+  "ريا بين يديك — بلا حدود ولا توقف",
+  "تعرفك شخصياً وتتذكر كل رحلة سافرتها",
+  "معك في المطار والفندق والمطعم — تقرأ الصور وتشرح",
+  "تخطط معك من اليوم الأول حتى العودة للبيت",
+  "لا إعلانات · تجربة نظيفة تماماً",
 ];
 
 const COMPANION_FEATURES_EN = [
-  "Unlimited conversations with Rya",
-  "Personal memory — Rya remembers your trips",
-  "Photo reading (menus, tickets, signs)",
-  "Deep analysis & personalized plans",
-  "No ads · No limits",
+  "Rya is yours — no limits, no interruptions",
+  "She knows you personally and remembers every trip",
+  "With you at the airport, hotel & restaurant — reads photos instantly",
+  "Plans with you from day one until you're back home",
+  "Zero ads · A completely clean experience",
 ];
 
 export function PaywallModal({ locale, onClose }: PaywallModalProps) {
@@ -109,12 +109,12 @@ export function PaywallModal({ locale, onClose }: PaywallModalProps) {
               <Lock size={24} className="text-white" />
             </div>
             <h2 className="text-xl font-bold text-white">
-              {isAr ? "وصلت للحد اليومي المجاني" : "You reached your free daily limit"}
+              {isAr ? "ريا تنتظرك بلا حدود" : "Rya is waiting — unlimited"}
             </h2>
             <p className="text-[13px] text-white/55 leading-relaxed">
               {isAr
-                ? "ستُعاد المحادثة المجانية غداً. أو فعّل Rya Companion مرة واحدة وأنهِ القيود نهائياً."
-                : "Free chat resets tomorrow. Or activate Rya Companion once and remove all limits permanently."}
+                ? "المحادثة المجانية تتجدد غداً — أو اجعل ريا رفيقتك الشخصية اليوم، مرة واحدة وإلى الأبد."
+                : "Free chat resets tomorrow — or make Rya your personal companion today, once and forever."}
             </p>
           </div>
 
@@ -137,7 +137,7 @@ export function PaywallModal({ locale, onClose }: PaywallModalProps) {
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-brand-primary py-3.5 text-[15px] font-semibold text-white shadow-lg shadow-violet-900/30 transition active:scale-[0.98]"
           >
             <Sparkles size={16} />
-            {isAr ? "فعّل Rya Companion — $19.99" : "Get Rya Companion — $19.99"}
+            {isAr ? "اجعل ريا رفيقتك — $19.99 فقط" : "Make Rya yours — just $19.99"}
             <ArrowRight size={15} className={isAr ? "rotate-180" : ""} />
           </a>
 
@@ -147,7 +147,7 @@ export function PaywallModal({ locale, onClose }: PaywallModalProps) {
             onClick={onClose}
             className="mt-2.5 w-full py-2.5 text-[13px] text-white/35 transition hover:text-white/55"
           >
-            {isAr ? "انتظر حتى غداً — مجاناً" : "Wait until tomorrow — free"}
+            {isAr ? "سأنتظر حتى غداً" : "I'll wait until tomorrow"}
           </button>
         </div>
       </div>

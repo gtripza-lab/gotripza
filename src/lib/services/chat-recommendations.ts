@@ -120,15 +120,15 @@ export function getUpsellMessage(locale: "ar" | "en", msgCount: number): string 
 
   if (locale === "ar") {
     return msgCount === 3
-      ? "💡 ريا المستشارة تُخطط رحلتك الكاملة وتُرافقك خلالها — بذاكرة شخصية وتحليل صور. جرّبها بـ $19.99 ←"
+      ? "✨ تخيّل أن تكون ريا رفيقتك الشخصية في كل رحلة — تعرفك، تتذكرك، وتكون بين يديك دائماً. جرّب Rya Companion ←"
       : msgCount === 6
-      ? "✨ هل تعلم؟ ريا المستشارة تتذكر رحلاتك السابقة وتُوصي بناءً على تفضيلاتك. اكتشفها ←"
-      : "📸 مع ريا المستشارة: صوّر أي قائمة أو لافحة أو تذكرة وستُفسّرها لك فوراً. جرّبها ←";
+      ? "🌍 مستشارة سفر خاصة بك تماماً — لا تبدأ من الصفر في كل رحلة، ريا تعرف ذوقك وتاريخك. اكتشفها ←"
+      : "🤝 مع Rya Companion ريا تكون معك من لحظة التخطيط حتى تعود للبيت — في المطار، الفندق، والمطعم. جرّبها ←";
   }
 
   return msgCount === 3
-    ? "💡 Rya Companion plans your full trip and stays with you — personal memory & photo analysis. Try it for $19.99 ←"
+    ? "✨ Imagine having Rya as your personal travel companion — she knows you, remembers you, and is always by your side. Try Rya Companion ←"
     : msgCount === 6
-    ? "✨ Rya Companion remembers your past trips and recommends based on your preferences. Discover it ←"
-    : "📸 With Rya Companion: photograph any menu, sign or ticket and she'll explain it instantly. Try it ←";
+    ? "🌍 Your own private travel advisor — never start from scratch again, Rya knows your taste and travel history. Discover her ←"
+    : "🤝 With Rya Companion she's with you from planning to landing home — airport, hotel, restaurant and beyond. Try her ←";
 }

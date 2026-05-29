@@ -306,8 +306,8 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
             >
               <Sparkles size={9} />
               {10 - freeMessagesUsed > 0
-                ? (isAr ? `${10 - freeMessagesUsed} رسائل` : `${10 - freeMessagesUsed} left`)
-                : (isAr ? "الحد اليومي" : "Limit reached")}
+                ? (isAr ? `ريا مجاناً · ${10 - freeMessagesUsed} متبقية` : `Free · ${10 - freeMessagesUsed} left`)
+                : (isAr ? "اجعلها رفيقتك ✨" : "Make her yours ✨")}
             </button>
           )}
           <div className="hidden items-center gap-1 sm:flex">
@@ -403,7 +403,7 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
                     className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600/80 to-brand-primary/80 py-2.5 text-[13px] font-semibold text-white/90 transition active:scale-[0.98]"
                   >
                     <Sparkles size={13} />
-                    {isAr ? "فعّل Rya Companion ←" : "Get Rya Companion →"}
+                    {isAr ? "اجعل ريا رفيقتك الشخصية ←" : "Make Rya your companion →"}
                   </button>
                 </div>
               )}
