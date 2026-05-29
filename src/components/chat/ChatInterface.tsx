@@ -49,6 +49,8 @@ import { useChat } from "./ChatContext";
 import { RayaAgentModal } from "./RayaAgentModal";
 import { RyaInstallPrompt } from "./RyaInstallPrompt";
 import type { ChatMessage, ChatSearchData, TravelContext } from "./ChatContext";
+import { ServiceCards } from "./ServiceCards";
+import { UpsellBanner, PaywallModal, useUpsellState } from "./CompanionUpsell";
 import { logEvent } from "@/lib/events";
 import { trackClick } from "@/lib/trackClick";
 import { getPartnerRecommendations } from "@/lib/orchestration";
@@ -130,18 +132,20 @@ const SUGGESTIONS_EN = [
 // ── Main Chat Interface ───────────────────────────────────────────────────
 
 export function ChatInterface({ dict }: { dict: Dictionary }) {
-  const { messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, addAssistantMessage, clearChat } = useChat();
+  const { messages, isThinking, locale, currency, travelContext, companionMemory, isCompanion, freeMessagesUsed, sendMessage, addAssistantMessage, clearChat } = useChat();
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isImageReading, setIsImageReading] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
   const [toolsOpen, setToolsOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const { dismissedUpsells, showPaywall, dismissUpsell, openPaywall, closePaywall } = useUpsellState();
   const recognitionRef = useRef<ISpeechRecognition | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const isAr = locale === "ar";
+  const biLocale: "ar" | "en" = isAr ? "ar" : "en";
   const suggestions = isAr ? SUGGESTIONS_AR : SUGGESTIONS_EN;
   const showSuggestions = messages.length <= 1 && !isThinking && !inputFocused;
   // Keep the route isolated like a native chat screen. We intentionally do not
@@ -291,29 +295,46 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
           </div>
         </div>
 
-        <div className="hidden items-center gap-1 sm:flex">
-          <button
-            type="button"
-            onClick={() => setAgentOpen(true)}
-            title={isAr ? "وكلاء ريا المتخصصون" : "Rya specialist agents"}
-            className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/[0.08] hover:text-white/70"
-          >
-            <Bot className="h-3.5 w-3.5" />
-          </button>
-          {messages.length > 1 && (
+        <div className="flex items-center gap-1.5">
+          {/* Free message counter — shown only for non-companion users who've sent ≥1 msg */}
+          {!isCompanion && freeMessagesUsed > 0 && (
             <button
               type="button"
-              onClick={clearChat}
-              title={isAr ? "محادثة جديدة" : "New conversation"}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/[0.08] hover:text-white/60"
+              onClick={openPaywall}
+              className="flex items-center gap-1 rounded-full border border-violet-500/30 bg-violet-500/10 px-2 py-0.5 text-[10px] font-medium text-violet-300/80 transition hover:bg-violet-500/20"
+              title={isAr ? "ترقية للنسخة المدفوعة" : "Upgrade to paid"}
             >
-              <Trash2 className="h-3.5 w-3.5" />
+              <Sparkles size={9} />
+              {10 - freeMessagesUsed > 0
+                ? (isAr ? `${10 - freeMessagesUsed} رسائل` : `${10 - freeMessagesUsed} left`)
+                : (isAr ? "الحد اليومي" : "Limit reached")}
             </button>
           )}
+          <div className="hidden items-center gap-1 sm:flex">
+            <button
+              type="button"
+              onClick={() => setAgentOpen(true)}
+              title={isAr ? "وكلاء ريا المتخصصون" : "Rya specialist agents"}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-white/35 transition hover:bg-white/[0.08] hover:text-white/70"
+            >
+              <Bot className="h-3.5 w-3.5" />
+            </button>
+            {messages.length > 1 && (
+              <button
+                type="button"
+                onClick={clearChat}
+                title={isAr ? "محادثة جديدة" : "New conversation"}
+                className="flex h-8 w-8 items-center justify-center rounded-lg text-white/25 transition hover:bg-white/[0.08] hover:text-white/60"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
       <RayaAgentModal locale={locale} open={agentOpen} onClose={() => setAgentOpen(false)} />
+      {showPaywall && <PaywallModal locale={biLocale} onClose={closePaywall} />}
 
       <div className={inputFocused ? "hidden sm:block" : ""}>
         <CompanionMemoryStrip
@@ -351,7 +372,42 @@ export function ChatInterface({ dict }: { dict: Dictionary }) {
       >
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
-            <MessageBubble key={msg.id} message={msg} dict={dict} currency={currency} locale={locale} />
+            <div key={msg.id}>
+              <MessageBubble message={msg} dict={dict} currency={currency} locale={locale} />
+
+              {/* Service cards: affiliate links after assistant responses (free users only) */}
+              {msg.role === "assistant" && !msg.isLoading && !isCompanion && !!msg.serviceCards?.length && (
+                <div className={isAr ? "ms-0 me-10" : "ms-10 me-0"}>
+                  <ServiceCards cards={msg.serviceCards} locale={biLocale} />
+                </div>
+              )}
+
+              {/* Upsell banner at messages 3, 6, 9 */}
+              {msg.role === "assistant" && !msg.isLoading && msg.upsellMessage &&
+               !dismissedUpsells.has(msg.freeMessagesUsed ?? 0) && (
+                <div className={isAr ? "ms-0 me-10" : "ms-10 me-0"}>
+                  <UpsellBanner
+                    message={msg.upsellMessage}
+                    locale={biLocale}
+                    onDismiss={() => dismissUpsell(msg.freeMessagesUsed ?? 0)}
+                  />
+                </div>
+              )}
+
+              {/* Paywall message at limit (error="free_limit_reached") */}
+              {msg.role === "assistant" && !msg.isLoading && msg.error === "free_limit_reached" && (
+                <div className={`mt-2 ${isAr ? "ms-0 me-10" : "ms-10 me-0"}`}>
+                  <button
+                    type="button"
+                    onClick={openPaywall}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600/80 to-brand-primary/80 py-2.5 text-[13px] font-semibold text-white/90 transition active:scale-[0.98]"
+                  >
+                    <Sparkles size={13} />
+                    {isAr ? "فعّل Rya Companion ←" : "Get Rya Companion →"}
+                  </button>
+                </div>
+              )}
+            </div>
           ))}
         </AnimatePresence>
 

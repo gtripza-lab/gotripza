@@ -23,6 +23,7 @@ import { currencyForLocale, type Currency } from "@/lib/utils";
 import { logEvent } from "@/lib/events";
 import { TP_MARKER } from "@/lib/partners";
 import { deriveTripLifecycle } from "@/lib/ai/trip-lifecycle";
+import type { ServiceCard } from "@/lib/services/chat-recommendations";
 
 // ── Re-export for consumers ────────────────────────────────────────────────
 export type { ChatMode, TravelContext };
@@ -170,6 +171,10 @@ export type ChatMessage = {
   context?: TravelContext;
   isLoading?: boolean;
   error?: string;
+  // Free vs paid
+  serviceCards?: ServiceCard[];
+  upsellMessage?: string | null;
+  freeMessagesUsed?: number;
 };
 
 type ChatContextValue = {
@@ -179,6 +184,8 @@ type ChatContextValue = {
   currency: Currency;
   travelContext: TravelContext;
   companionMemory: CompanionMemory;
+  isCompanion: boolean;
+  freeMessagesUsed: number;
   sendMessage: (text: string) => Promise<void>;
   addAssistantMessage: (text: string, mode?: ChatMode) => void;
   clearChat: () => void;
@@ -278,6 +285,8 @@ export function ChatProvider({
   const [messages, setMessages] = useState<ChatMessage[]>([welcomeMsg]);
   const [isThinking, setIsThinking] = useState(false);
   const [travelContext, setTravelContext] = useState<TravelContext>(EMPTY_CONTEXT);
+  const [isCompanion, setIsCompanion] = useState(false);
+  const [freeMessagesUsed, setFreeMessagesUsed] = useState(0);
   const [companionMemory, setCompanionMemory] = useState<CompanionMemory>({
     summary: null,
     knownFacts: [],
@@ -455,11 +464,40 @@ export function ChatProvider({
         destination_intel?: DestinationIntel | null;
         clarification_needed?: boolean;
         clarification_question?: string | null;
+        // Free vs paid
+        isCompanion?: boolean;
+        freeMessagesUsed?: number;
+        freeMessagesLimit?: number;
+        service_cards?: ServiceCard[];
+        upsell_message?: string | null;
       };
 
       let parsedJson: ParseResponse = {};
       try { parsedJson = await parseRes.json(); } catch { throw new Error("parse_failed"); }
+
+      // Handle free limit reached — show paywall message, don't throw
+      if (parsedJson.error === "free_limit_reached") {
+        const paywallMsg = locale === "ar"
+          ? "وصلت للحد اليومي المجاني (10 رسائل). تستطيع الاستمرار غداً مجاناً، أو فعّل Rya Companion للمحادثات غير المحدودة. 🔓"
+          : "You've reached the free daily limit (10 messages). You can continue tomorrow for free, or activate Rya Companion for unlimited conversations. 🔓";
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === thinkingId
+              ? { ...m, text: paywallMsg, isLoading: false, mode: "advice", error: "free_limit_reached" }
+              : m,
+          ),
+        );
+        setFreeMessagesUsed(10);
+        setIsThinking(false);
+        processingRef.current = false;
+        return;
+      }
+
       if (!parseRes.ok || !parsedJson.intent) throw new Error(parsedJson.error ?? "parse_failed");
+
+      // Update companion / free count state from server
+      if (typeof parsedJson.isCompanion === "boolean") setIsCompanion(parsedJson.isCompanion);
+      if (typeof parsedJson.freeMessagesUsed === "number") setFreeMessagesUsed(parsedJson.freeMessagesUsed);
 
       const intent = parsedJson.intent!;
       const aiLocale = parsedJson.locale ?? locale;
@@ -495,7 +533,16 @@ export function ChatProvider({
         setMessages((prev) =>
           prev.map((m) =>
             m.id === thinkingId
-              ? { ...m, text: aiMessage, isLoading: false, mode, context: nextContext }
+              ? {
+                  ...m,
+                  text: aiMessage,
+                  isLoading: false,
+                  mode,
+                  context: nextContext,
+                  serviceCards: parsedJson.service_cards ?? [],
+                  upsellMessage: parsedJson.upsell_message ?? null,
+                  freeMessagesUsed: parsedJson.freeMessagesUsed,
+                }
               : m,
           ),
         );
@@ -567,7 +614,17 @@ export function ChatProvider({
       setMessages((prev) =>
         prev.map((m) =>
           m.id === thinkingId
-            ? { ...m, text: aiMessage, isLoading: false, mode, searchData, context: nextContext }
+            ? {
+                ...m,
+                text: aiMessage,
+                isLoading: false,
+                mode,
+                searchData,
+                context: nextContext,
+                serviceCards: parsedJson.service_cards ?? [],
+                upsellMessage: parsedJson.upsell_message ?? null,
+                freeMessagesUsed: parsedJson.freeMessagesUsed,
+              }
             : m,
         ),
       );
@@ -682,8 +739,8 @@ export function ChatProvider({
   }, []);
 
   const value = useMemo<ChatContextValue>(
-    () => ({ messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, addAssistantMessage, clearChat, revealSide }),
-    [messages, isThinking, locale, currency, travelContext, companionMemory, sendMessage, addAssistantMessage, clearChat, revealSide],
+    () => ({ messages, isThinking, locale, currency, travelContext, companionMemory, isCompanion, freeMessagesUsed, sendMessage, addAssistantMessage, clearChat, revealSide }),
+    [messages, isThinking, locale, currency, travelContext, companionMemory, isCompanion, freeMessagesUsed, sendMessage, addAssistantMessage, clearChat, revealSide],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

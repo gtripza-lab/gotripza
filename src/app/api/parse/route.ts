@@ -18,10 +18,40 @@ import { rateLimit, rateLimitResponse } from "@/lib/security/rate-limit";
 import { captureError } from "@/lib/observability/sentry";
 import { createSupabaseService } from "@/lib/supabase/service";
 import { detectLifecycleFromText, isPostBookingLifecycle, mergeLifecycleStage } from "@/lib/ai/trip-lifecycle";
+import { buildServiceCards, getUpsellMessage } from "@/lib/services/chat-recommendations";
 
 // Supabase generated types do not include the newer support/memory tables yet.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyTable = any;
+
+// ── Free vs paid chat gating ───────────────────────────────────────────────
+const FREE_DAILY_LIMIT = 10;
+const FREE_COUNT_COOKIE = "gtz_free_count";
+
+function todayUtcDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function parseFreeCount(cookieVal: string | undefined): { date: string; count: number } {
+  if (!cookieVal) return { date: "", count: 0 };
+  const parts = cookieVal.split(":");
+  return { date: parts[0] ?? "", count: parseInt(parts[1] ?? "0", 10) || 0 };
+}
+
+async function checkCompanionAccess(email: string): Promise<boolean> {
+  try {
+    const db = createSupabaseService() as AnyTable;
+    const { data } = await db
+      .from("companion_unlocks")
+      .select("expires_at")
+      .eq("email", email.toLowerCase())
+      .gt("expires_at", new Date().toISOString())
+      .maybeSingle();
+    return !!data;
+  } catch {
+    return false; // fail open — don't block if DB is unavailable
+  }
+}
 
 function genAnonSid(): string {
   // 22-char URL-safe random id
@@ -1093,6 +1123,26 @@ export async function POST(req: NextRequest) {
     // tracking when not signed in). `gtz_sid` cookie is set on the response if
     // a new one was minted.
     const user = await getCurrentUser();
+
+    // ── Free vs paid gating ────────────────────────────────────────────────
+    const isCompanion = user?.email ? await checkCompanionAccess(user.email) : false;
+    const today = todayUtcDate();
+    const rawFreeCookie = req.cookies.get(FREE_COUNT_COOKIE)?.value;
+    const { date: freeDate, count: freeCountBefore } = parseFreeCount(rawFreeCookie);
+    const freeMessagesUsed = freeDate === today ? freeCountBefore : 0;
+
+    if (!isCompanion && freeMessagesUsed >= FREE_DAILY_LIMIT) {
+      return NextResponse.json({
+        error: "free_limit_reached",
+        isCompanion: false,
+        freeMessagesUsed: FREE_DAILY_LIMIT,
+        freeMessagesLimit: FREE_DAILY_LIMIT,
+      }, { status: 429 });
+    }
+
+    // This message will be counted — increment now (committed on response)
+    const freeMessagesAfter = isCompanion ? 0 : freeMessagesUsed + 1;
+
     let anonSid = req.cookies.get("gtz_sid")?.value ?? null;
     let mintedSid: string | null = null;
     if (!user && !anonSid) {
@@ -1124,6 +1174,19 @@ export async function POST(req: NextRequest) {
         : Promise.resolve(null);
     const tips = await tipsPromise;
 
+    // Build service cards and upsell for free users
+    const serviceCards = !isCompanion
+      ? buildServiceCards({
+          serviceInterests: (mergedContext.service_interests ?? []) as string[],
+          destination: mergedContext.destination,
+          origin: mergedContext.origin,
+          locale: intel.locale,
+        })
+      : [];
+    const upsellMessage = !isCompanion
+      ? getUpsellMessage(intel.locale, freeMessagesAfter)
+      : null;
+
     const response = NextResponse.json({
       conversation_id: conversationId,
       intent: intel.intent,
@@ -1142,6 +1205,12 @@ export async function POST(req: NextRequest) {
       clarification_needed: intel.clarification_needed ?? false,
       clarification_question: intel.clarification_question ?? null,
       mock: false,
+      // Free vs paid metadata
+      isCompanion,
+      freeMessagesUsed: freeMessagesAfter,
+      freeMessagesLimit: FREE_DAILY_LIMIT,
+      service_cards: serviceCards,
+      upsell_message: upsellMessage,
     });
 
     if (mintedSid) {
@@ -1152,6 +1221,17 @@ export async function POST(req: NextRequest) {
         sameSite: "lax",
         secure: process.env.NODE_ENV === "production",
         maxAge: 60 * 60 * 24 * 30, // 30 days
+        path: "/",
+      });
+    }
+
+    // Track free message count (daily, auto-expires)
+    if (!isCompanion) {
+      response.cookies.set(FREE_COUNT_COOKIE, `${today}:${freeMessagesAfter}`, {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 60 * 60 * 24 * 2, // 2 days
         path: "/",
       });
     }

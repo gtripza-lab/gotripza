@@ -43,7 +43,9 @@ export type EventName =
   | "plan_paywall_purchase_clicked"
   | "trip_plan_unlocked"
   | "companion_purchase_clicked"
-  | "companion_unlocked";
+  | "companion_unlocked"
+  | "service_card_clicked"
+  | "companion_upsell_clicked";
 
 export type EventPayload = Record<string, unknown>;
 
