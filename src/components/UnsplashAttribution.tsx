@@ -32,27 +32,21 @@ export function UnsplashAttribution({ photo, triggerDownload = false, className 
   if (!photo.url || !photo.photographer) return null;
 
   return (
-    <a
-      href={photo.link}
-      target="_blank"
-      rel="noopener noreferrer"
+    <div
       dir="ltr"
       className={[
         "absolute bottom-2 end-2 z-10 rounded-full bg-black/40 px-2.5 py-1 text-[10px]",
-        "text-white/70 hover:text-white hover:bg-black/60 transition backdrop-blur-sm",
-        "leading-none whitespace-nowrap",
+        "text-white/70 backdrop-blur-sm leading-none whitespace-nowrap",
         className ?? "",
       ].join(" ")}
-      title={`Photo by ${photo.photographer} on Unsplash`}
     >
-      {/* Per Unsplash guidelines: link photographer + Unsplash */}
+      {/* Per Unsplash guidelines: link photographer + Unsplash. Cannot nest <a> inside <a>. */}
       Photo by{" "}
       <a
         href={photo.photographerUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="underline underline-offset-2 hover:text-white"
-        onClick={(e) => e.stopPropagation()}
+        className="underline underline-offset-2 hover:text-white transition"
       >
         {photo.photographer}
       </a>{" "}
@@ -61,11 +55,10 @@ export function UnsplashAttribution({ photo, triggerDownload = false, className 
         href="https://unsplash.com?utm_source=gotripza&utm_medium=referral"
         target="_blank"
         rel="noopener noreferrer"
-        className="underline underline-offset-2 hover:text-white"
-        onClick={(e) => e.stopPropagation()}
+        className="underline underline-offset-2 hover:text-white transition"
       >
         Unsplash
       </a>
-    </a>
+    </div>
   );
 }
