@@ -27,6 +27,7 @@ export type SavedTripPlanRow = {
   currency: string;
   trip_type: string | null;
   plan: TripPlan;
+  share_id: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -86,4 +87,29 @@ export async function deleteTripPlan(userId: string, planId: string) {
     .eq("user_id", userId);
   if (isMissingTripPlansTable(error)) throw new TripPlansSetupError();
   if (error) throw new Error(error.message);
+}
+
+// ── Share plan ─────────────────────────────────────────────────────────────────
+export async function enablePlanSharing(userId: string, planId: string): Promise<string> {
+  const db = createSupabaseService() as AnyTable;
+  // Generate a short random share_id (8 chars, URL-safe)
+  const shareId = Math.random().toString(36).slice(2, 10);
+  const { error } = await db
+    .from("trip_plans")
+    .update({ share_id: shareId })
+    .eq("id", planId)
+    .eq("user_id", userId);
+  if (error) throw new Error(error.message);
+  return shareId;
+}
+
+export async function getSharedPlan(shareId: string): Promise<SavedTripPlanRow | null> {
+  const db = createSupabaseService() as AnyTable;
+  const { data, error } = await db
+    .from("trip_plans")
+    .select("*")
+    .eq("share_id", shareId)
+    .maybeSingle();
+  if (error) return null;
+  return data as SavedTripPlanRow | null;
 }

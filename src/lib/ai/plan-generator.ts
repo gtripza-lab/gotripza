@@ -2,6 +2,7 @@ import "server-only";
 import OpenAI from "openai";
 import { HAS_OPENAI_KEY, MODEL_PRIMARY, AI_TIMEOUT_MS, AI_MAX_RETRIES } from "./config";
 import type { TripPlan, TripPlanInput, PlannerTripType } from "../trip-planner";
+import { getCityContext, formatPlacesForPrompt } from "../google-places";
 
 let _client: OpenAI | null = null;
 function getClient(): OpenAI {
@@ -230,13 +231,32 @@ export async function generateAITripPlan(input: TripPlanInput): Promise<TripPlan
   // Pass the current month so AI gives seasonally-accurate tips
   const month = new Date().toLocaleString(isAr ? "ar-SA" : "en-US", { month: "long" });
 
+  // ── Fetch real Google Places data in parallel with plan build ──────────────
+  // Only for paid full plans (days > 1) to avoid cost on free 1-day previews
+  const placesContext = input.days > 1
+    ? await getCityContext(input.destination, true).catch(() => null)
+    : null;
+
+  const placesSection = placesContext
+    ? formatPlacesForPrompt(placesContext)
+    : "";
+
+  // Inject real places data into the user prompt if available
+  const enrichedUserPrompt = placesSection
+    ? `${userPrompt(input, isAr, month)}\n\n${
+        isAr
+          ? `بيانات محدّثة من Google للمدينة المطلوبة — استخدم هذه الأماكن الحقيقية في خطتك:\n${placesSection}`
+          : `Live Google Places data for this city — use these REAL verified places in your plan:\n${placesSection}`
+      }`
+    : userPrompt(input, isAr, month);
+
   const res = await getClient().chat.completions.create({
     model: MODEL_PRIMARY,
     temperature: 0.65,
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: systemPrompt(isAr, month) },
-      { role: "user", content: userPrompt(input, isAr, month) },
+      { role: "user", content: enrichedUserPrompt },
     ],
   });
 
