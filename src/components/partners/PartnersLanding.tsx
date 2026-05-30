@@ -81,13 +81,13 @@ export function PartnersLanding({ locale = "ar" }: { locale?: string }) {
 
   return (
     <main dir={dir} className="min-h-screen overflow-hidden bg-[#060A13] text-white">
-      <section className="relative border-b border-white/10 px-5 py-20 md:px-10 md:py-28">
+      <section className="relative overflow-x-hidden border-b border-white/10 px-5 py-20 md:px-10 md:py-28">
         <div
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_10%,rgba(59,130,246,0.28),transparent_34%),radial-gradient(circle_at_85%_20%,rgba(139,92,246,0.22),transparent_30%),linear-gradient(180deg,rgba(0,212,179,0.06),transparent_45%)]"
         />
         <div className="relative mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
-          <div>
+          <div className="min-w-0">
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-[#00D4B3]">
               <Crown className="h-3.5 w-3.5" />
               {t.badge}
@@ -99,11 +99,11 @@ export function PartnersLanding({ locale = "ar" }: { locale?: string }) {
               {t.subtitle}
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <a href="#apply" className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-[#060A13] transition hover:bg-white/90">
+              <a href="#apply" className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-bold text-[#060A13] transition hover:bg-white/90">
                 {t.cta}
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight className="h-4 w-4 shrink-0" />
               </a>
-              <Link href="/partner/dashboard" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/80 transition hover:bg-white/[0.08]">
+              <Link href="/partner/dashboard" className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-bold text-white/80 transition hover:bg-white/[0.08]">
                 {t.dashboard}
               </Link>
             </div>

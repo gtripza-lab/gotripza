@@ -26,6 +26,7 @@ export function CookieConsent({ locale }: { locale: Locale }) {
   const [visible, setVisible] = useState(false);
   const pathname = usePathname();
   const isAr = locale === "ar";
+  // Compact pill: chat screens + all mobile viewports (< sm handled via CSS)
   const isChatScreen = pathname?.includes("/search");
 
   useEffect(() => {
@@ -47,9 +48,10 @@ export function CookieConsent({ locale }: { locale: Locale }) {
   return (
     <AnimatePresence>
       {visible && (
+        /* ── Compact top-pill: chat screens + all mobile (< sm) ── */
         isChatScreen ? (
           <motion.div
-            key="cookie-banner-chat"
+            key="cookie-pill"
             role="dialog"
             aria-label={isAr ? "إشعار ملفات تعريف الارتباط" : "Cookie consent"}
             initial={{ y: -16, opacity: 0 }}
@@ -64,97 +66,111 @@ export function CookieConsent({ locale }: { locale: Locale }) {
               <span className="min-w-0 flex-1 truncate">
                 {isAr ? "نستخدم الكوكيز لتحسين التجربة." : "We use cookies to improve your experience."}
               </span>
-              <button
-                type="button"
-                onClick={() => dismiss("essential")}
-                className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 font-medium text-white/70"
-              >
+              <button type="button" onClick={() => dismiss("essential")}
+                className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 font-medium text-white/70">
                 {isAr ? "لاحقاً" : "Later"}
               </button>
-              <button
-                type="button"
-                onClick={() => dismiss("accepted")}
-                className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-ink-950"
-              >
+              <button type="button" onClick={() => dismiss("accepted")}
+                className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-ink-950">
                 {isAr ? "موافق" : "OK"}
               </button>
             </div>
           </motion.div>
         ) : (
-        <motion.div
-          key="cookie-banner"
-          role="dialog"
-          aria-label={isAr ? "إشعار ملفات تعريف الارتباط" : "Cookie consent"}
-          initial={{ y: 100, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 100, opacity: 0 }}
-          transition={{ type: "spring", stiffness: 280, damping: 32 }}
-          dir={isAr ? "rtl" : "ltr"}
-          className="fixed bottom-0 inset-x-0 z-50 p-4 sm:bottom-4 sm:inset-x-auto sm:start-4 sm:end-4 sm:max-w-lg md:max-w-xl"
-        >
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-ink-950/95 p-5 shadow-2xl backdrop-blur-xl">
-
-            {/* Dismiss (×) — same as "essential only" */}
-            <button
-              type="button"
-              onClick={() => dismiss("essential")}
-              aria-label={isAr ? "إغلاق" : "Dismiss"}
-              className="absolute end-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-white/40 transition hover:bg-white/10 hover:text-white/70"
+          <>
+            {/* ── Mobile (< sm): compact top-pill — never blocks bottom nav ── */}
+            <motion.div
+              key="cookie-pill-mobile"
+              role="dialog"
+              aria-label={isAr ? "إشعار ملفات تعريف الارتباط" : "Cookie consent"}
+              initial={{ y: -16, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -16, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 32 }}
+              dir={isAr ? "rtl" : "ltr"}
+              className="fixed inset-x-2 top-2 z-50 mx-auto max-w-sm sm:hidden"
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
+              <div className="flex items-center gap-2 rounded-2xl border border-white/10 bg-ink-950/92 p-2 text-[11px] text-white/58 shadow-2xl shadow-black/25 backdrop-blur-xl">
+                <Cookie className="h-3.5 w-3.5 shrink-0 text-brand-primary" />
+                <span className="min-w-0 flex-1 truncate">
+                  {isAr ? "نستخدم الكوكيز لتحسين التجربة." : "We use cookies to improve your experience."}
+                </span>
+                <button type="button" onClick={() => dismiss("essential")}
+                  className="shrink-0 rounded-full border border-white/10 px-2.5 py-1 font-medium text-white/70">
+                  {isAr ? "لاحقاً" : "Later"}
+                </button>
+                <button type="button" onClick={() => dismiss("accepted")}
+                  className="shrink-0 rounded-full bg-white px-3 py-1 font-semibold text-ink-950">
+                  {isAr ? "موافق" : "OK"}
+                </button>
+              </div>
+            </motion.div>
 
-            {/* Icon + heading */}
-            <div className="mb-3 flex items-center gap-3">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-primary/15">
-                <Cookie className="h-4.5 w-4.5 text-brand-primary" />
-              </span>
-              <h3 className="text-sm font-semibold text-white/90">
-                {isAr ? "نستخدم ملفات تعريف الارتباط" : "We use cookies"}
-              </h3>
-            </div>
+            {/* ── Desktop (sm+): full card bottom-left ── */}
+            <motion.div
+              key="cookie-banner-desktop"
+              role="dialog"
+              aria-label={isAr ? "إشعار ملفات تعريف الارتباط" : "Cookie consent"}
+              initial={{ y: 100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 100, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 280, damping: 32 }}
+              dir={isAr ? "rtl" : "ltr"}
+              className="fixed bottom-4 start-4 end-4 z-50 mx-auto hidden max-w-lg sm:block md:max-w-xl"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-ink-950/95 p-5 shadow-2xl backdrop-blur-xl">
+                {/* Dismiss × */}
+                <button
+                  type="button"
+                  onClick={() => dismiss("essential")}
+                  aria-label={isAr ? "إغلاق" : "Dismiss"}
+                  className="absolute end-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border border-white/10 text-white/40 transition hover:bg-white/10 hover:text-white/70"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
 
-            {/* Body */}
-            <p className="mb-4 text-xs leading-relaxed text-white/55">
-              {isAr
-                ? "نستخدم ملفات تعريف الارتباط لتحسين تجربتك، وتشغيل روابط الشراكات (Travelpayouts)، وتحليل استخدام الموقع بشكل مجهول. بياناتك لا تُباع لأي طرف خارجي."
-                : "We use cookies to improve your experience, power affiliate links (Travelpayouts), and analyse site usage anonymously. Your data is never sold to third parties."}
-            </p>
+                <div className="mb-3 flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-brand-primary/15">
+                    <Cookie className="h-4.5 w-4.5 text-brand-primary" />
+                  </span>
+                  <h3 className="text-sm font-semibold text-white/90">
+                    {isAr ? "نستخدم ملفات تعريف الارتباط" : "We use cookies"}
+                  </h3>
+                </div>
 
-            {/* Trust badge */}
-            <div className="mb-4 flex items-center gap-1.5 text-[11px] text-emerald-400/80">
-              <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
-              {isAr
-                ? "لا تتبع شخصي · لا بيانات تُباع · يمكنك الرفض في أي وقت"
-                : "No personal tracking · No data sold · Withdraw any time"}
-            </div>
+                <p className="mb-4 text-xs leading-relaxed text-white/55">
+                  {isAr
+                    ? "نستخدم ملفات تعريف الارتباط لتحسين تجربتك، وتشغيل روابط الشراكات، وتحليل استخدام الموقع بشكل مجهول. بياناتك لا تُباع لأي طرف خارجي."
+                    : "We use cookies to improve your experience, power affiliate links, and analyse site usage anonymously. Your data is never sold to third parties."}
+                </p>
 
-            {/* Actions */}
-            <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => dismiss("accepted")}
-                className="flex-1 rounded-xl bg-gradient-to-r from-brand-primary to-brand-deep py-2 text-xs font-semibold text-white shadow-glow transition hover:scale-[1.02] sm:flex-none sm:px-5"
-              >
-                {isAr ? "قبول الكل" : "Accept All"}
-              </button>
-              <button
-                type="button"
-                onClick={() => dismiss("essential")}
-                className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] py-2 text-xs font-medium text-white/70 transition hover:bg-white/[0.08] sm:flex-none sm:px-5"
-              >
-                {isAr ? "الضروري فقط" : "Essential Only"}
-              </button>
-              <Link
-                href={`/${locale}/privacy`}
-                onClick={() => dismiss("essential")}
-                className="text-xs text-brand-primary/80 transition hover:text-brand-primary hover:underline"
-              >
-                {isAr ? "سياسة الخصوصية" : "Privacy Policy"}
-              </Link>
-            </div>
-          </div>
-        </motion.div>
+                <div className="mb-4 flex items-center gap-1.5 text-[11px] text-emerald-400/80">
+                  <ShieldCheck className="h-3.5 w-3.5 shrink-0" />
+                  {isAr
+                    ? "لا تتبع شخصي · لا بيانات تُباع · يمكنك الرفض في أي وقت"
+                    : "No personal tracking · No data sold · Withdraw any time"}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button type="button" onClick={() => dismiss("accepted")}
+                    className="flex-1 rounded-xl bg-gradient-to-r from-brand-primary to-brand-deep py-2 text-xs font-semibold text-white shadow-glow transition hover:scale-[1.02] sm:flex-none sm:px-5">
+                    {isAr ? "قبول الكل" : "Accept All"}
+                  </button>
+                  <button type="button" onClick={() => dismiss("essential")}
+                    className="flex-1 rounded-xl border border-white/10 bg-white/[0.04] py-2 text-xs font-medium text-white/70 transition hover:bg-white/[0.08] sm:flex-none sm:px-5">
+                    {isAr ? "الضروري فقط" : "Essential Only"}
+                  </button>
+                  <Link
+                    href={`/${locale}/privacy`}
+                    onClick={() => dismiss("essential")}
+                    className="text-xs text-brand-primary/80 transition hover:text-brand-primary hover:underline"
+                  >
+                    {isAr ? "سياسة الخصوصية" : "Privacy Policy"}
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </>
         )
       )}
     </AnimatePresence>

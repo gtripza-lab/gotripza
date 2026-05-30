@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseService } from "@/lib/supabase/service";
+import { sendPlanReadyEmail } from "@/lib/email/plan-ready";
 
 export const runtime = "nodejs";
 
@@ -117,6 +118,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true, action: "plans_revoked" });
       }
       await grantPlanCredits(email, orderId);
+      // Fire-and-forget — send "your plan is ready" email
+      sendPlanReadyEmail(email).catch(() => {/* non-blocking */});
       return NextResponse.json({ ok: true, action: "plans_granted" });
     }
 

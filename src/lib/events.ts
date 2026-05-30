@@ -42,6 +42,7 @@ export type EventName =
   | "signin_complete"
   | "plan_paywall_purchase_clicked"
   | "trip_plan_unlocked"
+  | "trip_plan_pdf_downloaded"
   | "companion_purchase_clicked"
   | "companion_unlocked"
   | "service_card_clicked"

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   CalendarDays,
   Car,
@@ -315,8 +316,14 @@ function UnlockForm({
   );
 }
 
+const PLAN_FORM_KEY = "gtripza_plan_form";
+
 export function TripPlanner({ locale }: { locale: Locale }) {
   const isAr = locale === "ar";
+  const searchParams = useSearchParams();
+  const isPurchased  = searchParams?.get("purchased") === "1";
+  const emailParam   = searchParams?.get("email") ?? "";
+
   const [form, setForm] = useState<FormState>(isAr ? DEFAULT_AR : DEFAULT_EN);
   const [plan, setPlan] = useState<TripPlan | null>(null);
   const [isPreview, setIsPreview] = useState(false);
@@ -329,7 +336,8 @@ export function TripPlanner({ locale }: { locale: Locale }) {
   const [selectedTier, setSelectedTier] = useState<PlanTierId>("standard");
   const [plansRemaining, setPlansRemaining] = useState<number | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [sessionEmail, setSessionEmail] = useState("");
+  const [sessionEmail, setSessionEmail] = useState(emailParam);
+  const unlockRef = useRef<HTMLDivElement>(null);
   const currency = isAr ? "SAR" : "USD";
 
   const currentTier = PLAN_TIERS.find((t) => t.id === selectedTier) ?? PLAN_TIERS[1];
@@ -338,6 +346,25 @@ export function TripPlanner({ locale }: { locale: Locale }) {
     () => form.origin.trim().length > 1 && form.destination.trim().length > 1,
     [form.origin, form.destination],
   );
+
+  // Restore saved form + scroll to unlock section when returning from Gumroad
+  useEffect(() => {
+    if (!isPurchased) return;
+    try {
+      const saved = sessionStorage.getItem(PLAN_FORM_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved) as Partial<FormState>;
+        setForm((prev) => ({ ...prev, ...parsed }));
+        sessionStorage.removeItem(PLAN_FORM_KEY);
+      }
+    } catch { /* ignore */ }
+    // Give React time to render the plan preview, then scroll to unlock
+    const t = setTimeout(() => {
+      unlockRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 600);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPurchased]);
 
   // Load session and listen for auth state changes (handles OAuth redirect return)
   useEffect(() => {
@@ -361,6 +388,8 @@ export function TripPlanner({ locale }: { locale: Locale }) {
 
   async function handlePurchaseClick(tier: PlanTier) {
     logEvent("plan_paywall_purchase_clicked", { tier: tier.id, price: tier.price, source: "tier_card" });
+    // Save form so we can restore it when the user returns from Gumroad
+    try { sessionStorage.setItem(PLAN_FORM_KEY, JSON.stringify(form)); } catch { /* ignore */ }
     const supabase = createSupabaseBrowser();
     const { data } = await supabase.auth.getSession();
     if (data.session) {
@@ -555,8 +584,31 @@ export function TripPlanner({ locale }: { locale: Locale }) {
     }
   }
 
+  async function downloadPDF() {
+    if (!plan) return;
+    try {
+      // Dynamic import — keeps bundle small (PDF lib is large)
+      const [{ pdf }, { TripPlanDocument }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/components/TripPlanPDF"),
+      ]);
+      const blob = await pdf(<TripPlanDocument plan={plan} isAr={isAr} />).toBlob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = `gotripza-${plan.destinationName.replace(/\s+/g, "-").toLowerCase()}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+      logEvent("trip_plan_pdf_downloaded", { destination: plan.destinationName, days: plan.days });
+    } catch (err) {
+      console.error("[PDF] generation failed:", err);
+      // Fallback to print dialog
+      window.print();
+    }
+  }
+
   function printPlan() {
-    window.print();
+    downloadPDF();
   }
 
   function buildShareData(currentPlan: TripPlan) {
@@ -1023,13 +1075,30 @@ export function TripPlanner({ locale }: { locale: Locale }) {
                 {/* Purchase banner */}
                 <PaywallBanner isAr={isAr} gumroadUrl={currentTier.gumroadUrl} price={currentTier.price} />
 
+                {/* ── Post-purchase success banner (shown when returning from Gumroad) ── */}
+                {isPurchased && (
+                  <div
+                    className="flex items-start gap-3 rounded-2xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3"
+                    dir={isAr ? "rtl" : "ltr"}
+                  >
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                    <p className="text-sm leading-relaxed text-emerald-300/90">
+                      {isAr
+                        ? "تم الشراء بنجاح ✅ — أدخل بريدك الإلكتروني أدناه لاستلام خطتك فوراً."
+                        : "Purchase confirmed ✅ — enter your email below to unlock your plan instantly."}
+                    </p>
+                  </div>
+                )}
+
                 {/* Unlock form */}
-                <UnlockForm
-                  isAr={isAr}
-                  form={form}
-                  prefillEmail={sessionEmail || undefined}
-                  onUnlock={unlockPlan}
-                />
+                <div ref={unlockRef}>
+                  <UnlockForm
+                    isAr={isAr}
+                    form={form}
+                    prefillEmail={sessionEmail || undefined}
+                    onUnlock={unlockPlan}
+                  />
+                </div>
 
                 {unlockLoading && (
                   <div className="flex items-center justify-center gap-2 py-4 text-sm text-white/50">

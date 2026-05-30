@@ -253,7 +253,7 @@ export default async function PlusPage(props: { params: Promise<{ locale: string
                 </div>
                 <Image
                   src="/brand/rya/rya-social-profile.png"
-                  alt=""
+                  alt="Rya companion"
                   width={56}
                   height={56}
                   className="rounded-2xl"

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { unstable_cache } from "next/cache";
 import { notFound } from "next/navigation";
 import { isLocale, type Locale } from "@/i18n/config";
 import { DESTINATIONS } from "@/lib/seo-destinations";
@@ -49,15 +50,38 @@ const FEATURED_SLUGS = [
   "rome", "barcelona",
 ];
 
+// Fallback gradient per destination (shown when photo fails to load)
+const DEST_GRADIENT: Record<string, string> = {
+  dubai:     "from-amber-600/50 to-orange-800/60",
+  istanbul:  "from-red-700/50 to-rose-900/60",
+  london:    "from-slate-600/50 to-blue-900/60",
+  paris:     "from-indigo-600/50 to-violet-900/60",
+  bali:      "from-emerald-600/50 to-teal-900/60",
+  tokyo:     "from-pink-600/50 to-rose-800/60",
+  bangkok:   "from-yellow-600/50 to-orange-900/60",
+  singapore: "from-cyan-600/50 to-blue-900/60",
+  maldives:  "from-sky-500/50 to-cyan-900/60",
+  antalya:   "from-blue-500/50 to-teal-800/60",
+  rome:      "from-orange-600/50 to-amber-900/60",
+  barcelona: "from-red-500/50 to-orange-800/60",
+};
+
+// Cache photo fetches for 24 hours — survives dev-mode hot reloads
+const fetchFeaturedPhotos = unstable_cache(
+  async (keywords: string[]) => fetchPhotos(keywords),
+  ["destinations-featured-photos"],
+  { revalidate: 86400 },
+);
+
 export default async function DestinationsIndexPage(props: Props) {
   const params = await props.params;
   if (!isLocale(params.locale)) notFound();
   const locale = params.locale as Locale;
   const isAr = locale === "ar";
 
-  // Fetch photos only for featured destinations (cached 24h by Next.js data cache)
+  // Fetch photos only for featured destinations (cached 24h — survives hot reloads)
   const featuredDests = DESTINATIONS.filter((d) => FEATURED_SLUGS.includes(d.slug));
-  const photos = await fetchPhotos(featuredDests.map((d) => d.heroKeyword));
+  const photos = await fetchFeaturedPhotos(featuredDests.map((d) => d.heroKeyword));
   const photoMap: Record<string, UnsplashPhoto> = {};
   featuredDests.forEach((d, i) => { photoMap[d.slug] = photos[i]; });
 
@@ -102,7 +126,7 @@ export default async function DestinationsIndexPage(props: Props) {
                       className="object-cover transition duration-500 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="absolute inset-0 bg-gradient-to-br from-brand-primary/30 to-brand-deep/40" />
+                    <div className={`absolute inset-0 bg-gradient-to-br ${DEST_GRADIENT[d.slug] ?? "from-brand-primary/30 to-brand-deep/40"}`} />
                   )}
                   {/* Dark overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />

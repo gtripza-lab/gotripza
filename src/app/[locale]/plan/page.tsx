@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import {
   CheckCircle2,
   Globe,
-  Lock,
   Sparkles,
   Star,
   WalletCards,
@@ -15,7 +14,6 @@ import { Navbar } from "@/components/Navbar";
 import { TripPlanner } from "@/components/TripPlanner";
 import { contentLocale, isLocale, type Locale } from "@/i18n/config";
 import { getDictionary } from "@/i18n/get-dictionary";
-import { READY_TRIP_PLANS } from "@/lib/ready-trip-plans";
 import { PLAN_TIERS } from "@/lib/checkout-links";
 
 const BASE = process.env.NEXT_PUBLIC_APP_URL ?? "https://gotripza.com";
@@ -77,7 +75,7 @@ export default async function PlanPage(
         <section className="mx-auto max-w-4xl px-4 pb-8 pt-16 text-center">
           <p className="inline-flex items-center gap-2 rounded-full border border-brand-primary/20 bg-brand-primary/[0.08] px-4 py-1.5 text-xs font-semibold text-brand-primary">
             <Sparkles className="h-3.5 w-3.5" />
-            {isAr ? "مدعوم بـ GPT-4o" : "Powered by GPT-4o"}
+            {isAr ? "مخطط رحلات بالذكاء الاصطناعي" : "AI Trip Planner"}
           </p>
 
           <h1 className="mt-5 font-display text-4xl font-bold leading-tight text-white sm:text-5xl">
@@ -347,10 +345,6 @@ export default async function PlanPage(
                     q: "ما وسائل الدفع المتاحة؟",
                     a: "الدفع عبر Gumroad يدعم Visa وMastercard وPayPal وApple Pay.",
                   },
-                  {
-                    q: "هل هناك ضمان استرداد؟",
-                    a: "نعم، إذا لم تكن الخطة مفيدة راسلنا خلال 48 ساعة من الشراء وسنرد المبلغ.",
-                  },
                 ]
               : [
                   {
@@ -369,10 +363,6 @@ export default async function PlanPage(
                     q: "What payment methods are accepted?",
                     a: "Gumroad supports Visa, Mastercard, PayPal, and Apple Pay.",
                   },
-                  {
-                    q: "Is there a refund guarantee?",
-                    a: "Yes — if the plan isn't useful, contact us within 48 hours of purchase for a full refund.",
-                  },
                 ]
             ).map(({ q, a }) => (
               <div
@@ -386,38 +376,6 @@ export default async function PlanPage(
           </div>
         </section>
 
-        {/* ── Ready plans ──────────────────────────────────────────────────── */}
-        <section className="mx-auto max-w-7xl px-4 pb-12">
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.035] p-5">
-            <div className="flex items-center gap-3">
-              <Lock className="h-4 w-4 text-brand-primary/60" />
-              <h2 className="font-display text-xl font-semibold text-white">
-                {isAr ? "خطط جاهزة للتعديل" : "Ready plans to customize"}
-              </h2>
-            </div>
-            <p className="mt-2 text-sm leading-6 text-white/45">
-              {isAr
-                ? "ابدأ من خطة جاهزة ثم عدلها مع ريا حسب تاريخك وميزانيتك."
-                : "Start from a ready itinerary, then tune it with Rya for your dates and budget."}
-            </p>
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {READY_TRIP_PLANS.map((page) => (
-                <Link
-                  key={page.slug}
-                  href={`/${locale}/trip-plans/${page.slug}`}
-                  className="rounded-xl border border-white/[0.07] bg-black/20 p-4 transition hover:border-brand-primary/35 hover:bg-brand-primary/[0.08]"
-                >
-                  <p className="text-sm font-semibold text-white/85">
-                    {page.title[copyLocale]}
-                  </p>
-                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-white/45">
-                    {page.description[copyLocale]}
-                  </p>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
       </main>
       <Footer dict={dict} locale={locale} />
     </>
